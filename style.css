@@ -334,6 +334,24 @@ body {
 }
 #content img:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 
+/* Mermaid Diagrams */
+.mermaid-container {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+    margin: 18px 0;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.mermaid {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
 /* Checkbox lists */
 #content input[type="checkbox"] { margin-right: 6px; accent-color: #2563eb; }
 

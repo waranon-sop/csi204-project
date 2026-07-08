@@ -120,7 +120,8 @@ project-root/
 
 ## 🔗 ลิงก์ที่เกี่ยวข้อง
 
-- 🌐 GitHub Pages: https://somchai-demo.github.io/csi204-project/ (รอเผยแพร่จริง)
+- 🌐 GitHub Repository: [https://github.com/waranon-sop/csi204-project](https://github.com/waranon-sop/csi204-project)
+- 🌐 GitHub Pages (Web): [https://waranon-sop.github.io/csi204-project/](https://waranon-sop.github.io/csi204-project/)
 - 📄 เอกสาร Analysis & Design: [docs/analysis-design.md](docs/analysis-design.md)
 
 ---

@@ -4,10 +4,10 @@
 
 // ── Remove inline TOC section from markdown (sidebar handles navigation) ──
 function removeToc(text) {
-    // Match a heading containing "สารบัญ" and remove it + all list items below it
-    // until the next heading (##) or horizontal rule (---)
+    // Match a "สารบัญ" heading block and remove it along with its list items
+    // Stops at the next heading (## or ---) using a non-greedy match
     return text.replace(
-        /#{1,3}[^\n]*สารบัญ[^\n]*\n((?:[\s\S]*?(?=\n#{1,3} |\n---)))/i,
+        /^#{1,3}[^\n]*สารบัญ[^\n]*\n[\s\S]*?(?=\n#{1,3}\s|\n---)/im,
         ''
     );
 }
@@ -15,11 +15,8 @@ function removeToc(text) {
 // ── Fix image paths for files inside /docs subfolder ──
 function fixImagePaths(text, filePath) {
     if (!filePath.startsWith('docs/')) return text;
-
-    return text
-        .replace(/\]\(usecase\.png\)/g,  '](docs/usecase.png)')
-        .replace(/\]\(class\.png\)/g,    '](docs/class.png)')
-        .replace(/\]\(sequence\.png\)/g, '](docs/sequence.png)');
+    // Prefix relative image paths with docs/ if not already prefixed
+    return text.replace(/!\[([^\]]*)\]\((?!https?:\/\/|docs\/)([^)]+)\)/g, '![$1](docs/$2)');
 }
 
 // ── Strip leading emoji/symbols from heading text for TOC ──
@@ -123,6 +120,40 @@ function loadFile(filePath, btnId, displayLabel) {
 
             // Build sidebar TOC from rendered headings
             buildToc(content);
+
+            // Render Mermaid diagrams dynamically
+            if (window.mermaid) {
+                const mermaidBlocks = content.querySelectorAll('pre code.language-mermaid');
+                if (mermaidBlocks.length > 0) {
+                    // Use timestamp to avoid ID collision when user re-loads the same file
+                    const runId = Date.now();
+                    const mermaidNodes = [];
+
+                    mermaidBlocks.forEach((block, index) => {
+                        const rawCode = block.textContent;
+                        const preElement = block.parentElement;
+
+                        const container = document.createElement('div');
+                        container.className = 'mermaid-container';
+
+                        const mermaidDiv = document.createElement('div');
+                        mermaidDiv.className = 'mermaid';
+                        mermaidDiv.id = `mermaid-${runId}-${index}`; // unique ID per render session
+                        mermaidDiv.textContent = rawCode;
+
+                        container.appendChild(mermaidDiv);
+                        preElement.replaceWith(container);
+                        mermaidNodes.push(mermaidDiv);
+                    });
+
+                    // Run after all DOM replacements are complete
+                    try {
+                        window.mermaid.run({ nodes: mermaidNodes });
+                    } catch (err) {
+                        console.error('Mermaid render error:', err);
+                    }
+                }
+            }
         })
         .catch((err) => {
             content.classList.remove('loading-msg');
@@ -157,6 +188,16 @@ function onMainScroll() {
 
 // ── Init ──
 window.addEventListener('DOMContentLoaded', () => {
+    // Initialize Mermaid config
+    if (window.mermaid) {
+        window.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'neutral',
+            securityLevel: 'loose',
+            flowchart: { useMaxWidth: true, htmlLabels: true }
+        });
+    }
+
     // Make #main scrollable (not window) so sidebar stays fixed
     document.getElementById('main').addEventListener('scroll', onMainScroll);
 
