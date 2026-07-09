@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProfileDropdown({ isOpen, onClose, currentUser = { name: 'Alex Rivers', role: 'customer' } }) {
   const dropdownRef = useRef(null);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -111,7 +114,11 @@ export default function ProfileDropdown({ isOpen, onClose, currentUser = { name:
       {/* Logout Action Button */}
       <div className="pt-2">
         <button 
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            logout();
+            navigate('/');
+          }}
           className="w-full flex items-center justify-center gap-2 border border-[#2D2D2A] hover:bg-[#F2E9DC]/40 rounded-full py-2.5 px-4 text-xs font-semibold text-[#2D2D2A] transition-all active:scale-95"
         >
           <LogOut className="h-4 w-4 text-[#8B8B88]" />

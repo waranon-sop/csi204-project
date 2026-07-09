@@ -12,7 +12,7 @@ export default function Navbar({ currentUser = { name: 'Alex Rivers', role: 'cus
 
   // Determine navigation menu links dynamically based on user role (SAD Design)
   const getNavLinks = () => {
-    switch (currentUser.role) {
+    switch (currentUser?.role) {
       case 'staff':
         return [
           { name: 'Quality Queue (คัดเกรดเสื้อผ้า)', path: '/wardrobe' },
@@ -40,7 +40,7 @@ export default function Navbar({ currentUser = { name: 'Alex Rivers', role: 'cus
   return (
     <nav className="sticky top-0 z-50 bg-[#FAF8F5] border-b border-[#F2E9DC]">
       {/* Role Indicator Banner (for Staff / Admin UI feedback) */}
-      {currentUser.role !== 'customer' && (
+      {currentUser && currentUser.role !== 'customer' && (
         <div className={`py-1.5 px-6 text-center text-[10px] font-bold text-white tracking-widest flex items-center justify-center gap-1.5 ${
           currentUser.role === 'admin' ? 'bg-[#2D2D2A]' : 'bg-[#C57B57]'
         }`}>
@@ -103,7 +103,7 @@ export default function Navbar({ currentUser = { name: 'Alex Rivers', role: 'cus
             </div>
 
             {/* Shopping Cart Icon (Only relevant for Customer) */}
-            {currentUser.role === 'customer' && (
+            {currentUser?.role === 'customer' && (
               <Link to="/wardrobe" className="text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors relative">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
@@ -112,31 +112,40 @@ export default function Navbar({ currentUser = { name: 'Alex Rivers', role: 'cus
               </Link>
             )}
 
-            {/* Profile Avatar Trigger */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-7 h-7 rounded-full overflow-hidden border border-[#F2E9DC] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none"
-              >
-                <img 
-                  src={
-                    currentUser.role === 'admin'
-                      ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100' // Man avatar for Admin
-                      : currentUser.role === 'staff'
-                        ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100' // Staff avatar
-                        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100' // Alex (Customer)
-                  } 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover" 
+            {/* Profile Avatar Trigger or Login Button */}
+            {currentUser ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-7 h-7 rounded-full overflow-hidden border border-[#F2E9DC] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none"
+                >
+                  <img 
+                    src={
+                      currentUser.role === 'admin'
+                        ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100' // Man avatar for Admin
+                        : currentUser.role === 'staff'
+                          ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100' // Staff avatar
+                          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100' // Alex (Customer)
+                    } 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
+                </button>
+                
+                <ProfileDropdown 
+                  isOpen={isDropdownOpen} 
+                  onClose={() => setIsDropdownOpen(false)} 
+                  currentUser={currentUser}
                 />
-              </button>
-              
-              <ProfileDropdown 
-                isOpen={isDropdownOpen} 
-                onClose={() => setIsDropdownOpen(false)} 
-                currentUser={currentUser}
-              />
-            </div>
+              </div>
+            ) : (
+              <Link 
+                to="/login"
+                className="py-2 px-4 rounded-full bg-[#2D2D2A] text-white text-xs font-semibold hover:bg-[#4A533D] transition-colors"
+              >
+                Log In
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -182,19 +191,35 @@ export default function Navbar({ currentUser = { name: 'Alex Rivers', role: 'cus
 
             <div className="flex items-center justify-between px-3 pt-2">
               <span className="text-xs text-[#8B8B88]">Account Actions</span>
-              <button 
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsDropdownOpen(true);
-                }}
-                className="w-8 h-8 rounded-full overflow-hidden border border-[#F2E9DC]"
-              >
-                <img 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover" 
-                />
-              </button>
+              {currentUser ? (
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsDropdownOpen(true);
+                  }}
+                  className="w-8 h-8 rounded-full overflow-hidden border border-[#F2E9DC]"
+                >
+                  <img 
+                    src={
+                      currentUser.role === 'admin'
+                        ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'
+                        : currentUser.role === 'staff'
+                          ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100'
+                          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
+                    } 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
+                </button>
+              ) : (
+                <Link 
+                  to="/login"
+                  onClick={() => setIsOpen(false)}
+                  className="py-1.5 px-4 rounded-full bg-[#2D2D2A] text-white text-[10px] font-semibold"
+                >
+                  Log In
+                </Link>
+              )}
             </div>
           </div>
         </div>

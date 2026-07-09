@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,37 +8,40 @@ import OrderHistory from './pages/OrderHistory';
 import MyWardrobe from './pages/MyWardrobe';
 import EcoImpact from './pages/EcoImpact';
 import PaymentMethods from './pages/PaymentMethods';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import { User, ShieldAlert, Cpu } from 'lucide-react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-export default function App() {
-  // Mock User State to demonstrate SAD system design roles
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Alex Rivers',
-    role: 'customer', // 'customer' | 'staff' | 'admin'
-  });
+function AppContent() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const { currentUser, setDemoUser } = useAuth();
 
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen bg-[#FAF8F5]">
-        {/* Pass user state to Navbar to dynamically show different menus */}
-        <Navbar currentUser={currentUser} />
+    <div className={`flex flex-col min-h-screen bg-[#FAF8F5]`}>
+      {/* Conditionally render Navbar */}
+      {!isAuthPage && <Navbar currentUser={currentUser} />}
 
-        {/* Main Content Area */}
-        <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<ProfileSettings />} />
-            <Route path="/orders" element={<OrderHistory />} />
-            <Route path="/wardrobe" element={<MyWardrobe />} />
-            <Route path="/eco-impact" element={<EcoImpact />} />
-            <Route path="/payment" element={<PaymentMethods />} />
-          </Routes>
-        </main>
+      {/* Main Content Area */}
+      <main className={isAuthPage ? 'flex-grow flex w-full' : 'flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6'}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<ProfileSettings />} />
+          <Route path="/orders" element={<OrderHistory />} />
+          <Route path="/wardrobe" element={<MyWardrobe />} />
+          <Route path="/eco-impact" element={<EcoImpact />} />
+          <Route path="/payment" element={<PaymentMethods />} />
+        </Routes>
+      </main>
 
-        {/* Footer */}
-        <Footer />
+      {/* Conditionally render Footer */}
+      {!isAuthPage && <Footer />}
 
-        {/* ==================== Interactive SAD Demo Role Switcher ==================== */}
+      {/* ==================== Interactive SAD Demo Role Switcher ==================== */}
+      {!isAuthPage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#FCFBF7] border border-[#F2E9DC] p-4 rounded-3xl shadow-2xl max-w-[260px] font-sans text-[#2D2D2A]">
           <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-[#F2E9DC]">
             <Cpu className="h-4 w-4 text-[#5F6B4E]" />
@@ -49,9 +52,9 @@ export default function App() {
           </p>
           <div className="flex flex-col gap-2">
             <button
-              onClick={() => setCurrentUser({ name: 'Alex Rivers', role: 'customer' })}
+              onClick={() => setDemoUser({ name: 'Alex Rivers', role: 'customer' })}
               className={`w-full py-2 px-3 text-xs rounded-xl flex items-center justify-between font-bold transition-all ${
-                currentUser.role === 'customer'
+                currentUser?.role === 'customer'
                   ? 'bg-[#5F6B4E] text-white shadow-sm'
                   : 'bg-white hover:bg-[#F2E9DC]/40 border border-[#EAE5DB] text-[#2D2D2A]'
               }`}
@@ -60,9 +63,9 @@ export default function App() {
               <User className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => setCurrentUser({ name: 'พนักงาน สมศักดิ์', role: 'staff' })}
+              onClick={() => setDemoUser({ name: 'พนักงาน สมศักดิ์', role: 'staff' })}
               className={`w-full py-2 px-3 text-xs rounded-xl flex items-center justify-between font-bold transition-all ${
-                currentUser.role === 'staff'
+                currentUser?.role === 'staff'
                   ? 'bg-[#C57B57] text-white shadow-sm'
                   : 'bg-white hover:bg-[#F2E9DC]/40 border border-[#EAE5DB] text-[#2D2D2A]'
               }`}
@@ -71,9 +74,9 @@ export default function App() {
               <Cpu className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => setCurrentUser({ name: 'ผู้ดูแลระบบ ยิ่งยศ', role: 'admin' })}
+              onClick={() => setDemoUser({ name: 'ผู้ดูแลระบบ ยิ่งยศ', role: 'admin' })}
               className={`w-full py-2 px-3 text-xs rounded-xl flex items-center justify-between font-bold transition-all ${
-                currentUser.role === 'admin'
+                currentUser?.role === 'admin'
                   ? 'bg-[#2D2D2A] text-white shadow-sm'
                   : 'bg-white hover:bg-[#F2E9DC]/40 border border-[#EAE5DB] text-[#2D2D2A]'
               }`}
@@ -83,7 +86,17 @@ export default function App() {
             </button>
           </div>
         </div>
-      </div>
-    </Router>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
