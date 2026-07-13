@@ -11,6 +11,7 @@
 "use client";
 
 import React, { createContext, useContext } from 'react';
+import { useAuth } from './AuthContext';
 
 const UserContext = createContext(null);
 
@@ -18,9 +19,11 @@ const UserContext = createContext(null);
  * Wrap the app (or a sub-tree) with this provider and supply the currentUser
  * state from App.jsx.
  */
-export function UserProvider({ currentUser, setCurrentUser, children }) {
+export function UserProvider({ children }) {
+  const { currentUser, setDemoUser } = useAuth();
+  
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser }}>
+    <UserContext.Provider value={{ currentUser, setCurrentUser: setDemoUser }}>
       {children}
     </UserContext.Provider>
   );
