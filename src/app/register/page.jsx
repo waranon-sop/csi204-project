@@ -1,7 +1,10 @@
+"use client";
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Leaf, EyeOff, Eye } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,7 +18,7 @@ export default function Register() {
   const [error, setError] = useState('');
 
   const { register } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -40,7 +43,7 @@ export default function Register() {
 
     const result = register(name, email, password);
     if (result.success) {
-      navigate('/');
+      router.push('/');
     } else {
       setError(result.error);
     }
@@ -82,13 +85,13 @@ export default function Register() {
           {/* Tabs */}
           <div className="flex border-b border-[#EAE5DB] mb-12">
             <Link
-              to="/login"
+              href="/login"
               className="flex-1 text-center py-4 text-xs font-bold tracking-wider text-[#8B8B88] hover:text-[#2D2D2A] transition-colors"
             >
               Login
             </Link>
             <Link
-              to="/register"
+              href="/register"
               className="flex-1 text-center py-4 text-xs font-bold tracking-wider text-[#2D2D2A] border-b-2 border-[#2D2D2A] -mb-[1px]"
             >
               Create Account
@@ -218,7 +221,7 @@ export default function Register() {
 
           {/* Social Logins */}
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white border border-[#EAE5DB] hover:bg-[#FAF8F5] rounded-xl text-sm font-semibold text-[#2D2D2A] transition-colors shadow-sm">
+            <button type="button" className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white border border-[#EAE5DB] hover:bg-[#FAF8F5] rounded-xl text-sm font-semibold text-[#2D2D2A] transition-colors shadow-sm">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -227,7 +230,7 @@ export default function Register() {
               </svg>
               Google
             </button>
-            <button className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white border border-[#EAE5DB] hover:bg-[#FAF8F5] rounded-xl text-sm font-semibold text-[#2D2D2A] transition-colors shadow-sm">
+            <button type="button" className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white border border-[#EAE5DB] hover:bg-[#FAF8F5] rounded-xl text-sm font-semibold text-[#2D2D2A] transition-colors shadow-sm">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.04 2.34-.85 3.73-.71 1.5.15 2.76.77 3.63 1.88-3.2 1.76-2.67 6.17.4 7.34-.73 1.58-1.55 3.04-2.84 3.66zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.3 2.3-1.89 4.13-3.74 4.25z" />
               </svg>
