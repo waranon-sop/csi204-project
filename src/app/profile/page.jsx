@@ -1,18 +1,34 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
 import { User, Mail, Phone, MapPin, Shield, Check } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileSettings() {
+  const { currentUser } = useAuth();
+  
   const [formData, setFormData] = useState({
-    fullName: 'พิมพ์ชนก สุขใจ',
-    email: 'pimchanok.s@example.com',
-    phone: '081-234-5678',
-    address: '123/45 ถนนประเสริฐมนูกิจ แขวงนวมินทร์ เขตบึงกุ่ม กรุงเทพฯ 10240',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
     ecoStatus: 'Eco Hero',
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || '',
+        address: currentUser.address || '',
+        ecoStatus: currentUser.ecoStatus || 'Eco Hero',
+      }));
+    }
+  }, [currentUser]);
 
   const [saved, setSaved] = useState(false);
 

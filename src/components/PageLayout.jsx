@@ -8,23 +8,14 @@ import RewardsWidget from './RewardsWidget';
 
 export default function PageLayout({ children }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === '/login' || pathname === '/register';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAF8F5]">
-      {!isAuthPage && (
-        <>
-          <Navbar />
-          <CartDrawer />
-        </>
-      )}
+      <Navbar />
+      <CartDrawer />
       {children}
-      {!isAuthPage && (
-        <>
-          <RewardsWidget />
-          <Footer />
-        </>
-      )}
+      <RewardsWidget />
+      <Footer />
     </div>
   );
 }

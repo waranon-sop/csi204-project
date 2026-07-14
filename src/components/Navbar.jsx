@@ -6,12 +6,16 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, ShieldAlert, Cpu, Heart, ShoppingBag, User } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
+import AuthModal from './AuthModal';
 import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useCurrentUser } from '../context/UserContext';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function Navbar() {
   const { currentUser } = useCurrentUser();
+  const { isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -256,9 +260,9 @@ export default function Navbar() {
                 )}
               </button>
             ) : currentUser ? null : (
-              <Link href="/login" className="p-1 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors" title="Login to view cart">
+              <button onClick={() => openAuthModal('login')} className="p-1 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors" title="Login to view cart">
                 <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
-              </Link>
+              </button>
             )}
 
             {/* Profile Icon / Avatar */}
@@ -285,9 +289,9 @@ export default function Navbar() {
                 <ProfileDropdown isOpen={isDropdownOpen} onClose={() => setIsDropdownOpen(false)} currentUser={currentUser} />
               </div>
             ) : (
-              <Link href="/login" className="p-1 pl-2 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors" title="Login / Register">
+              <button onClick={() => openAuthModal('login')} className="p-1 pl-2 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors focus:outline-none" title="Login / Register">
                 <User className="h-5 w-5" strokeWidth={1.5} />
-              </Link>
+              </button>
             )}
           </div>
 
@@ -340,14 +344,19 @@ export default function Navbar() {
                   />
                 </button>
               ) : (
-                <Link href="/login" onClick={() => setIsOpen(false)} className="text-[13px] font-bold text-[#2D2D2A] flex items-center gap-2 border border-[#EAE5DB] px-4 py-2 rounded-full">
+                <button onClick={() => { setIsOpen(false); openAuthModal('login'); }} className="text-[13px] font-bold text-[#2D2D2A] flex items-center gap-2 border border-[#EAE5DB] px-4 py-2 rounded-full">
                   <User className="h-4 w-4" /> Log In
-                </Link>
+                </button>
               )}
             </div>
           </div>
         </div>
       )}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={closeAuthModal} 
+        initialView={authModalView} 
+      />
     </nav>
   );
 }

@@ -3,8 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { User, History, CreditCard, Heart, Leaf, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 // Avatar URLs keyed by role — mirrors the values used in Navbar & ProfileDropdown
 const ROLE_AVATARS = {
@@ -19,8 +20,12 @@ const ROLE_AVATARS = {
 // Default customer persona — matches the initial state in App.jsx
 const DEFAULT_USER = { name: 'Alex Rivers', role: 'customer' };
 
-export default function Sidebar({ currentUser = DEFAULT_USER }) {
+export default function Sidebar() {
+  const { currentUser, logout } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
+
+  const user = currentUser || { name: 'Guest', role: 'customer' };
 
   const menuItems = [
     {
@@ -56,7 +61,7 @@ export default function Sidebar({ currentUser = DEFAULT_USER }) {
   ];
 
   const isActive = (path) => pathname === path;
-  const avatarSrc = ROLE_AVATARS[currentUser.role] ?? ROLE_AVATARS.customer;
+  const avatarSrc = ROLE_AVATARS[user.role] ?? ROLE_AVATARS.customer;
 
   return (
     <aside className="bg-white rounded-2xl border border-earth-200/60 p-5 shadow-sm space-y-6">
@@ -65,14 +70,14 @@ export default function Sidebar({ currentUser = DEFAULT_USER }) {
         <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-sage-500/20">
           <Image 
             src={avatarSrc} 
-            alt={`${currentUser.name} avatar`} 
+            alt={`${user.name} avatar`} 
             fill
             sizes="48px"
             className="object-cover"
           />
         </div>
         <div>
-          <h2 className="font-semibold text-earth-800 text-sm">{currentUser.name}</h2>
+          <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
           <p className="text-xs text-sage-600 font-medium">สมาชิกระดับ Eco Hero</p>
         </div>
       </div>
@@ -104,7 +109,7 @@ export default function Sidebar({ currentUser = DEFAULT_USER }) {
 
       {/* Log out option */}
       <div className="pt-2 border-t border-earth-100">
-        <button className="flex w-full items-center gap-3.5 px-4 py-3.5 rounded-xl text-clay-600 hover:bg-clay-50/50 hover:text-clay-700 transition-colors text-left">
+        <button onClick={() => { logout(); router.push('/'); }} className="flex w-full items-center gap-3.5 px-4 py-3.5 rounded-xl text-clay-600 hover:bg-clay-50/50 hover:text-clay-700 transition-colors text-left">
           <LogOut className="h-5 w-5 text-clay-400" />
           <div className="text-sm font-medium">ออกจากระบบ</div>
         </button>

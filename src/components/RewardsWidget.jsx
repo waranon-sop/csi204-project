@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { ChevronUp, ChevronDown, Leaf, Tag, Gift } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function RewardsWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const { openAuthModal } = useAuth();
 
   return (
     <div className="fixed bottom-0 right-8 z-[60] flex flex-col items-end">
@@ -60,12 +62,12 @@ export default function RewardsWidget() {
             </div>
           </div>
 
-          <Link href="/register" className="block w-full py-3 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded hover:bg-[#4A543C] transition-colors mb-4">
+          <button onClick={() => openAuthModal('register')} className="block w-full py-3 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded hover:bg-[#4A543C] transition-colors mb-4 text-center">
             Join Now
-          </Link>
+          </button>
           
           <p className="text-[11px] text-[#8B8B88] font-medium">
-            Already a member? <Link href="/login" className="text-[#2D2D2A] underline hover:text-[#5F6B4E]">Sign In</Link>
+            Already a member? <button onClick={() => openAuthModal('login')} className="text-[#2D2D2A] underline hover:text-[#5F6B4E]">Sign In</button>
           </p>
         </div>
       </div>
