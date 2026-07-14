@@ -12,7 +12,34 @@ export function AuthProvider({ children }) {
 
   // Initialize from localStorage
   useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+    let storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+    
+    // Seed initial admin if not exists
+    if (!storedUsers.find(u => u.email === 'admin')) {
+      const seedAdmin = {
+        id: 'seed-admin-001',
+        name: 'ยิ่งยศ ผู้ดูแลระบบ',
+        email: 'admin', 
+        password: 'admin',
+        role: 'admin'
+      };
+      storedUsers = [seedAdmin, ...storedUsers];
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+    }
+
+    // Seed initial staff if not exists
+    if (!storedUsers.find(u => u.email === 'staff')) {
+      const seedStaff = {
+        id: 'seed-staff-001',
+        name: 'สมหญิง พนักงาน',
+        email: 'staff', 
+        password: 'staff',
+        role: 'staff'
+      };
+      storedUsers = [seedStaff, ...storedUsers];
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+    }
+
     const storedSession = JSON.parse(localStorage.getItem('currentUser')) || null;
     
     setUsers(storedUsers);
@@ -24,7 +51,7 @@ export function AuthProvider({ children }) {
     if (user) {
       setCurrentUser(user);
       localStorage.setItem('currentUser', JSON.stringify(user));
-      return { success: true };
+      return { success: true, user };
     }
     return { success: false, error: 'Invalid email or password' };
   };
@@ -58,17 +85,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('currentUser');
   };
 
-  // For the SAD System Design demo widget
-  const setDemoUser = (roleData) => {
-    setCurrentUser(roleData);
-  };
-
   const value = {
     currentUser,
     login,
     register,
     logout,
-    setDemoUser
   };
 
   return (

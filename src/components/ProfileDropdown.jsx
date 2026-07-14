@@ -41,8 +41,8 @@ export default function ProfileDropdown({ isOpen, onClose }) {
           icon: ShieldAlert,
           avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Admin Dashboard', path: '/eco-impact', icon: Settings },
-            { name: 'User Roles & Permissions', path: '/profile', icon: ShieldAlert },
+            { name: 'Admin Dashboard', path: '/admin', icon: Settings },
+            { name: 'User Roles & Permissions', path: '/admin/customers', icon: ShieldAlert },
           ],
         };
       case 'staff':
@@ -52,8 +52,8 @@ export default function ProfileDropdown({ isOpen, onClose }) {
           icon: Cpu,
           avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Inspection Queue', path: '/wardrobe', icon: Settings },
-            { name: 'Dispatch Queue', path: '/orders', icon: History },
+            { name: 'Inspection Queue', path: '/admin/products', icon: Settings },
+            { name: 'Dispatch Queue', path: '/admin/orders', icon: History },
           ],
         };
       case 'customer':

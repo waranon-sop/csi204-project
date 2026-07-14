@@ -21,14 +21,20 @@ export default function Login() {
       setError('Please fill in both email and password.');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Allow 'admin' and 'staff' specifically, otherwise check email format
+    if (email !== 'admin' && email !== 'staff' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Please enter a valid email address.');
       return;
     }
 
     const result = login(email, password);
     if (result.success) {
-      router.push('/');
+      const role = result.user?.role;
+      if (role === 'admin' || role === 'staff') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     } else {
       setError(result.error);
     }
@@ -107,7 +113,7 @@ export default function Login() {
                 Email Address
               </label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="hello@example.com"
