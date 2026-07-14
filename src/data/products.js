@@ -29,6 +29,7 @@ export const mockProducts = [
     brandCategory: 'Vintage Denim • Reclaimed Wash',
     category: 'Vintage Denim',
     price: 128,
+    originalPrice: 150,
     badge: 'RARE FIND',
     badgeStyle: { background: '#FFF3EE', color: '#C57B57' },
     image:
@@ -92,6 +93,7 @@ export const mockProducts = [
     brandCategory: 'Y2K Archive • 100% Cotton',
     category: 'Y2K Shirts',
     price: 45,
+    originalPrice: 60,
     badge: 'LIMITED RUN',
     badgeStyle: { background: '#F5ECD7', color: '#8B8B88' },
     image:
