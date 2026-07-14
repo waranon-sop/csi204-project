@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from './CartDrawer';
+import RewardsWidget from './RewardsWidget';
 
 export default function PageLayout({ children }) {
   const pathname = usePathname();
@@ -21,7 +22,12 @@ export default function PageLayout({ children }) {
         </>
       )}
       {children}
-      {showNavbarFooter && <Footer />}
+      {showNavbarFooter && (
+        <>
+          <RewardsWidget />
+          <Footer />
+        </>
+      )}
     </div>
   );
 }

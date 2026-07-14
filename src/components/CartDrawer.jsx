@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 
 export default function CartDrawer() {
-  const { isCartOpen, closeCart, cartItems, removeFromCart, cartTotal } = useCart();
+  const { isCartOpen, closeCart, cartItems, removeFromCart, cartTotal, subTotal, shipping } = useCart();
   const router = useRouter();
 
   return (
@@ -101,11 +101,11 @@ export default function CartDrawer() {
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex justify-between text-[#8B8B88]">
                     <span>Subtotal</span>
-                    <span>${cartTotal}.00</span>
+                    <span>${subTotal}.00</span>
                   </div>
                   <div className="flex justify-between text-[#8B8B88]">
                     <span>Carbon-Neutral Shipping</span>
-                    <span>Calculated at checkout</span>
+                    <span>${shipping}.00</span>
                   </div>
                   <div className="flex justify-between font-bold text-[#2D2D2A] text-lg pt-3 border-t border-[#F2E9DC]/60">
                     <span>Total</span>
