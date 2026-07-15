@@ -20,7 +20,8 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const searchRef = useRef(null);
   const megaMenuRef = useRef(null);
   const pathname = usePathname();
@@ -31,12 +32,17 @@ export default function Navbar() {
 
   // Close search/mega-menu when clicking outside
   useEffect(() => {
+    const stored = localStorage.getItem('reWearRecentSearches');
+    if (stored) {
+      try { setRecentSearches(JSON.parse(stored)); } catch (e) {}
+    }
+
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsSearchFocused(false);
       }
       if (megaMenuRef.current && !megaMenuRef.current.contains(event.target)) {
-        setIsMegaMenuOpen(false);
+        setActiveMegaMenu(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -46,7 +52,12 @@ export default function Navbar() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      const q = searchQuery.trim();
+      const updatedSearches = [q, ...recentSearches.filter(s => s !== q)].slice(0, 5);
+      setRecentSearches(updatedSearches);
+      localStorage.setItem('reWearRecentSearches', JSON.stringify(updatedSearches));
+      
+      router.push(`/search?q=${encodeURIComponent(q)}`);
       setIsSearchFocused(false);
       setSearchQuery('');
     }
@@ -77,12 +88,50 @@ export default function Navbar() {
       case 'customer':
       default:
         return [
+          { name: 'NEW', path: '/search?q=New' },
           { 
-            name: 'Shop', 
+            name: 'CLOTHING', 
             path: '#',
             hasMegaMenu: true,
+            megaMenuData: {
+              items: [
+                { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
+                { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
+                { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
+                { name: 'Pants & Jeans', path: '/search?q=Pants&cat=CLOTHING' },
+                { name: 'Outerwear', path: '/search?q=Outerwear&cat=CLOTHING' },
+              ]
+            }
           },
-          { name: 'Sustainability', path: currentUser ? '/eco-impact' : '/sustainability' },
+          { 
+            name: 'ACCESSORIES', 
+            path: '#',
+            hasMegaMenu: true,
+            megaMenuData: {
+              items: [
+                { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
+                { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
+                { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
+                { name: 'Rings', path: '/search?q=Rings&cat=ACCESSORIES' },
+                { name: 'Handbags', path: '/search?q=Handbags&cat=ACCESSORIES' },
+              ]
+            }
+          },
+          { 
+            name: 'SALE', 
+            path: '#',
+            hasMegaMenu: true,
+            megaMenuData: {
+              items: [
+                { name: '10% OFF', path: '/search?q=10%25%20OFF&cat=SALE' },
+                { name: '20% OFF', path: '/search?q=20%25%20OFF&cat=SALE' },
+                { name: '30% OFF', path: '/search?q=30%25%20OFF&cat=SALE' },
+                { name: '50% OFF', path: '/search?q=50%25%20OFF&cat=SALE' },
+                { name: '70% OFF', path: '/search?q=70%25%20OFF&cat=SALE' },
+              ]
+            }
+          },
+          ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
         ];
     }
   };
@@ -90,7 +139,7 @@ export default function Navbar() {
   const navLinks = getNavLinks();
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#F9F8F6] border-b border-[#EAE5DB]">
+    <nav className="sticky top-0 z-50 bg-white border-b border-[#EAE5DB]">
       {/* Role Indicator Banner */}
       {currentUser && currentUser.role !== 'customer' && (
         <div className={`py-1 px-6 text-center text-[9px] font-bold text-white tracking-widest flex items-center justify-center gap-1.5 ${
@@ -110,135 +159,110 @@ export default function Navbar() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 relative">
-        <div className="flex justify-between h-[72px] items-center">
+
+
+      {/* Tier 2: Main Header */}
+      <div className="w-full px-6 md:px-12 lg:px-16 relative">
+        <div className="flex justify-between h-[80px] items-center">
           
-          {/* Left: Logo */}
-          <div className="flex-1 md:flex-none flex items-center">
-            <Link href="/" className="flex items-baseline hover:opacity-90 transition-opacity">
+          {/* Left: Mobile Menu Toggle & Logo */}
+          <div className="flex-1 flex items-center justify-start space-x-4">
+            <Link href="/" className="md:hidden flex items-baseline hover:opacity-90 transition-opacity">
               <span className="font-serif text-3xl font-bold text-[#2D2D2A] tracking-tight">Re-</span>
               <span className="font-serif text-3xl font-bold text-[#5F6B4E] tracking-tight">wear</span>
             </Link>
+            <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-[#2D2D2A] focus:outline-none p-1">
+              {isOpen ? <X className="h-6 w-6" strokeWidth={1.5} /> : <Menu className="h-6 w-6" strokeWidth={1.5} />}
+            </button>
           </div>
 
-          {/* Center: Main Categories (Desktop) */}
-          <div className="hidden md:flex flex-1 justify-center items-center space-x-8" ref={megaMenuRef}>
-            {navLinks.map((link, index) => {
-              if (link.hasMegaMenu) {
-                return (
-                  <div key={index} className="h-full flex items-center">
-                    <button
-                      onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-                      className={`text-[13px] font-bold tracking-widest uppercase transition-colors py-6 ${
-                        isMegaMenuOpen ? 'text-[#C57B57]' : 'text-[#2D2D2A] hover:text-[#5F6B4E]'
-                      }`}
-                    >
-                      {link.name}
-                    </button>
-                    
-                    {/* Mega Menu Dropdown */}
-                    {isMegaMenuOpen && (
-                      <div className="absolute top-full left-0 w-full bg-white border-t border-[#EAE5DB] shadow-2xl z-50 animate-fade-in origin-top">
-                        <div className="max-w-7xl mx-auto px-8 py-10 grid grid-cols-4 gap-8">
-                          {/* Column 1 */}
-                          <div className="space-y-4">
-                            <h3 className="text-xs font-bold text-[#2D2D2A] uppercase tracking-widest border-b border-[#EAE5DB] pb-2">Categories</h3>
-                            <ul className="space-y-3">
-                              <li><Link href="/" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#2D2D2A] font-bold hover:text-[#C57B57] transition-colors">Just In</Link></li>
-                              <li><Link href="/search?q=Vintage%20Denim" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Vintage Denim</Link></li>
-                              <li><Link href="/search?q=Y2K%20Shirts" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Y2K Tops & Shirts</Link></li>
-                              <li><Link href="/search?q=Jackets" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Outerwear & Jackets</Link></li>
-                              <li><Link href="/" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">All Clothing</Link></li>
-                            </ul>
-                          </div>
-                          {/* Column 2 */}
-                          <div className="space-y-4">
-                            <h3 className="text-xs font-bold text-[#2D2D2A] uppercase tracking-widest border-b border-[#EAE5DB] pb-2">Collections</h3>
-                            <ul className="space-y-3">
-                              <li><Link href="/" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Winter Warmers</Link></li>
-                              <li><Link href="/" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Workwear Archives</Link></li>
-                              <li><Link href="/" onClick={() => setIsMegaMenuOpen(false)} className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors">Rare Finds</Link></li>
-                            </ul>
-                          </div>
-                          {/* Image Promo */}
-                          <div className="col-span-2 relative aspect-[21/9] rounded-xl overflow-hidden bg-[#E8E8F2] group cursor-pointer" onClick={() => { setIsMegaMenuOpen(false); router.push('/'); }}>
-                            <Image src="/hero_folded_clothes.png" alt="Promo" fill className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 mix-blend-multiply" />
-                            <div className="absolute inset-0 flex flex-col justify-center p-8 bg-gradient-to-r from-white/90 to-transparent">
-                              <span className="text-[10px] font-bold text-[#C57B57] tracking-widest uppercase mb-1">New Arrivals</span>
-                              <h4 className="text-xl font-serif font-bold text-[#2D2D2A]">Autumn Archive Collection</h4>
-                              <span className="text-xs font-bold text-[#2D2D2A] mt-4 flex items-center gap-1 group-hover:text-[#5F6B4E]">Shop Now &rarr;</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
-                <Link
-                  key={index}
-                  href={link.path}
-                  className={`text-[13px] font-bold tracking-widest uppercase transition-colors py-6 ${
-                    isActive(link.path) && link.path !== '#'
-                      ? 'text-[#2D2D2A]' 
-                      : 'text-[#2D2D2A] hover:text-[#5F6B4E]'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
+          {/* Center: Logo (Desktop) */}
+          <div className="hidden md:flex flex-1 justify-center items-center">
+            <Link href="/" className="flex items-baseline hover:opacity-90 transition-opacity">
+              <span className="font-serif text-4xl font-bold text-[#2D2D2A] tracking-tight">Re-</span>
+              <span className="font-serif text-4xl font-bold text-[#5F6B4E] tracking-tight">wear</span>
+            </Link>
           </div>
 
-          {/* Right: Icons (Desktop) */}
-          <div className="hidden md:flex flex-1 justify-end items-center space-x-6">
+          {/* Right: Icons & Search (Desktop) */}
+          <div className="hidden md:flex flex-1 justify-end items-center gap-6">
             
             {/* Search Icon / Input */}
             <form className="relative flex items-center" ref={searchRef} onSubmit={handleSearchSubmit}>
-              <div className={`flex items-center overflow-hidden transition-all duration-300 ${isSearchFocused ? 'w-56 border-b border-[#2D2D2A]' : 'w-6 border-b border-transparent'}`}>
-                <button type="button" onClick={() => setIsSearchFocused(true)} className="p-1 focus:outline-none shrink-0">
-                  <Search className="h-5 w-5 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors" strokeWidth={1.5} />
-                </button>
+              <div className="flex items-center bg-[#F5F5F5] rounded-md px-3 py-2 w-48 transition-colors border border-transparent focus-within:border-[#EAE5DB]">
+                <Search className="h-4 w-4 text-[#5C5C5A] shrink-0" strokeWidth={1.5} />
                 <input
                   type="text"
-                  placeholder="Search pieces..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full bg-transparent focus:outline-none text-xs text-[#2D2D2A] pl-2 ${isSearchFocused ? 'opacity-100' : 'opacity-0'}`}
+                  onFocus={() => setIsSearchFocused(true)}
+                  className="w-full bg-transparent focus:outline-none text-[13px] text-[#2D2D2A] placeholder-[#8B8B88] pl-3"
                 />
               </div>
 
-              {/* Search Results Dropdown */}
-              {isSearchFocused && searchQuery && (
+              {/* Search Dropdown */}
+              {isSearchFocused && (searchQuery || recentSearches.length > 0) && (
                 <div className="absolute top-full mt-4 w-72 right-0 bg-white border border-[#EAE5DB] rounded-2xl shadow-2xl overflow-hidden z-50">
-                  {searchResults.length > 0 ? (
-                    <div className="max-h-80 overflow-y-auto p-2">
-                      <div className="px-3 py-2 text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest border-b border-[#EAE5DB] mb-1">
-                        Matches
+                  {searchQuery.trim() ? (
+                    searchResults.length > 0 ? (
+                      <div className="max-h-80 overflow-y-auto p-2">
+                        <div className="px-3 py-2 text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest border-b border-[#EAE5DB] mb-1">
+                          Matches
+                        </div>
+                        {searchResults.map(p => (
+                          <Link 
+                            key={p.id} 
+                            href={`/product/${p.id}`}
+                            onClick={() => { setIsSearchFocused(false); setSearchQuery(''); }}
+                            className="flex items-center gap-3 p-2 hover:bg-[#F9F8F6] rounded-xl transition-colors group"
+                          >
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-[#E8E8F2]">
+                              <Image src={p.image} alt={p.title} fill sizes="40px" className="object-cover mix-blend-multiply" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.title}</p>
+                              <p className="text-[10px] text-[#C57B57] font-bold">THB {p.price}</p>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                      {searchResults.map(p => (
-                        <Link 
-                          key={p.id} 
-                          href={`/product/${p.id}`}
-                          onClick={() => { setIsSearchFocused(false); setSearchQuery(''); }}
-                          className="flex items-center gap-3 p-2 hover:bg-[#F9F8F6] rounded-xl transition-colors group"
-                        >
-                          <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-[#E8E8F2]">
-                            <Image src={p.image} alt={p.title} fill sizes="40px" className="object-cover mix-blend-multiply" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.title}</p>
-                            <p className="text-[10px] text-[#C57B57] font-bold">${p.price}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
+                    ) : (
+                      <div className="p-4 text-center text-xs text-[#8B8B88]">
+                        No pieces found for "{searchQuery}"
+                      </div>
+                    )
                   ) : (
-                    <div className="p-4 text-center text-xs text-[#8B8B88]">
-                      No pieces found for "{searchQuery}"
-                    </div>
+                    recentSearches.length > 0 && (
+                      <div className="p-2">
+                        <div className="px-3 py-2 text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest border-b border-[#EAE5DB] mb-1 flex justify-between items-center">
+                          <span>Recent Searches</span>
+                          <button 
+                            type="button" 
+                            onMouseDown={(e) => { e.preventDefault(); setRecentSearches([]); localStorage.removeItem('reWearRecentSearches'); }} 
+                            className="hover:text-[#C57B57]"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        {recentSearches.map((term, i) => (
+                          <button 
+                            key={i}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSearchQuery(term);
+                              router.push(`/search?q=${encodeURIComponent(term)}`);
+                              setIsSearchFocused(false);
+                            }}
+                            className="w-full text-left flex items-center gap-3 p-3 hover:bg-[#F9F8F6] rounded-xl transition-colors text-xs font-semibold text-[#2D2D2A]"
+                          >
+                            <Search className="h-3.5 w-3.5 text-[#8B8B88]" />
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    )
                   )}
                 </div>
               )}
@@ -267,7 +291,7 @@ export default function Navbar() {
 
             {/* Profile Icon / Avatar */}
             {currentUser ? (
-              <div className="relative pl-2">
+              <div className="relative">
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-7 h-7 rounded-full overflow-hidden border border-[#EAE5DB] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none relative"
@@ -289,18 +313,72 @@ export default function Navbar() {
                 <ProfileDropdown isOpen={isDropdownOpen} onClose={() => setIsDropdownOpen(false)} currentUser={currentUser} />
               </div>
             ) : (
-              <button onClick={() => openAuthModal('login')} className="p-1 pl-2 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors focus:outline-none" title="Login / Register">
+              <button onClick={() => openAuthModal('login')} className="p-1 text-[#2D2D2A] hover:text-[#5F6B4E] transition-colors focus:outline-none" title="Login / Register">
                 <User className="h-5 w-5" strokeWidth={1.5} />
               </button>
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex md:hidden flex-1 justify-end items-center space-x-4">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-[#2D2D2A] focus:outline-none p-1">
-              {isOpen ? <X className="h-6 w-6" strokeWidth={1.5} /> : <Menu className="h-6 w-6" strokeWidth={1.5} />}
-            </button>
-          </div>
+        </div>
+      </div>
+
+      {/* Tier 3: Category Links */}
+      <div className="hidden md:flex w-full justify-center items-center border-t border-[#EAE5DB] relative z-40" ref={megaMenuRef}>
+        <div className="flex space-x-12 relative">
+          {navLinks.map((link, index) => {
+            if (link.hasMegaMenu) {
+              return (
+                <div key={index}>
+                  <button
+                    onClick={() => setActiveMegaMenu(activeMegaMenu === link.name ? null : link.name)}
+                    className={`text-[11px] font-bold tracking-[0.2em] uppercase transition-colors py-4 focus:outline-none ${
+                      activeMegaMenu === link.name ? 'text-[#C57B57]' : 'text-[#2D2D2A] hover:text-[#5F6B4E]'
+                    }`}
+                  >
+                    {link.name}
+                  </button>
+
+                  {/* Mega Menu Dropdown */}
+                  {activeMegaMenu === link.name && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-[400px] bg-white border border-[#EAE5DB] shadow-2xl z-50 animate-fade-in origin-top mt-0">
+                      <div className="p-10 flex justify-center">
+                        <div className="space-y-4 min-w-[200px]">
+                          <h3 className="text-sm font-bold text-[#2D2D2A] uppercase tracking-widest border-b border-[#EAE5DB] pb-3">{link.name} Categories</h3>
+                          <ul className="space-y-3">
+                            {link.megaMenuData.items.map((item, idx) => (
+                              <li key={idx}>
+                                <Link 
+                                  href={item.path} 
+                                  onClick={() => setActiveMegaMenu(null)} 
+                                  className="text-[13px] text-[#5C5C5A] hover:text-[#C57B57] transition-colors"
+                                >
+                                  {item.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={index}
+                href={link.path}
+                className={`text-[11px] font-bold tracking-[0.2em] uppercase transition-colors py-4 ${
+                  isActive(link.path) && link.path !== '#'
+                    ? 'text-[#C57B57]' 
+                    : 'text-[#2D2D2A] hover:text-[#5F6B4E]'
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </div>
       </div>
 

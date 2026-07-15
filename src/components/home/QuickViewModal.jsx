@@ -1,29 +1,70 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Check, ShoppingBag, Heart, Leaf, ShieldCheck } from 'lucide-react';
+import { X, Check, ShoppingBag, Heart, Leaf, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useCurrentUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function QuickViewModal({
   selectedProduct,
   setSelectedProduct,
 }) {
   const [isLiked, setIsLiked] = useState(false);
+  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+
+  const getEcoImpact = (category) => {
+    let water = 2700;
+    let co2 = 5;
+
+    const catUpper = (category || '').toUpperCase();
+    if (catUpper.includes('DENIM') || catUpper.includes('JEAN') || catUpper.includes('BOTTOM')) {
+      water = 7500;
+      co2 = 15;
+    } else if (catUpper.includes('JACKET') || catUpper.includes('HEAVYWEAR') || catUpper.includes('OUTERWEAR')) {
+      water = 5000;
+      co2 = 20;
+    }
+
+    const treeEquivalent = (co2 / 22).toFixed(2);
+    
+    return {
+      waterSaved: `${water.toLocaleString()} L`,
+      carbonSaved: `${co2} kg CO₂e`,
+      treeEquivalent: `${treeEquivalent} Trees/yr`
+    };
+  };
+
+  const ecoImpact = selectedProduct ? getEcoImpact(selectedProduct.category) : null;
   const { addToCart, cartItems } = useCart();
   const { currentUser } = useCurrentUser();
+  const { openAuthModal } = useAuth();
   const router = useRouter();
 
   const isAdded = cartItems.some((item) => item.id === selectedProduct?.id);
 
-  // Reset liked state when a new product is opened
+  // Reset state when a new product is opened
   useEffect(() => {
     setIsLiked(false);
+    setCurrentImageIdx(0);
   }, [selectedProduct]);
 
   if (!selectedProduct) return null;
+
+  const images = selectedProduct ? [selectedProduct.image, selectedProduct.hoverImage].filter(Boolean) : [];
+  
+  const nextImage = (e) => {
+    e.stopPropagation();
+    setCurrentImageIdx((prev) => (prev + 1) % images.length);
+  };
+  
+  const prevImage = (e) => {
+    e.stopPropagation();
+    setCurrentImageIdx((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral/60 backdrop-blur-sm animate-fade-in">
@@ -38,16 +79,45 @@ export default function QuickViewModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Left Column: Product Images */}
-          <div className="relative aspect-[4/5] bg-tertiary/40">
+          <div className="relative aspect-[4/5] bg-tertiary/40 group">
             <Image
-              src={selectedProduct.hoverImage}
+              src={images[currentImageIdx]}
               alt={selectedProduct.title}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
+              className="object-cover transition-opacity duration-300"
             />
+            {images.length > 1 && (
+              <>
+                {/* Arrow Buttons */}
+                <button 
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-[#2D2D2A] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white transition-all hover:scale-110 shadow-sm"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-[#2D2D2A] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white transition-all hover:scale-110 shadow-sm"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                
+                {/* Dots */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 z-10">
+                  {images.map((_, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIdx(idx); }}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIdx ? 'bg-white w-3' : 'bg-white/50 hover:bg-white/80'}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            
             {selectedProduct.badge && (
-              <span className="absolute top-6 left-6 text-[9px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-full bg-white/95 text-[#2D2D2A] border border-[#EAE5DB]/65">
+              <span className="absolute top-6 left-6 text-[9px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-full bg-white/95 text-[#2D2D2A] border border-[#EAE5DB]/65 z-10">
                 {selectedProduct.badge}
               </span>
             )}
@@ -63,9 +133,14 @@ export default function QuickViewModal({
                 <h2 className="font-serif text-2xl md:text-3xl font-semibold text-[#2D2D2A] mt-1">
                   {selectedProduct.title}
                 </h2>
-                <span className="block font-serif text-xl font-bold text-[#2D2D2A] mt-2">
-                  ${selectedProduct.price}
-                </span>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="block font-serif text-xl font-bold text-[#2D2D2A]">
+                    THB {selectedProduct.price}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#D03C31] bg-[#FFF3EE] px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    Only 1 left in stock
+                  </span>
+                </div>
               </div>
 
               <p className="text-xs text-[#8B8B88] leading-relaxed font-light">
@@ -107,66 +182,83 @@ export default function QuickViewModal({
                 <div className="space-y-0.5">
                   <span className="block text-[8px] text-[#8B8B88] uppercase">CO₂ Offset</span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
-                    {selectedProduct.carbonSaved}
+                    {ecoImpact?.carbonSaved}
                   </span>
                 </div>
                 <div className="space-y-0.5">
                   <span className="block text-[8px] text-[#8B8B88] uppercase">Water Saved</span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
-                    {selectedProduct.waterSaved}
+                    {ecoImpact?.waterSaved}
                   </span>
                 </div>
                 <div className="space-y-0.5">
                   <span className="block text-[8px] text-[#8B8B88] uppercase">Tree Equiv.</span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
-                    {selectedProduct.treeEquivalent}
+                    {ecoImpact?.treeEquivalent}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Add to Cart Actions */}
-            <div className="pt-2 flex gap-3">
-              <button
-                disabled={isAdded}
-                onClick={() => {
-                  if (currentUser?.role === 'customer') {
-                    if (!isAdded) {
-                      addToCart(selectedProduct);
-                      setSelectedProduct(null);
+            <div className="pt-2 flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  disabled={isAdded || selectedProduct.status === 'Reserved'}
+                  onClick={() => {
+                    if (currentUser?.role === 'customer') {
+                      if (!isAdded && selectedProduct.status !== 'Reserved') {
+                        addToCart(selectedProduct);
+                        setSelectedProduct(null);
+                      }
+                    } else {
+                      openAuthModal('login');
                     }
-                  } else {
-                    router.push('/login');
-                  }
-                }}
-                className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  isAdded
-                    ? 'bg-sage-600 text-white'
-                    : 'btn-slide-primary bg-primary text-white shadow-md'
-                }`}
-              >
-                {isAdded ? (
-                  <>
-                    <Check className="h-4 w-4" />
-                    Added to Cart!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="h-4 w-4" />
-                    Add to Bag
-                  </>
-                )}
-              </button>
-              <button 
-                onClick={() => setIsLiked(!isLiked)}
-                className={`p-3.5 border rounded-xl transition-all ${
-                  isLiked 
-                    ? 'border-clay-400 bg-clay-50 text-clay-600' 
-                    : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : ''}`} />
-              </button>
+                  }}
+                  className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                    selectedProduct.status === 'Reserved'
+                      ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
+                      : isAdded
+                      ? 'bg-sage-600 text-white'
+                      : 'btn-slide-primary bg-primary text-white shadow-md'
+                  }`}
+                >
+                  {selectedProduct.status === 'Reserved' ? (
+                    'ติดจอง (Reserved)'
+                  ) : isAdded ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Added to Cart!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="h-4 w-4" />
+                      Add to Bag
+                    </>
+                  )}
+                </button>
+                <button 
+                  onClick={() => setIsLiked(!isLiked)}
+                  className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
+                    isLiked 
+                      ? 'border-clay-400 bg-clay-50 text-clay-600' 
+                      : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : ''}`} />
+                </button>
+              </div>
+              
+              {/* View Full Details Link */}
+              <div className="text-center mt-2">
+                <Link 
+                  href={`/product/${selectedProduct.id}`}
+                  onClick={() => setSelectedProduct(null)}
+                  className="text-[11px] text-[#5C5C5A] hover:text-[#2D2D2A] underline underline-offset-4 decoration-[#EAE5DB] hover:decoration-[#2D2D2A] transition-colors"
+                >
+                  View Full Details
+                </Link>
+              </div>
             </div>
 
             {/* Guarantee Label */}

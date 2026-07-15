@@ -105,7 +105,7 @@ export default function OrderHistory() {
                     <div className="flex items-center justify-between pt-4 border-t border-earth-100/60 flex-wrap gap-4">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xs text-earth-400">ยอดชำระสุทธิ:</span>
-                        <span className="text-base font-bold text-earth-900">${order.total}</span>
+                        <span className="text-base font-bold text-earth-900">THB {order.total}</span>
                       </div>
 
                       <div className="flex gap-2 items-center">

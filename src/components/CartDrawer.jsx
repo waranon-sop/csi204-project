@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { X, Trash2, ArrowRight } from 'lucide-react';
+import { X, Trash2, ArrowRight, Leaf, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,24 @@ import { useCart } from '../context/CartContext';
 export default function CartDrawer() {
   const { isCartOpen, closeCart, cartItems, removeFromCart, cartTotal, subTotal, shipping } = useCart();
   const router = useRouter();
+
+  const getCartEcoImpact = () => {
+    let totalCO2 = 0;
+    cartItems.forEach(item => {
+      const catUpper = (item.category || '').toUpperCase();
+      if (catUpper.includes('DENIM') || catUpper.includes('JEAN') || catUpper.includes('BOTTOM')) {
+        totalCO2 += 15;
+      } else if (catUpper.includes('JACKET') || catUpper.includes('HEAVYWEAR') || catUpper.includes('OUTERWEAR')) {
+        totalCO2 += 20;
+      } else {
+        totalCO2 += 5;
+      }
+    });
+    const treeEquivalent = (totalCO2 / 22).toFixed(2);
+    return { totalCO2, treeEquivalent };
+  };
+
+  const ecoImpact = getCartEcoImpact();
 
   return (
     <AnimatePresence>
@@ -87,7 +105,7 @@ export default function CartDrawer() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-semibold px-2 py-1 bg-[#F2E9DC] text-[#2D2D2A] rounded">Qty: 1</span>
-                        <span className="font-serif font-bold text-base text-[#8B6B57]">${item.price}</span>
+                        <span className="font-serif font-bold text-base text-[#8B6B57]">THB {item.price}</span>
                       </div>
                     </div>
                   </div>
@@ -101,15 +119,28 @@ export default function CartDrawer() {
                 <div className="space-y-3 mb-6 text-sm">
                   <div className="flex justify-between text-[#8B8B88]">
                     <span>Subtotal</span>
-                    <span>${subTotal}.00</span>
+                    <span>THB {subTotal}.00</span>
                   </div>
-                  <div className="flex justify-between text-[#8B8B88]">
-                    <span>Carbon-Neutral Shipping</span>
-                    <span>${shipping}.00</span>
+                  <div className="flex justify-between text-primary relative group cursor-help">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Leaf className="h-3.5 w-3.5 fill-current" /> Carbon-Neutral Shipping
+                      <Info className="h-3.5 w-3.5 text-[#8B8B88]" />
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-3 bg-[#2D2D2A] text-white text-xs rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 font-sans pointer-events-none">
+                        <p className="mb-2">เราชดเชยคาร์บอน จากการจัดส่งทุกออเดอร์ เพื่อให้การส่งมอบเสื้อผ้าไม่สร้างผลกระทบต่อสิ่งแวดล้อม</p>
+                        {cartItems.length > 0 && (
+                          <div className="bg-[#4A543C] p-2 rounded text-[10px] leading-relaxed">
+                            <span className="font-bold text-[#EAE5DB]">Eco-Impact รวมของออเดอร์นี้:</span><br/>
+                            ลดคาร์บอนไปแล้ว {ecoImpact.totalCO2} kg CO₂e <br/>
+                            (เทียบเท่าการปลูกต้นไม้ {ecoImpact.treeEquivalent} ต้น! 🌳)
+                          </div>
+                        )}
+                      </div>
+                    </span>
+                    <span className="font-medium text-[#8B8B88]">{shipping}.00</span>
                   </div>
                   <div className="flex justify-between font-bold text-[#2D2D2A] text-lg pt-3 border-t border-[#F2E9DC]/60">
                     <span>Total</span>
-                    <span>${cartTotal}.00</span>
+                    <span>THB {cartTotal}.00</span>
                   </div>
                 </div>
                 <button 

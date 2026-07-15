@@ -6,13 +6,18 @@ const ORDERS_KEY = 're_wear_orders';
 export const initializeProducts = () => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(PRODUCTS_KEY);
-  if (!stored) {
-    // Add default status 'Available' to all mock products
-    const initialized = mockProducts.map(p => ({ ...p, status: 'Available', reservedAt: null }));
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialized));
-    return initialized;
+  let parsed = stored ? JSON.parse(stored) : [];
+
+  if (parsed.length < mockProducts.length) {
+    const existingIds = new Set(parsed.map(p => p.id));
+    const newProducts = mockProducts
+      .filter(p => !existingIds.has(p.id))
+      .map(p => ({ ...p, status: 'Available', reservedAt: null }));
+    
+    parsed = [...parsed, ...newProducts];
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(parsed));
   }
-  return JSON.parse(stored);
+  return parsed;
 };
 
 export const getProducts = () => {

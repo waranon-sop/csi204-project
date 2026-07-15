@@ -44,9 +44,9 @@ export function CartProvider({ children }) {
   const clearCart = () => setCartItems([]);
 
   const subTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const shipping = cartItems.length > 0 ? 15 : 0;
-  const cartTotal = subTotal + shipping;
-
+  const shipping = cartItems.length > 0 ? 55 : 0;
+  const shippingDiscount = subTotal >= 500 ? shipping : 0;
+  const cartTotal = subTotal + shipping - shippingDiscount;
   return (
     <CartContext.Provider
       value={{
@@ -59,6 +59,7 @@ export function CartProvider({ children }) {
         clearCart,
         subTotal,
         shipping,
+        shippingDiscount,
         cartTotal,
       }}
     >
