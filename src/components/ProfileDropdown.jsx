@@ -5,13 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu } from 'lucide-react';
-import { useCurrentUser } from '../context/UserContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileDropdown({ isOpen, onClose }) {
-  const { currentUser, setCurrentUser } = useCurrentUser();
-  const dropdownRef = useRef(null);
-  const { logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const router = useRouter();
 
   // Close dropdown when clicking outside
@@ -124,8 +121,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
         <button 
           onClick={() => {
             onClose();
-            if (logout) logout();
-            setCurrentUser(null);
+            logout();
             router.push('/');
           }}
           className="w-full flex items-center justify-center gap-2 border border-[#2D2D2A] hover:bg-[#F2E9DC]/40 rounded-full py-2.5 px-4 text-xs font-semibold text-[#2D2D2A] transition-all active:scale-95"

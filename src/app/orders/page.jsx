@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { Leaf, Eye, Truck, Package, Box } from 'lucide-react';
 import { getOrdersByUser } from '../../utils/localStorageHelper';
-import { useCurrentUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 
 const getStatusBadge = (status) => {
   switch (status) {
@@ -26,7 +26,7 @@ const getStatusBadge = (status) => {
 };
 
 export default function OrderHistory() {
-  const { currentUser } = useCurrentUser();
+  const { currentUser } = useAuth();
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {

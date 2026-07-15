@@ -9,13 +9,10 @@ import ProfileDropdown from './ProfileDropdown';
 import AuthModal from './AuthModal';
 import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
-import { useCurrentUser } from '../context/UserContext';
-
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { currentUser } = useCurrentUser();
-  const { isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
+  const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -81,9 +78,10 @@ export default function Navbar() {
         ];
       case 'admin':
         return [
-          { name: 'Admin Dashboard', path: '/eco-impact' },
-          { name: 'User Roles', path: '/profile' },
-          { name: 'System Settings', path: '/payment' },
+          { name: 'Admin Dashboard', path: '/admin' },
+          { name: 'User Management', path: '/admin/customers' },
+          { name: 'Products', path: '/admin/products' },
+          { name: 'Orders', path: '/admin/orders' },
         ];
       case 'customer':
       default:

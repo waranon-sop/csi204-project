@@ -39,11 +39,7 @@ export const updateProductStatus = (productId, status) => {
     return p;
   });
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(updated));
-  
-  // Custom event to sync across components
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('productsUpdated'));
-  }
+  window.dispatchEvent(new Event('productsUpdated'));
 };
 
 export const releaseExpiredReservations = () => {

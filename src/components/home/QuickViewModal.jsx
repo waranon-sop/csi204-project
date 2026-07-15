@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
-import { useCurrentUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 
 export default function QuickViewModal({
@@ -40,8 +39,7 @@ export default function QuickViewModal({
 
   const ecoImpact = selectedProduct ? getEcoImpact(selectedProduct.category) : null;
   const { addToCart, cartItems } = useCart();
-  const { currentUser } = useCurrentUser();
-  const { openAuthModal } = useAuth();
+  const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
   const isAdded = cartItems.some((item) => item.id === selectedProduct?.id);
@@ -206,14 +204,15 @@ export default function QuickViewModal({
                 <button
                   disabled={isAdded || selectedProduct.status === 'Reserved'}
                   onClick={() => {
-                    if (currentUser?.role === 'customer') {
+                    if (!currentUser) {
+                      openAuthModal('login');
+                    } else if (currentUser.role === 'customer') {
                       if (!isAdded && selectedProduct.status !== 'Reserved') {
                         addToCart(selectedProduct);
                         setSelectedProduct(null);
                       }
-                    } else {
-                      openAuthModal('login');
                     }
+                    // admin/staff → ไม่ควรซื้อของได้ ไม่ทำอะไร
                   }}
                   className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
                     selectedProduct.status === 'Reserved'

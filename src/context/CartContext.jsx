@@ -3,11 +3,30 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { updateProductStatus, releaseExpiredReservations, getProducts } from '../utils/localStorageHelper';
 
+const CART_KEY = 're_wear_cart';
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Load cart from localStorage on mount — cross-check each item is still Reserved
+  useEffect(() => {
+    const savedCart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    if (savedCart.length > 0) {
+      const currentProducts = getProducts();
+      const validItems = savedCart.filter(item => {
+        const prod = currentProducts.find(p => p.id === item.id);
+        return prod && prod.status === 'Reserved';
+      });
+      setCartItems(validItems);
+    }
+  }, []);
+
+  // Sync cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
   // Soft lock release check
   useEffect(() => {
@@ -41,7 +60,10 @@ export function CartProvider({ children }) {
 
   const toggleCart = () => setIsCartOpen((prev) => !prev);
   const closeCart = () => setIsCartOpen(false);
-  const clearCart = () => setCartItems([]);
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem(CART_KEY);
+  };
 
   const subTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
   const shipping = cartItems.length > 0 ? 55 : 0;

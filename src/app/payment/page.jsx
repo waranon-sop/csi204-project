@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
-import { useCurrentUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import { createOrder, updateProductStatus } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart } = useCart();
-  const { currentUser } = useCurrentUser();
+  const { currentUser } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment

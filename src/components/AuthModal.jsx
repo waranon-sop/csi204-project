@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, EyeOff, Eye, CheckCircle2 } from 'lucide-react';
+import { X, Eye, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -13,7 +13,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const [loginKeepSignedIn, setLoginKeepSignedIn] = useState(false);
   
   // Register State
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
@@ -42,7 +43,9 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
       setError('Please fill in both email and password.');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
+    // Allow special usernames (admin, staff) or valid email format
+    const isSpecialUser = loginEmail === 'admin' || loginEmail === 'staff';
+    if (!isSpecialUser && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
       setError('Please enter a valid email address.');
       return;
     }
@@ -62,7 +65,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     e.preventDefault();
     setError('');
 
-    if (!name || !regEmail || !regPassword) {
+    if (!firstName || !regEmail || !regPassword) {
       setError('Please fill in required fields.');
       return;
     }
@@ -79,7 +82,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
       return;
     }
 
-    const result = register(name, regEmail, regPassword, phone, keepSignedIn);
+    const result = register(`${firstName.trim()} ${lastName.trim()}`.trim(), regEmail, regPassword, phone, keepSignedIn);
     if (result.success) {
       onClose();
     } else {
@@ -140,7 +143,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
             <form onSubmit={handleLoginSubmit} className="space-y-6">
               <div>
                 <input
-                  type="email"
+                  type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="Email Address *"
@@ -231,15 +234,15 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
-                  value={name.split(' ')[0] || ''}
-                  onChange={(e) => setName(e.target.value + ' ' + (name.split(' ')[1] || ''))}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name *"
                   className="w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] placeholder-[#8B8B88] focus:outline-none focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm"
                 />
                 <input
                   type="text"
-                  value={name.split(' ').slice(1).join(' ') || ''}
-                  onChange={(e) => setName((name.split(' ')[0] || '') + ' ' + e.target.value)}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last Name *"
                   className="w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] placeholder-[#8B8B88] focus:outline-none focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm"
                 />

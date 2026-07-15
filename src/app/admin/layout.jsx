@@ -15,12 +15,14 @@ export default function AdminLayout({ children }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    // We check both context and localStorage to prevent flicker on first render
-    const storedSession = JSON.parse(localStorage.getItem('currentUser'));
+    // Check both localStorage and sessionStorage (new auth supports both)
+    const storedSession =
+      JSON.parse(sessionStorage.getItem('currentUser')) ||
+      JSON.parse(localStorage.getItem('currentUser'));
     const userToCheck = currentUser || storedSession;
 
     if (!userToCheck) {
-      router.push('/login');
+      router.push('/'); // Redirect to home (AuthModal will open)
     } else if (userToCheck.role !== 'admin' && userToCheck.role !== 'staff') {
       router.push('/'); // Redirect customers to home
     } else if (userToCheck.role === 'staff' && !pathname.startsWith('/admin/products') && !pathname.startsWith('/admin/orders')) {

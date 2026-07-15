@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import QuickViewModal from './QuickViewModal';
 import { useCart } from '../../context/CartContext';
-import { useCurrentUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 import { getProducts } from '../../utils/localStorageHelper';
 
@@ -60,8 +59,7 @@ export default function ProductCollection() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const { addToCart } = useCart();
-  const { currentUser } = useCurrentUser();
-  const { openAuthModal } = useAuth();
+  const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
   const [look1Selection, setLook1Selection] = useState(LOOK_1_ITEMS.map(i => i.id));

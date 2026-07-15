@@ -7,7 +7,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { mockProducts } from '../../data/products';
 import QuickViewModal from '../../components/home/QuickViewModal';
 import { useCart } from '../../context/CartContext';
-import { useCurrentUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
@@ -20,7 +20,7 @@ function SearchContent() {
   const [openFilter, setOpenFilter] = React.useState(null);
   const [selectedSpecs, setSelectedSpecs] = React.useState([]);
   const { addToCart } = useCart();
-  const { currentUser } = useCurrentUser();
+  const { currentUser } = useAuth();
 
   const searchResults = useMemo(() => {
     let results = mockProducts;
