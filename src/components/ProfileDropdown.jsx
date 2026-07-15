@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 export default function ProfileDropdown({ isOpen, onClose }) {
   const { currentUser, logout } = useAuth();
   const router = useRouter();
+  const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
