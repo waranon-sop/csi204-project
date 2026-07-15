@@ -24,12 +24,15 @@ export default {
         neutral: {
           DEFAULT: '#2D2D2A', // Charcoal text/elements
           muted: '#8B8B88',
-          bg: '#FAF8F5',      // Soft warm base
+          bg: '#F9F8F6',      // Soft warm base
+        },
+        lavender: {
+          DEFAULT: '#E8E8F2',
         },
         
         // Keep earth/sage/clay compatibility for other pages but map them to the new palette!
         earth: {
-          50: '#FAF8F5',  // Neutral BG
+          50: '#F9F8F6',  // Neutral BG
           100: '#F2E9DC', // Tertiary
           200: '#EADFCF',
           300: '#D0C2B0',

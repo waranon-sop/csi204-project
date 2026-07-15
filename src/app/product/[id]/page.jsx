@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, RefreshCcw, ShieldCheck, Shirt, MapPin } from 'lucide-react';
+import { Heart, RefreshCcw, ShieldCheck, Shirt, MapPin, Leaf, Info } from 'lucide-react';
 import { mockProducts } from '../../../data/products';
 import AnimatedPage from '../../../components/AnimatedPage';
 import { useCart } from '../../../context/CartContext';
@@ -92,7 +92,7 @@ export default function ProductDetail() {
               {product.title}
             </h1>
             <p className="font-serif text-2xl font-bold text-[#8B6B57]">
-              ${product.price}.00
+              THB {product.price}.00
             </p>
           </div>
 
@@ -184,9 +184,13 @@ export default function ProductDetail() {
             </div>
             
             <div className="flex items-center justify-between text-[9px] text-[#8B8B88] font-medium">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+              <div className="flex items-center gap-1.5 text-primary relative group cursor-help">
+                <Leaf className="w-3.5 h-3.5 fill-current" />
                 Carbon-Neutral Shipping
+                <Info className="h-3.5 w-3.5 text-[#8B8B88]" />
+                <div className="absolute bottom-full left-0 mb-2 w-48 p-2 bg-[#2D2D2A] text-white text-[10px] rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 font-sans pointer-events-none">
+                  เราชดเชยคาร์บอน (Carbon Offset) จากการจัดส่งทุกออเดอร์ เพื่อให้การส่งมอบเสื้อผ้าถึงมือคุณไม่สร้างผลกระทบต่อสิ่งแวดล้อม
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -222,7 +226,7 @@ export default function ProductDetail() {
                 />
               </div>
               <h3 className="font-serif text-sm font-semibold text-[#4A543C] group-hover:text-[#5F6B4E] transition-colors line-clamp-1">{p.title}</h3>
-              <p className="font-serif text-sm font-bold text-[#8B6B57] mt-1">${p.price}.00</p>
+              <p className="font-serif text-sm font-bold text-[#8B6B57] mt-1">THB {p.price}.00</p>
             </Link>
           ))}
         </div>
