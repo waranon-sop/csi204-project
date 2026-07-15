@@ -1,43 +1,39 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
-import { Leaf, Eye, Truck, Package } from 'lucide-react';
+import { Leaf, Eye, Truck, Package, Box } from 'lucide-react';
+import { getOrdersByUser } from '../../utils/localStorageHelper';
+import { useCurrentUser } from '../../context/UserContext';
 
-const mockOrders = [
-  {
-    id: 'RW-2026-9042',
-    date: '04 ก.ค. 2026',
-    status: 'จัดส่งสำเร็จ',
-    statusColor: 'bg-sage-100 text-sage-800 border-sage-200',
-    total: 390,
-    itemsCount: 1,
-    carbonSaved: '4.2 kg CO₂e',
-    itemSummary: 'เสื้อคาร์ดิแกนผ้าถักสีเบจ',
-  },
-  {
-    id: 'RW-2026-8711',
-    date: '28 มิ.ย. 2026',
-    status: 'จัดส่งสำเร็จ',
-    statusColor: 'bg-sage-100 text-sage-800 border-sage-200',
-    total: 940,
-    itemsCount: 2,
-    carbonSaved: '11.6 kg CO₂e',
-    itemSummary: 'เสื้อเชิ้ตลินินสีเขียว + กางเกงขาสั้นสีครีม',
-  },
-  {
-    id: 'RW-2026-7512',
-    date: '15 พ.ค. 2026',
-    status: 'ยกเลิกคำสั่งซื้อ',
-    statusColor: 'bg-clay-100 text-clay-800 border-clay-200',
-    total: 450,
-    itemsCount: 1,
-    carbonSaved: '0 kg',
-    itemSummary: 'เสื้อแจ็คเก็ตยีนส์ฟอกสีคราม',
-  },
-];
+const getStatusBadge = (status) => {
+  switch (status) {
+    case 'Pending':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'Processing':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'Shipped':
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'Delivered':
+    case 'จัดส่งสำเร็จ':
+      return 'bg-sage-100 text-sage-800 border-sage-200';
+    case 'Cancelled':
+    case 'ยกเลิกคำสั่งซื้อ':
+      return 'bg-clay-100 text-clay-800 border-clay-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
 
 export default function OrderHistory() {
+  const { currentUser } = useCurrentUser();
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      setOrders(getOrdersByUser(currentUser.id));
+    }
+  }, [currentUser]);
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -58,9 +54,9 @@ export default function OrderHistory() {
             </div>
 
             {/* Orders List */}
-            {mockOrders.length > 0 ? (
+            {orders.length > 0 ? (
               <div className="space-y-4">
-                {mockOrders.map((order) => (
+                {orders.map((order) => (
                   <div 
                     key={order.id} 
                     className="border border-earth-200/80 rounded-2xl p-5 hover:border-sage-300 transition-colors bg-earth-50/20"
@@ -77,7 +73,7 @@ export default function OrderHistory() {
                       </div>
                       <div className="space-y-1">
                         <span className="text-xs font-semibold text-earth-400 block sm:text-right">สถานะจัดส่ง</span>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${order.statusColor}`}>
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusBadge(order.status)}`}>
                           {order.status}
                         </span>
                       </div>
@@ -106,13 +102,20 @@ export default function OrderHistory() {
                     </div>
 
                     {/* Footer of card */}
-                    <div className="flex items-center justify-between pt-4 border-t border-earth-100/60">
+                    <div className="flex items-center justify-between pt-4 border-t border-earth-100/60 flex-wrap gap-4">
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xs text-earth-400">ยอดชำระสุทธิ:</span>
-                        <span className="text-base font-bold text-earth-900">฿{order.total}</span>
+                        <span className="text-base font-bold text-earth-900">THB {order.total}</span>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
+                        {order.status === 'Shipped' && order.trackingNumber && (
+                          <div className="flex items-center gap-1.5 mr-2 px-3 py-1.5 bg-earth-50 rounded-lg border border-earth-200 text-xs">
+                            <Box className="h-4 w-4 text-earth-500" />
+                            <span className="text-earth-500 font-semibold">Tracking:</span>
+                            <span className="text-earth-800 font-mono tracking-wider">{order.trackingNumber}</span>
+                          </div>
+                        )}
                         <button className="flex items-center gap-1.5 bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors">
                           <Eye className="h-3.5 w-3.5" />
                           ดูรายละเอียด
