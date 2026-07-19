@@ -618,7 +618,7 @@ export default function ProductCollection() {
                 className="relative aspect-square rounded-2xl overflow-hidden bg-lavender block cursor-pointer"
               >
                 <Image
-                  src={product.image || ""}
+                  src={product.image || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=600"}
                   alt={product.title || product.name || "Product"}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

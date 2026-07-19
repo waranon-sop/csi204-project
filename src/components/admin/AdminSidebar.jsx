@@ -27,10 +27,10 @@ export default function AdminSidebar() {
       <nav className="flex-1 px-3 space-y-1">
         {[
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, adminOnly: true },
-          { name: 'Inventory', path: '/admin/products', icon: Package },
+          { name: 'Inventory', path: '/admin/inventory', icon: Package },
           { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
           { name: 'Promotions', path: '/admin/promotions', icon: Tag },
-          { name: 'Users', path: '/admin/customers', icon: Users, adminOnly: true },
+          { name: 'Users', path: '/admin/users', icon: Users, adminOnly: true },
         ]
           .filter(item => !item.adminOnly || currentUser?.role === 'admin')
           .map((item) => {

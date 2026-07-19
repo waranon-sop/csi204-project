@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Store, Leaf, Truck, CreditCard, Bell } from 'lucide-react';
 import { useToast } from '../../../components/ui/ToastProvider';
+import { useAdminGuard } from '../../../hooks/useAdminGuard';
 
 export default function SettingsPage() {
+  const { isAllowed } = useAdminGuard();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -55,9 +57,15 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: 'Store Details', icon: Store },
     { id: 'eco', label: 'Eco-Impact Metrics', icon: Leaf },
-    { id: 'shipping', label: 'Shipping & Delivery', icon: Truck },
-    { id: 'payment', label: 'Payment Methods', icon: CreditCard },
   ];
+
+  if (!isAllowed) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-[#4A533D]/20 border-t-[#4A533D] rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 animate-fade-in">
@@ -205,55 +213,6 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Shipping Settings */}
-              {activeTab === 'shipping' && (
-                <div className="space-y-6 animate-fade-in">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#2D2D2A] mb-4">Shipping Rates</h2>
-                    <div className="space-y-4 max-w-xl">
-                      <div>
-                        <label className="block text-sm font-semibold text-[#5C5C58] mb-1.5">Standard Flat Rate</label>
-                        <input 
-                          type="number" 
-                          name="shippingFlatRate"
-                          value={settings.shippingFlatRate}
-                          onChange={handleChange}
-                          className="w-full px-4 py-2 border border-[#D8D2C8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4A533D]/30 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-[#5C5C58] mb-1.5">Free Shipping Threshold</label>
-                        <input 
-                          type="number" 
-                          name="freeShippingThreshold"
-                          value={settings.freeShippingThreshold}
-                          onChange={handleChange}
-                          className="w-full px-4 py-2 border border-[#D8D2C8] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4A533D]/30 text-sm"
-                        />
-                        <p className="text-xs text-[#8B8B88] mt-1.5">Orders above this amount will automatically receive free shipping.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Settings */}
-              {activeTab === 'payment' && (
-                <div className="space-y-6 animate-fade-in">
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-[#EAE5DB] rounded-full flex items-center justify-center mb-4">
-                      <CreditCard className="w-8 h-8 text-[#5C5C58]" />
-                    </div>
-                    <h2 className="text-lg font-bold text-[#2D2D2A] mb-2">Payment Gateway Integration</h2>
-                    <p className="text-sm text-[#8B8B88] max-w-md">
-                      Connect your store to Stripe or Omise to start accepting credit card payments. This feature requires API keys to be configured in the environment variables.
-                    </p>
-                    <button type="button" className="mt-6 px-6 py-2 border-2 border-[#D8D2C8] rounded-lg font-semibold text-[#5C5C58] hover:bg-[#FAF8F5] transition-colors">
-                      Configure Gateway
-                    </button>
-                  </div>
-                </div>
-              )}
 
             </form>
           </div>

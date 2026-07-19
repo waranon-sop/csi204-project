@@ -70,7 +70,8 @@ export default function AdminPromotions() {
   const activeCount = promotions.filter(p => p.status === 'Active').length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <>
+      <div className="space-y-6 animate-fade-in">
       {/* Header & Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-2xl p-5 border bg-white border-earth-200/60">
@@ -146,7 +147,7 @@ export default function AdminPromotions() {
                     {promo.expiryDate || 'No expiry'}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1 transition-opacity">
                       <button onClick={() => setEditingPromo(promo)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
                         <Edit className="h-4 w-4" />
                       </button>
@@ -163,6 +164,7 @@ export default function AdminPromotions() {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
 
       {/* Edit/Add Modal */}
@@ -241,6 +243,6 @@ export default function AdminPromotions() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

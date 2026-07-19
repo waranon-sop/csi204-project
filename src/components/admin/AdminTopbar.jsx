@@ -7,9 +7,10 @@ import { LogOut, Bell, Search, ShoppingBag, AlertTriangle, MessageSquare, Packag
 
 const PAGE_TITLES = {
   '/admin': { title: 'Performance Overview', sub: "Tracking the lifecycle of Re-Wear's curated textile collection" },
-  '/admin/products': { title: 'Inventory Management', sub: 'Manage your store listings and stock levels' },
+  '/admin/inventory': { title: 'Inventory Management', sub: 'Manage your store listings and stock levels' },
   '/admin/orders': { title: 'Customer Orders', sub: 'View and process incoming customer orders' },
-  '/admin/customers': { title: 'User Management', sub: 'Manage staff & admin accounts and access levels' },
+  '/admin/promotions': { title: 'Promotions Management', sub: 'Manage discount codes and promotional campaigns' },
+  '/admin/users': { title: 'User Management', sub: 'Manage staff & admin accounts and access levels' },
   '/admin/settings': { title: 'Store Settings', sub: 'Manage your store preferences and system configuration' },
 };
 
@@ -43,7 +44,7 @@ function generateNotifications() {
         title: 'Low Stock Alert',
         body: `"${product.name || product.title}" is running low — only ${product.stock} left.`,
         time: 'In-stock check',
-        link: '/admin/products',
+        link: '/admin/inventory',
         read: false,
       });
     });
@@ -57,7 +58,7 @@ function generateNotifications() {
         title: 'Out of Stock',
         body: `"${product.name || product.title}" is completely out of stock.`,
         time: 'Needs restock',
-        link: '/admin/products',
+        link: '/admin/inventory',
         read: false,
       });
     });
@@ -83,7 +84,7 @@ function generateNotifications() {
         title: 'Low Stock Alert',
         body: '"Raw Silk Trousers" is running low — only 4 left.',
         time: 'In-stock check',
-        link: '/admin/products',
+        link: '/admin/inventory',
         read: false,
       },
       {
@@ -92,7 +93,7 @@ function generateNotifications() {
         title: 'Out of Stock',
         body: '"Recycled Cotton Sweater" is completely out of stock.',
         time: 'Needs restock',
-        link: '/admin/products',
+        link: '/admin/inventory',
         read: true,
       },
     ];
@@ -173,17 +174,7 @@ export default function AdminTopbar() {
       {/* Right: actions */}
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-4">
-          {/* Search */}
-          <div className="relative group flex items-center">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-[#8B8B88] group-focus-within:text-[#4A533D] transition-colors" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-10 pr-4 py-2.5 bg-[#FAF8F5] hover:bg-[#F3EFEA] border border-transparent focus:border-[#4A533D]/30 focus:bg-white rounded-xl text-sm text-[#2D2D2A] placeholder-[#8B8B88] outline-none w-64 transition-all duration-300 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] focus:shadow-[0_2px_8px_rgba(74,83,61,0.08)]"
-            />
-          </div>
+
 
           {/* Notifications Bell */}
           <div className="relative" ref={notifRef}>

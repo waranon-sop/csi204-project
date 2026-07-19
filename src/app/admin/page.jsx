@@ -4,20 +4,38 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingCart, Leaf, Droplets, Wind, Trash2, Banknote, Shirt, Award, Truck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAdminGuard } from '../../hooks/useAdminGuard';
+import { useToast } from '../../components/ui/ToastProvider';
 
 export default function AdminDashboard() {
+  const { isAllowed } = useAdminGuard();
+  const { addToast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [timeFilter, setTimeFilter] = useState('Month');
+  const [orders, setOrders] = useState([]);
   const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
   const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342 });
 
+  // Show access denied toast if redirected from a protected page
   useEffect(() => {
-    const orders = JSON.parse(localStorage.getItem('orders')) || [];
+    if (searchParams.get('denied') === '1') {
+      addToast('Access denied — admin only.');
+      router.replace('/admin');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+
+    const localOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    setOrders(localOrders);
     const now = new Date();
     const thisMonth = now.getMonth();
     const thisYear = now.getFullYear();
 
     // Calculate Eco Stats
-    const deliveredOrders = orders.filter(order => {
+    const deliveredOrders = localOrders.filter(order => {
       if (order.status !== 'Delivered') return false;
       const d = new Date(order.createdAt || order.date);
       if (timeFilter === 'Month') return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
@@ -56,11 +74,10 @@ export default function AdminDashboard() {
       waste: (base * ecoWaste).toFixed(1),
     });
 
-    // Calculate General Stats (Only count revenue for shipped or delivered orders)
-    const confirmedOrders = orders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
+    const confirmedOrders = localOrders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
     const totalRev = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     
-    const active = orders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
+    const active = localOrders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
 
     let fallbackRev = 12480;
     if (timeFilter === 'Week') fallbackRev = 3450;
@@ -74,29 +91,64 @@ export default function AdminDashboard() {
   }, [timeFilter]);
 
   const getChartData = () => {
-    let baseData = [];
-    let baseSum = 1;
-
-    if (timeFilter === 'Day') {
-      baseData = [{ time: '08:00', w: 150 }, { time: '12:00', w: 200 }, { time: '16:00', w: 80 }, { time: '20:00', w: 110 }];
-      baseSum = 540;
-    } else if (timeFilter === 'Week') {
-      baseData = [{ time: 'Mon', w: 450 }, { time: 'Wed', w: 620 }, { time: 'Fri', w: 880 }, { time: 'Sun', w: 1500 }];
-      baseSum = 3450;
-    } else {
-      baseData = [{ time: 'Week 1', w: 2400 }, { time: 'Week 2', w: 3200 }, { time: 'Week 3', w: 2800 }, { time: 'Week 4', w: 4080 }];
-      baseSum = 12480;
-    }
-
-    const currentRevenue = dashboardStats.revenue || baseSum;
+    const confirmedOrders = orders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
+    const now = new Date();
     
-    return baseData.map(d => ({
-      time: d.time,
-      revenue: Math.round((d.w / baseSum) * currentRevenue)
-    }));
+    if (timeFilter === 'Day') {
+      const buckets = { '08:00': 0, '12:00': 0, '16:00': 0, '20:00': 0 };
+      confirmedOrders.forEach(o => {
+        const d = new Date(o.createdAt || o.date);
+        if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          const h = d.getHours();
+          if (h < 10) buckets['08:00'] += o.total;
+          else if (h < 14) buckets['12:00'] += o.total;
+          else if (h < 18) buckets['16:00'] += o.total;
+          else buckets['20:00'] += o.total;
+        }
+      });
+      if (Object.values(buckets).every(v => v === 0)) {
+        return [{ time: '08:00', revenue: 150 }, { time: '12:00', revenue: 200 }, { time: '16:00', revenue: 80 }, { time: '20:00', revenue: 110 }];
+      }
+      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
+    } else if (timeFilter === 'Week') {
+      const buckets = { 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0 };
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      confirmedOrders.forEach(o => {
+        const d = new Date(o.createdAt || o.date);
+        if (d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000)) {
+          buckets[days[d.getDay()]] += o.total;
+        }
+      });
+      if (Object.values(buckets).every(v => v === 0)) {
+        return [{ time: 'Mon', revenue: 450 }, { time: 'Wed', revenue: 620 }, { time: 'Fri', revenue: 880 }, { time: 'Sun', revenue: 1500 }];
+      }
+      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] })).filter(d => d.revenue > 0);
+    } else {
+      const buckets = { 'Week 1': 0, 'Week 2': 0, 'Week 3': 0, 'Week 4': 0 };
+      confirmedOrders.forEach(o => {
+        const d = new Date(o.createdAt || o.date);
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          const w = Math.ceil(d.getDate() / 7);
+          if (w <= 4) buckets[`Week ${w}`] += o.total;
+          else buckets['Week 4'] += o.total;
+        }
+      });
+      if (Object.values(buckets).every(v => v === 0)) {
+        return [{ time: 'Week 1', revenue: 2400 }, { time: 'Week 2', revenue: 3200 }, { time: 'Week 3', revenue: 2800 }, { time: 'Week 4', revenue: 4080 }];
+      }
+      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
+    }
   };
 
   const chartData = getChartData();
+
+  if (!isAllowed) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-[#4A533D]/20 border-t-[#4A533D] rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -131,9 +183,6 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-baseline gap-3 mt-4">
             <p className="text-4xl font-serif tracking-tight">THB {dashboardStats.revenue.toLocaleString()}</p>
-            <p className="text-xs text-white/60 flex items-center gap-1">
-              +12%<TrendingUp className="w-3 h-3" />
-            </p>
           </div>
         </div>
 
@@ -145,9 +194,6 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-baseline gap-3 mt-4">
             <p className="text-4xl font-serif tracking-tight">{dashboardStats.activeOrders}</p>
-            <p className="text-xs text-[#5A3828]/60 flex items-center gap-1">
-              +5%<TrendingUp className="w-3 h-3" />
-            </p>
           </div>
         </div>
 

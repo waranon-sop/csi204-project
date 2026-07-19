@@ -50,8 +50,8 @@ const STOCK_STYLE = {
 const STATUS_BADGE = {
   'Available':  { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
   'In Stock':   { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
-  'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
-  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
+  'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Out of Stock' },
+  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Out of Stock' },
   'Reserved':   { dot: 'bg-[#9E7A2E]',  text: 'text-[#9E7A2E]',  bg: 'bg-[#FDF9F0]',  label: 'Reserved' },
   'Draft':      { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Draft' },
   'Low Stock':  { dot: 'bg-[#C57B57]',  text: 'text-[#C57B57]',  bg: 'bg-[#FAF0EA]',  label: 'Low Stock' },
@@ -65,6 +65,8 @@ export default function AdminProducts() {
   const [productToDelete, setProductToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
+  const [filterCondition, setFilterCondition] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -106,16 +108,25 @@ export default function AdminProducts() {
 
   const handleSaveProduct = () => {
     let updatedProducts;
-    if (editingProduct.isNew) {
-      const newProduct = { ...editingProduct, id: `RW-${Math.floor(Math.random() * 90000) + 10000}` };
+    
+    // Auto-correct status based on stock to prevent inconsistencies
+    const productToSave = { ...editingProduct };
+    if (productToSave.stock === 0 && productToSave.status === 'Available') {
+      productToSave.status = 'Out of Stock';
+    } else if (productToSave.stock > 0 && (productToSave.status === 'Out of Stock' || productToSave.status === 'Sold Out')) {
+      productToSave.status = 'Available';
+    }
+
+    if (productToSave.isNew) {
+      const newProduct = { ...productToSave, id: `RW-${Math.floor(Math.random() * 90000) + 10000}` };
       delete newProduct.isNew;
       updatedProducts = [newProduct, ...products];
       addToast('New product added successfully');
       addAdminNotification(currentUser?.name, 'Added a new product', newProduct.name, 'product');
     } else {
-      updatedProducts = products.map(p => p.id === editingProduct.id ? editingProduct : p);
+      updatedProducts = products.map(p => p.id === productToSave.id ? productToSave : p);
       addToast('Product updated successfully');
-      addAdminNotification(currentUser?.name, 'Updated product', editingProduct.name, 'product');
+      addAdminNotification(currentUser?.name, 'Updated product', productToSave.name, 'product');
     }
     setProducts(updatedProducts);
     localStorage.setItem('products', JSON.stringify(updatedProducts));
@@ -183,6 +194,8 @@ export default function AdminProducts() {
     addToast('Inventory exported successfully');
   };
 
+  const getStock = (p) => p.stock !== undefined ? p.stock : (p.status === 'Available' || p.status === 'In Stock' ? 1 : 0);
+
   const filteredProducts = products.filter(product => {
     const searchLower = (searchQuery || '').toLowerCase();
     const productName = (product.name || product.title || '').toLowerCase();
@@ -194,23 +207,30 @@ export default function AdminProducts() {
                           productId.includes(searchLower);
                           
     const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
-    return matchesSearch && matchesCategory;
+    const matchesCondition = filterCondition === 'All' || product.condition === filterCondition;
+    
+    let matchesStatus = true;
+    const stockCount = getStock(product);
+    if (filterStatus === 'Low Stock') matchesStatus = stockCount > 0 && stockCount <= 5;
+    else if (filterStatus === 'Out of Stock') matchesStatus = stockCount === 0 || product.status === 'Out of Stock' || product.status === 'Sold Out';
+    else if (filterStatus !== 'All') matchesStatus = product.status === filterStatus || (filterStatus === 'Available' && product.status === 'In Stock');
+
+    return matchesSearch && matchesCategory && matchesCondition && matchesStatus;
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  // Global store stats — always from ALL products (store health overview)
+  const outOfStock = products.filter(p => getStock(p) === 0 || p.status === 'Out of Stock' || p.status === 'Sold Out').length;
+  const stockValue = products.reduce((a, p) => a + ((p.price || 0) * getStock(p)), 0);
+  const archivedItems = products.filter(p => p.status === 'Archived').length;
+
   // When search or filter changes, reset to page 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory]);
+  }, [searchQuery, filterCategory, filterCondition, filterStatus]);
 
-  const getStock = (p) => p.stock !== undefined ? p.stock : (p.status === 'Available' || p.status === 'In Stock' ? 1 : 0);
-  const totalItems = products.reduce((a, p) => a + getStock(p), 0);
-  const outOfStock = products.filter(p => getStock(p) === 0 || p.status === 'Out of Stock' || p.status === 'Sold Out').length;
-  const stockValue = products.reduce((a, p) => a + ((p.price || 0) * getStock(p)), 0);
-  // Mock slow moving items (>30 days) since we don't have real dates in the mock data yet
-  const slowMovingItems = products.filter(p => p.dateAdded ? (new Date() - new Date(p.dateAdded)) / (1000 * 60 * 60 * 24) > 30 : false).length || 5;
 
   return (
     <>
@@ -219,19 +239,24 @@ export default function AdminProducts() {
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'Total Items', value: totalItems.toLocaleString() },
-          { label: 'Out of Stock', value: outOfStock, color: 'rust' },
-          { label: 'Slow-Moving', value: slowMovingItems, color: 'ochre' },
-          { label: 'Stock Value', value: `THB ${stockValue.toLocaleString()}` },
-        ].map(({ label, value, color }) => {
+          { label: 'Showing Items', value: filteredProducts.length.toLocaleString(), tab: null },
+          { label: 'Out of Stock', value: outOfStock, color: 'rust', tab: 'Out of Stock' },
+          { label: 'Archived', value: archivedItems, color: 'ochre', tab: 'Archived' },
+          { label: 'Stock Value', value: `THB ${stockValue.toLocaleString()}`, tab: null },
+        ].map(({ label, value, color, tab }) => {
           let styleClass = 'bg-white border-earth-200/60 text-earth-900';
           if (color === 'rust') styleClass = 'bg-[#FCF5F3] border-[#E8D1CE] text-[#A84C43]';
           else if (color === 'ochre') styleClass = 'bg-[#FDF9F0] border-[#E8D8BA] text-[#9E7A2E]';
           
           return (
-            <div key={label} className={`rounded-2xl p-5 border ${styleClass}`}>
+            <div
+              key={label}
+              onClick={() => tab && setFilterStatus(tab)}
+              className={`rounded-2xl p-5 border ${styleClass} ${tab ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            >
               <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${color ? 'opacity-80' : 'text-earth-400'}`}>{label}</p>
               <p className="text-3xl font-bold">{value}</p>
+              {tab && <p className="text-[10px] mt-2 opacity-60 font-medium">Click</p>}
             </div>
           );
         })}
@@ -239,6 +264,24 @@ export default function AdminProducts() {
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl border border-earth-200/60 overflow-hidden">
+        
+        {/* Quick Status Tabs */}
+        <div className="px-6 pt-4 flex gap-6 border-b border-earth-100 overflow-x-auto no-scrollbar">
+          {['All', 'Available', 'Low Stock', 'Out of Stock', 'Reserved', 'Draft', 'Archived'].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
+                filterStatus === status 
+                  ? 'border-[#3A4A2D] text-[#3A4A2D]' 
+                  : 'border-transparent text-earth-500 hover:text-earth-800 hover:border-earth-300'
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
         {/* Toolbar */}
         <div className="px-6 py-4 border-b border-earth-100 flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -254,19 +297,49 @@ export default function AdminProducts() {
           <div className="flex items-center gap-2 ml-auto">
             <div className="relative">
               <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
-                ⊟ {filterCategory === 'All' ? 'Filters' : filterCategory}
+                <Filter className="h-4 w-4" /> Filters
+                {(filterCategory !== 'All' || filterCondition !== 'All') && (
+                  <span className="w-2 h-2 rounded-full bg-[#C57B57]"></span>
+                )}
               </button>
               {isFilterOpen && (
-                <div className="absolute top-full mt-2 right-0 bg-white border border-earth-200 rounded-xl shadow-lg w-40 z-20 py-2">
-                  {['All', ...categories].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => { setFilterCategory(cat); setIsFilterOpen(false); }}
-                      className={`block w-full text-left px-4 py-2 text-sm ${filterCategory === cat ? 'bg-[#EEF1EA] text-[#3A4A2D] font-bold' : 'text-earth-600 hover:bg-earth-50'}`}
+                <div className="absolute top-full mt-2 right-0 bg-white border border-earth-200 rounded-2xl shadow-xl w-56 z-20 overflow-hidden">
+                  <div className="p-4 border-b border-earth-100">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Category</p>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#F9F7F4] border border-earth-200 rounded-lg text-sm text-earth-800 focus:outline-none"
                     >
-                      {cat}
+                      <option value="All">All Categories</option>
+                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </div>
+                  <div className="p-4 bg-[#F9F7F4]">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Condition</p>
+                    <select
+                      value={filterCondition}
+                      onChange={(e) => setFilterCondition(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-earth-200 rounded-lg text-sm text-earth-800 focus:outline-none"
+                    >
+                      <option value="All">All Conditions</option>
+                      {['Like New', 'Very Good', 'Good', 'Acceptable'].map(cond => <option key={cond} value={cond}>{cond}</option>)}
+                    </select>
+                  </div>
+                  <div className="p-3 bg-white border-t border-earth-100 flex justify-between items-center">
+                    <button 
+                      onClick={() => { setFilterCategory('All'); setFilterCondition('All'); }}
+                      className="text-xs font-semibold text-earth-500 hover:text-earth-800 transition-colors"
+                    >
+                      Reset
                     </button>
-                  ))}
+                    <button 
+                      onClick={() => setIsFilterOpen(false)}
+                      className="px-4 py-1.5 bg-[#3A4A2D] text-white rounded-lg text-xs font-semibold hover:bg-[#4A5E3A] transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -277,7 +350,7 @@ export default function AdminProducts() {
               Manage Attributes
             </button>
             <button
-              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, stock: 0, condition: 'Very Good', defects: '', category: 'Tops', size: 'M' })}
+              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, stock: 1, status: 'Available', condition: 'Very Good', defects: '', category: 'Tops', size: 'M' })}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#3A4A2D] hover:bg-[#4A5E3A] text-white rounded-xl text-sm font-medium transition-colors"
             >
               <Plus className="h-4 w-4" /> Add New Listing
@@ -336,9 +409,15 @@ export default function AdminProducts() {
                       <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-400 hover:text-[#9E7A2E] hover:bg-[#FDF9F0] rounded-lg transition-colors" title="Archive">
-                        <Archive className="h-4 w-4" />
-                      </button>
+                      {product.status === 'Archived' ? (
+                        <button onClick={() => handleRestoreProduct(product.id)} className="p-2 text-[#5F6B4E] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="Restore to Store">
+                          <ArchiveRestore className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-400 hover:text-[#9E7A2E] hover:bg-[#FDF9F0] rounded-lg transition-colors" title="Archive">
+                          <Archive className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -581,7 +660,7 @@ export default function AdminProducts() {
               {/* 3. Pricing & Inventory */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">3. Pricing & Inventory</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Price (THB)</label>
                     <input type="number" value={editingProduct.price || 0} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
@@ -593,6 +672,19 @@ export default function AdminProducts() {
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">SKU</label>
                     <input type="text" value={editingProduct.id || 'Generated on save'} disabled className="w-full px-4 py-2.5 border border-earth-200 rounded-xl text-sm bg-earth-100 text-earth-500 cursor-not-allowed" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Status</label>
+                    <select
+                      value={editingProduct.status || 'Available'}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800"
+                    >
+                      <option value="Available">🟢 Available — พร้อมขาย</option>
+                      <option value="Reserved">🟡 Reserved — ติดจอง</option>
+                      <option value="Draft">⚪ Draft — ฉบับร่าง</option>
+                      <option value="Out of Stock">🔴 Out of Stock — หมดแล้ว</option>
+                    </select>
                   </div>
                 </div>
               </div>
