@@ -13,6 +13,9 @@ export function AuthProvider({ children }) {
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState('login');
+  
+  // Pending Google Data
+  const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
 
   const openAuthModal = (view = 'login') => {
     setAuthModalView(view);
@@ -107,35 +110,22 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('currentUser');
     }
 
+    setPendingGoogleUser(null); // Clear any pending data
+
     return { success: true };
   };
 
-  const loginWithGoogle = () => {
-    // Simulated Google Login payload
-    const mockGoogleProfile = {
-      email: 'user.demo@gmail.com',
-      name: 'Google User',
-    };
-
-    let user = users.find(u => u.email === mockGoogleProfile.email);
+  const loginWithGoogle = (googleData) => {
+    // googleData contains email and name from decoded JWT
+    let user = users.find(u => u.email === googleData.email);
     
-    // If user doesn't exist, register them silently (mocking Google auto-registration)
     if (!user) {
-      user = {
-        id: Date.now().toString(),
-        name: mockGoogleProfile.name,
-        email: mockGoogleProfile.email,
-        password: '', // Google users don't need a password in this flow
-        phone: '',
-        role: 'customer'
-      };
-      
-      const updatedUsers = [...users, user];
-      setUsers(updatedUsers);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      // First time user: save data and require registration
+      setPendingGoogleUser(googleData);
+      return { action: 'register' };
     }
 
-    // Perform Login
+    // Existing user: Login automatically
     setCurrentUser(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
     sessionStorage.removeItem('currentUser');
@@ -159,6 +149,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     loginWithGoogle,
+    pendingGoogleUser,
     logout,
     setDemoUser,
     isAuthModalOpen,

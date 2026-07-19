@@ -1,7 +1,6 @@
 # Re-wear - แพลตฟอร์มส่งต่อเสื้อผ้ามือสอง 
 
 [![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&style=flat-square)](https://nextjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square)](https://nodejs.org/)
 [![Status](https://img.shields.io/badge/Status-Development-blue?style=flat-square)](#)
 
 > ️ **Circular Fashion:** โครงการนี้จัดทำขึ้นเพื่อประกอบการเรียนวิชา **CSI204 ดิจิทัลแพลตฟอร์มสำหรับพัฒนาซอฟต์แวร์** โดยเป็นระบบ e-Commerce แพลตฟอร์มสำหรับการส่งต่อเสื้อผ้ามือสอง
@@ -31,7 +30,6 @@
 | ชื่อโครงการ | Re-wear (แพลตฟอร์มส่งต่อเสื้อผ้ามือสอง) |
 | ผู้จัดทำ | 1. นางสาวพิมพ์มาดา คงดี / 67154952<br>2. นายวรานนท์ โสปรก / 67155008<br>3. นายณัฐพงศ์ หาญชัยภา / 67152565 |
 | วิชา | CSI204 Digital Platform for Software Development |
-| อาจารย์ผู้สอน | Mr. Thinnaphat Borirak |
 | วันที่จัดทำ | 4 กรกฎาคม 2026 |
 
 ---
