@@ -7,74 +7,77 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User, History, CreditCard, Heart, Leaf, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Avatar URLs keyed by role — mirrors the values used in Navbar & ProfileDropdown
-const ROLE_AVATARS = {
-  customer:
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100',
-  staff:
-    'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100',
-  admin:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100',
-};
+
 export default function Sidebar() {
   const { currentUser, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  const user = currentUser || { name: 'Guest', role: 'customer' };
+  const user = currentUser || { name: 'Guest', role: 'customer', rank: 'Seed' };
+
+  const getDisplayRank = (u) => {
+    if (u.role === 'admin') return 'Admin';
+    if (u.role === 'staff') return 'Staff';
+    return u.rank || 'Seed';
+  };
 
   const menuItems = [
     {
-      name: 'การตั้งค่าโปรไฟล์',
+      name: 'Profile Settings',
       path: '/profile',
       icon: User,
-      description: 'แก้ไขข้อมูลส่วนตัวและที่อยู่',
+      description: 'Edit personal information and address',
     },
     {
-      name: 'ประวัติการสั่งซื้อ',
+      name: 'Order History',
       path: '/orders',
       icon: History,
-      description: 'ตรวจสอบคำสั่งซื้อย้อนหลัง',
+      description: 'View your past orders',
     },
     {
-      name: 'ช่องทางการชำระเงิน',
-      path: '/payment',
+      name: 'Payment Methods',
+      path: '/payment-methods',
       icon: CreditCard,
-      description: 'จัดการบัตรและบัญชีธนาคาร',
+      description: 'Manage cards and bank accounts',
     },
     {
-      name: 'ตู้เสื้อผ้า & รายการโปรด',
+      name: 'My Wardrobe & Favorites',
       path: '/wardrobe',
       icon: Heart,
-      description: 'เสื้อผ้าที่บันทึกไว้และที่ลงขาย',
+      description: 'Saved and listed clothing items',
     },
     {
-      name: 'แดชบอร์ดรักษ์โลก',
+      name: 'Privileges & Points',
       path: '/eco-impact',
       icon: Leaf,
-      description: 'คำนวณการลดคาร์บอนและรางวัล',
+      description: 'View your privileges and eco points',
     },
   ];
 
   const isActive = (path) => pathname === path;
-  const avatarSrc = ROLE_AVATARS[user.role] ?? ROLE_AVATARS.customer;
 
   return (
     <aside className="bg-white rounded-2xl border border-earth-200/60 p-5 shadow-sm space-y-6">
       {/* Quick Profile Summary — driven by currentUser prop */}
       <div className="flex items-center gap-4 pb-5 border-b border-earth-100">
-        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-sage-500/20">
-          <Image 
-            src={avatarSrc} 
-            alt={`${user.name} avatar`} 
-            fill
-            sizes="48px"
-            className="object-cover"
-          />
+        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-sage-500/20 bg-gray-100 flex items-center justify-center">
+          {user.picture ? (
+            <Image 
+              src={user.picture} 
+              alt={`${user.name} avatar`} 
+              fill
+              sizes="48px"
+              className="object-cover"
+            />
+          ) : (
+            <User className="h-6 w-6 text-gray-400" />
+          )}
         </div>
         <div>
           <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
-          <p className="text-xs text-sage-600 font-medium">สมาชิกระดับ Eco Hero</p>
+          <p className="text-xs text-sage-600 font-medium">
+            {user.role === 'customer' ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
+          </p>
         </div>
       </div>
 
@@ -107,7 +110,7 @@ export default function Sidebar() {
       <div className="pt-2 border-t border-earth-100">
         <button onClick={() => { logout(); router.push('/'); }} className="flex w-full items-center gap-3.5 px-4 py-3.5 rounded-xl text-clay-600 hover:bg-clay-50/50 hover:text-clay-700 transition-colors text-left">
           <LogOut className="h-5 w-5 text-clay-400" />
-          <div className="text-sm font-medium">ออกจากระบบ</div>
+          <div className="text-sm font-medium">Log Out</div>
         </button>
       </div>
     </aside>

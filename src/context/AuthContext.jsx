@@ -89,7 +89,8 @@ export function AuthProvider({ children }) {
       email,
       password,
       phone,
-      role: 'customer' // Default role
+      role: 'customer', // Default role
+      rank: 'Seed'
     };
 
     const updatedUsers = [...users, newUser];
@@ -140,6 +141,38 @@ export function AuthProvider({ children }) {
     setCurrentUser(roleData);
   };
 
+  const addSpending = (amount) => {
+    if (!currentUser || currentUser.role !== 'customer') return;
+
+    const newSpending = (currentUser.total_spending || 0) + amount;
+    
+    let newRank = 'Seed';
+    if (newSpending >= 25000) newRank = 'Monstrosa';
+    else if (newSpending >= 12000) newRank = 'Variegata';
+    else if (newSpending >= 6000) newRank = 'Bloom';
+    else if (newSpending >= 2000) newRank = 'Sprout';
+
+    updateUser({ total_spending: newSpending, rank: newRank });
+  };
+
+  const updateUser = (updates) => {
+    if (!currentUser) return;
+    
+    const updatedUser = { ...currentUser, ...updates };
+    
+    const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    setCurrentUser(updatedUser);
+    
+    if (localStorage.getItem('currentUser')) {
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    } else if (sessionStorage.getItem('currentUser')) {
+      sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+  };
+
   const value = {
     currentUser,
     login,
@@ -148,6 +181,8 @@ export function AuthProvider({ children }) {
     pendingGoogleUser,
     logout,
     setDemoUser,
+    addSpending,
+    updateUser,
     isAuthModalOpen,
     authModalView,
     openAuthModal,

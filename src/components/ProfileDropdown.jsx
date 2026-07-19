@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu } from 'lucide-react';
+import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileDropdown({ isOpen, onClose }) {
@@ -57,7 +57,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
       case 'customer':
       default:
         return {
-          title: 'Seed Member',
+          title: `${currentUser.rank || 'Seed'} Member`,
           color: 'text-[#5F6B4E]',
           icon: Leaf,
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
@@ -81,14 +81,18 @@ export default function ProfileDropdown({ isOpen, onClose }) {
     >
       {/* Profile Header (Dynamic) */}
       <div className="flex items-center gap-4 pb-5 border-b border-[#F2E9DC] mb-4">
-        <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#F2E9DC] shadow-sm shrink-0">
-          <Image 
-            src={roleDetails.avatar} 
-            alt={`${currentUser.name} avatar`} 
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
+        <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#F2E9DC] shadow-sm shrink-0 bg-gray-100 flex items-center justify-center">
+          {currentUser.picture ? (
+            <Image 
+              src={currentUser.picture} 
+              alt={`${currentUser.name} avatar`} 
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : (
+            <User className="h-6 w-6 text-gray-400" />
+          )}
         </div>
         <div className="text-left">
           <h3 className="font-semibold text-[#2D2D2A] text-base leading-snug">{currentUser.name}</h3>

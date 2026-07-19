@@ -10,7 +10,7 @@ import Image from 'next/image';
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart } = useCart();
-  const { currentUser } = useAuth();
+  const { currentUser, addSpending } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment
@@ -58,6 +58,10 @@ export default function CheckoutPage() {
     createOrder(orderData);
     cartItems.forEach(item => updateProductStatus(item.id, 'Sold Out'));
     clearCart();
+
+    if (addSpending && currentUser) {
+      addSpending(cartTotal);
+    }
 
     setTimeout(() => {
       setIsProcessing(false);

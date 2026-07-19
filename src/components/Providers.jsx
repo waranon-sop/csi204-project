@@ -4,6 +4,7 @@ import React from 'react';
 import { UserProvider } from '../context/UserContext';
 import { CartProvider } from '../context/CartContext';
 import { AuthProvider } from '../context/AuthContext';
+import { FavoritesProvider } from '../context/FavoritesContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export default function Providers({ children }) {
@@ -12,11 +13,13 @@ export default function Providers({ children }) {
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <AuthProvider>
-        <CartProvider>
-          <UserProvider>
-            {children}
-          </UserProvider>
-        </CartProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <UserProvider>
+              {children}
+            </UserProvider>
+          </CartProvider>
+        </FavoritesProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

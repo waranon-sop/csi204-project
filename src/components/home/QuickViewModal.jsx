@@ -7,12 +7,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useFavorites } from '../../context/FavoritesContext';
 
 export default function QuickViewModal({
   selectedProduct,
   setSelectedProduct,
 }) {
-  const [isLiked, setIsLiked] = useState(false);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
   const getEcoImpact = (category) => {
@@ -39,6 +39,7 @@ export default function QuickViewModal({
 
   const ecoImpact = selectedProduct ? getEcoImpact(selectedProduct.category) : null;
   const { addToCart, cartItems } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
@@ -46,7 +47,6 @@ export default function QuickViewModal({
 
   // Reset state when a new product is opened
   useEffect(() => {
-    setIsLiked(false);
     setCurrentImageIdx(0);
   }, [selectedProduct]);
 
@@ -237,14 +237,14 @@ export default function QuickViewModal({
                   )}
                 </button>
                 <button 
-                  onClick={() => setIsLiked(!isLiked)}
+                  onClick={() => toggleFavorite(selectedProduct)}
                   className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
-                    isLiked 
+                    isFavorite(selectedProduct.id) 
                       ? 'border-clay-400 bg-clay-50 text-clay-600' 
                       : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : ''}`} />
+                  <Heart className={`h-4 w-4 ${isFavorite(selectedProduct.id) ? 'fill-current text-clay-600' : ''}`} />
                 </button>
               </div>
               

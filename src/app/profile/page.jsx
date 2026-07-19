@@ -1,20 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
 import { User, Mail, Phone, MapPin, Shield, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateUser } = useAuth();
+  const fileInputRef = useRef(null);
   
+  const getDisplayRank = (u) => {
+    if (!u) return '';
+    if (u.role === 'admin') return 'Admin';
+    if (u.role === 'staff') return 'Staff';
+    return u.rank || 'Seed';
+  };
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
     address: '',
-    ecoStatus: 'Eco Hero',
+    ecoStatus: '',
+    picture: '',
   });
 
   useEffect(() => {
@@ -25,15 +34,40 @@ export default function ProfileSettings() {
         email: currentUser.email || '',
         phone: currentUser.phone || '',
         address: currentUser.address || '',
-        ecoStatus: currentUser.ecoStatus || 'Eco Hero',
+        ecoStatus: getDisplayRank(currentUser),
+        picture: currentUser.picture || '',
       }));
     }
   }, [currentUser]);
 
   const [saved, setSaved] = useState(false);
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, picture: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePic = () => {
+    setFormData(prev => ({ ...prev, picture: '' }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (updateUser) {
+      updateUser({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        picture: formData.picture
+      });
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -59,22 +93,41 @@ export default function ProfileSettings() {
 
             {/* Profile Pic Upload */}
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
-              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md">
-                <Image 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" 
-                  alt="Avatar big" 
-                  fill
-                  sizes="96px"
-                  className="object-cover"
-                />
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md bg-gray-100 flex items-center justify-center">
+                {formData.picture ? (
+                  <Image 
+                    src={formData.picture} 
+                    alt="Avatar big" 
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <User className="h-10 w-10 text-gray-400" />
+                )}
               </div>
               <div className="text-center sm:text-left space-y-2">
                 <h3 className="font-semibold text-earth-800 text-sm">รูปโปรไฟล์</h3>
                 <div className="flex gap-2">
-                  <button className="bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2 rounded-full transition-colors shadow-sm">
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/png, image/jpeg" 
+                    className="hidden" 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2 rounded-full transition-colors shadow-sm"
+                  >
                     เปลี่ยนรูปใหม่
                   </button>
-                  <button className="bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors">
+                  <button 
+                    type="button"
+                    onClick={handleRemovePic}
+                    className="bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors"
+                  >
                     ลบออก
                   </button>
                 </div>

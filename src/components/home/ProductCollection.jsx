@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
-import { Eye, Leaf, ArrowRight } from 'lucide-react';
+import { Eye, Leaf, ArrowRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import QuickViewModal from './QuickViewModal';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useFavorites } from '../../context/FavoritesContext';
 import { getProducts } from '../../utils/localStorageHelper';
 
 const FILTERS = ['All Pieces', 'Vintage Denim', 'Y2K Shirts', 'Jackets'];
@@ -59,6 +60,7 @@ export default function ProductCollection() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const { addToCart } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
@@ -345,6 +347,18 @@ export default function ProductCollection() {
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 ease-in-out mix-blend-multiply"
                 />
+
+                <div className="absolute top-4 right-4 z-20">
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleFavorite(product);
+                    }}
+                    className="p-2 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm transition-colors shadow-sm text-sage-600 hover:scale-110 active:scale-95"
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
 
                 <div className="absolute inset-0 bg-[#2D2D2A]/10 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 flex items-center justify-center pb-6">
                   <button
