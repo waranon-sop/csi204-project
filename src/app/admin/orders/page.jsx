@@ -83,6 +83,39 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-[#FAF0EA] flex items-center justify-center">
+              <Package className="w-4 h-4 text-[#C57B57]" />
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Total Pending</p>
+              <span className="text-[10px] bg-[#C57B57] text-white px-2 py-0.5 rounded-full font-bold">+12%</span>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-earth-800">{pending} Orders</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-[#EEF1EA] flex items-center justify-center">
+              <Truck className="w-4 h-4 text-[#3A4A2D]" />
+            </div>
+            <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">In Transit Today</p>
+          </div>
+          <p className="text-2xl font-bold text-earth-800">{inTransit} Orders</p>
+        </div>
+        <div className="bg-[#3A4A2D] rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Weekly Revenue</p>
+          </div>
+          <p className="text-2xl font-bold text-white">THB {weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+        </div>
+      </div>
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl border border-earth-200/60 overflow-hidden">
@@ -177,39 +210,6 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      {/* Bottom Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#FAF0EA] flex items-center justify-center">
-              <Package className="w-4 h-4 text-[#C57B57]" />
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Total Pending</p>
-              <span className="text-[10px] bg-[#C57B57] text-white px-2 py-0.5 rounded-full font-bold">+12%</span>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-earth-800">{pending} Orders</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#EEF1EA] flex items-center justify-center">
-              <Truck className="w-4 h-4 text-[#3A4A2D]" />
-            </div>
-            <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">In Transit Today</p>
-          </div>
-          <p className="text-2xl font-bold text-earth-800">{inTransit} Orders</p>
-        </div>
-        <div className="bg-[#3A4A2D] rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Weekly Revenue</p>
-          </div>
-          <p className="text-2xl font-bold text-white">THB {weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-        </div>
-      </div>
 
       {/* Order Detail Modal */}
       {selectedOrder && (

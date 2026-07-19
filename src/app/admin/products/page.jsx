@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
@@ -45,6 +45,17 @@ const STOCK_STYLE = {
   'In Stock':     'text-[#3A4A2D]',
   'Low Stock':    'text-[#C57B57]',
   'Out of Stock': 'text-red-500',
+};
+
+const STATUS_BADGE = {
+  'Available':  { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
+  'In Stock':   { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
+  'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
+  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
+  'Reserved':   { dot: 'bg-[#9E7A2E]',  text: 'text-[#9E7A2E]',  bg: 'bg-[#FDF9F0]',  label: 'Reserved' },
+  'Draft':      { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Draft' },
+  'Low Stock':  { dot: 'bg-[#C57B57]',  text: 'text-[#C57B57]',  bg: 'bg-[#FAF0EA]',  label: 'Low Stock' },
+  'Archived':   { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Archived' },
 };
 
 export default function AdminProducts() {
@@ -139,6 +150,19 @@ export default function AdminProducts() {
       setViewProduct(null);
       setProductToDelete(null);
     }
+  };
+
+  const handleRestoreProduct = (id) => {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+    const updatedProducts = products.map(p =>
+      p.id === id ? { ...p, status: 'Available' } : p
+    );
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    addToast(`"${product.name}" restored and set to Available`);
+    addAdminNotification(currentUser?.name, 'Restored product', product.name, 'product');
+    setViewProduct(prev => prev?.id === id ? { ...prev, status: 'Available' } : prev);
   };
 
   const handleExport = () => {
@@ -269,7 +293,7 @@ export default function AdminProducts() {
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Condition</th>
                 <th className="px-6 py-4">Price</th>
-                <th className="px-6 py-4">Stock</th>
+                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -294,25 +318,25 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-6 py-4 font-medium text-earth-800">THB {product.price.toFixed(2)}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${getStock(product) === 0 ? 'bg-red-400' : getStock(product) <= 5 ? 'bg-[#C57B57]' : 'bg-[#5F6B4E]'}`}></span>
-                      <span className={`text-sm font-medium ${STOCK_STYLE[product.status] || 'text-earth-600'}`}>
-                        {getStock(product) > 0 ? `${getStock(product)} in stock` : 'Out of stock'}
-                      </span>
-                    </div>
+                    {(() => {
+                      const badge = STATUS_BADGE[product.status] || STATUS_BADGE['Draft'];
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                          {badge.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setViewProduct(product)} className="p-2 text-earth-500 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="View">
+                      <button onClick={() => setViewProduct(product)} className="p-2 text-earth-400 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="View">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-500 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
+                      <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleToggleVisibility(product.id)} className="p-2 text-earth-500 hover:text-earth-800 hover:bg-earth-100 rounded-lg transition-colors" title={product.status === 'Draft' ? 'Show in store' : 'Hide from store'}>
-                        {product.status === 'Draft' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                      </button>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Archive">
+                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-400 hover:text-[#9E7A2E] hover:bg-[#FDF9F0] rounded-lg transition-colors" title="Archive">
                         <Archive className="h-4 w-4" />
                       </button>
                     </div>
@@ -421,9 +445,15 @@ export default function AdminProducts() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-between">
-              <button onClick={() => handleDeleteProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
-                <Archive className="h-4 w-4" /> Archive
-              </button>
+              {viewProduct.status === 'Archived' ? (
+                <button onClick={() => handleRestoreProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-[#3A4A2D] bg-[#EEF1EA] border border-[#C2CBB8] rounded-xl text-sm font-medium hover:bg-[#DDE5D8] transition-colors">
+                  <ArchiveRestore className="h-4 w-4" /> Restore to Store
+                </button>
+              ) : (
+                <button onClick={() => handleDeleteProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-[#9E7A2E] bg-[#FDF9F0] border border-[#E8D8BA] rounded-xl text-sm font-medium hover:bg-[#FAF0D8] transition-colors">
+                  <Archive className="h-4 w-4" /> Archive
+                </button>
+              )}
               <div className="flex gap-2">
                 <button onClick={() => setViewProduct(null)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">Close</button>
                 <button onClick={() => { setEditingProduct(viewProduct); setViewProduct(null); }} className="flex items-center gap-2 px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">
