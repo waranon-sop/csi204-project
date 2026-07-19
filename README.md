@@ -1,7 +1,6 @@
 # Re-wear - แพลตฟอร์มส่งต่อเสื้อผ้ามือสอง 
 
 [![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&style=flat-square)](https://nextjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square)](https://nodejs.org/)
 [![Status](https://img.shields.io/badge/Status-Development-blue?style=flat-square)](#)
 
 > ️ **Circular Fashion:** โครงการนี้จัดทำขึ้นเพื่อประกอบการเรียนวิชา **CSI204 ดิจิทัลแพลตฟอร์มสำหรับพัฒนาซอฟต์แวร์** โดยเป็นระบบ e-Commerce แพลตฟอร์มสำหรับการส่งต่อเสื้อผ้ามือสอง
