@@ -226,15 +226,15 @@ erDiagram
 | ด้าน | ผลลัพธ์ |
 |---|---|
 | **Functional Requirements** | ครบ 8 รายการ (F-01 ถึง F-08) |
-| **จำนวนหน้าที่พัฒนา** | 8 หน้า (Homepage, Product, Search, Orders, Wardrobe, Profile, Payment, Eco-Impact) |
-| **Role-based System** | จำลองการทำงานของ 3 บทบาท (Customer, Staff, Admin) ผ่าน SAD Role Switcher |
+| **จำนวนหน้าที่พัฒนา** | 14 หน้า (Customer: 8 หน้า, Admin Panel: 6 หน้า) |
+| **Role-based System** | จัดการสิทธิ์ 3 บทบาทผ่าน AuthContext และ Route Protection (`useAdminGuard`) |
 | **Design Principles** | นำมาประยุกต์ใช้ 9 หลักการ (SoC, SRP, Modularity, Loose Coupling ฯลฯ) |
-| **เทคโนโลยีหลัก** | Next.js 15 (App Router), Tailwind CSS, Lucide React |
+| **เทคโนโลยีหลัก** | Next.js 15 (App Router), Tailwind CSS, Lucide React, Recharts |
 
 ### ข้อจำกัดและแนวทางพัฒนาต่อในอนาคต
 
-- **ระบบยืนยันตัวตน (Authentication):** ปัจจุบันจำลองสิทธิ์ผู้ใช้ผ่าน Role Switcher เท่านั้น แนวทางต่อไปคือนำ JWT / NextAuth.js มาใช้งานจริง
-- **ฐานข้อมูล:** ข้อมูลสินค้าและออเดอร์เป็นแบบ Mock (Static Data) แนวทางต่อไปคือเชื่อมต่อกับ Backend API และ Database จริง เช่น PostgreSQL
+- **ระบบยืนยันตัวตน (Authentication):** ปัจจุบันจำลองการ Login และเก็บสิทธิ์ผ่าน `localStorage` (Mock Auth) แนวทางต่อไปคือนำ JWT / NextAuth.js มาใช้งานจริง
+- **ฐานข้อมูล:** ข้อมูลสินค้าและออเดอร์จัดเก็บผ่าน Mock Data และ `localStorage` แนวทางต่อไปคือเชื่อมต่อกับ Backend API และ Database จริง เช่น PostgreSQL
 - **ระบบชำระเงิน:** ปัจจุบันเป็นแบบ Mockup แนวทางต่อไปคือผนวกกับ Payment Gateway เช่น Stripe หรือ Omise
 
 > **Note:** เอกสารนี้แสดงการวิเคราะห์และออกแบบระบบเบื้องต้น ซึ่งจะถูกนำไปใช้เป็นแนวทางในการพัฒนาระบบจริงในขั้นตอนถัดไป สร้างด้วย ️ โดย **กลุ่ม Re-wear** สำหรับวิชา CSI204
