@@ -74,24 +74,26 @@ export default function AdminDashboard() {
   }, [timeFilter]);
 
   const getChartData = () => {
-    if (timeFilter === 'Day') return [
-      { time: '08:00', revenue: 150 },
-      { time: '12:00', revenue: 200 },
-      { time: '16:00', revenue: 80 },
-      { time: '20:00', revenue: 110 },
-    ];
-    if (timeFilter === 'Week') return [
-      { time: 'Mon', revenue: 450 },
-      { time: 'Wed', revenue: 620 },
-      { time: 'Fri', revenue: 880 },
-      { time: 'Sun', revenue: 1500 },
-    ];
-    return [
-      { time: 'Week 1', revenue: 2400 },
-      { time: 'Week 2', revenue: 3200 },
-      { time: 'Week 3', revenue: 2800 },
-      { time: 'Week 4', revenue: 4080 },
-    ];
+    let baseData = [];
+    let baseSum = 1;
+
+    if (timeFilter === 'Day') {
+      baseData = [{ time: '08:00', w: 150 }, { time: '12:00', w: 200 }, { time: '16:00', w: 80 }, { time: '20:00', w: 110 }];
+      baseSum = 540;
+    } else if (timeFilter === 'Week') {
+      baseData = [{ time: 'Mon', w: 450 }, { time: 'Wed', w: 620 }, { time: 'Fri', w: 880 }, { time: 'Sun', w: 1500 }];
+      baseSum = 3450;
+    } else {
+      baseData = [{ time: 'Week 1', w: 2400 }, { time: 'Week 2', w: 3200 }, { time: 'Week 3', w: 2800 }, { time: 'Week 4', w: 4080 }];
+      baseSum = 12480;
+    }
+
+    const currentRevenue = dashboardStats.revenue || baseSum;
+    
+    return baseData.map(d => ({
+      time: d.time,
+      revenue: Math.round((d.w / baseSum) * currentRevenue)
+    }));
   };
 
   const chartData = getChartData();
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70 mb-1">Total Revenue</p>
           </div>
           <div className="flex items-baseline gap-3 mt-4">
-            <p className="text-4xl font-serif tracking-tight">${dashboardStats.revenue.toLocaleString()}</p>
+            <p className="text-4xl font-serif tracking-tight">THB {dashboardStats.revenue.toLocaleString()}</p>
             <p className="text-xs text-white/60 flex items-center gap-1">
               +12%<TrendingUp className="w-3 h-3" />
             </p>
@@ -171,7 +173,6 @@ export default function AdminDashboard() {
             <h2 className="text-sm font-serif text-[#5C5C58]">Circulation Trends</h2>
             <div className="flex items-center gap-4 text-xs font-semibold text-[#2D2D2A]">
               <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#4A533D] inline-block"></span> Revenue</span>
-              <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#C57B57] inline-block"></span> Sales</span>
             </div>
           </div>
 
@@ -181,12 +182,12 @@ export default function AdminDashboard() {
               <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DB" />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} tickFormatter={(value) => `$${value}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} tickFormatter={(value) => `THB ${value}`} />
                 <Tooltip 
                   cursor={{ fill: '#F5F2ED' }}
                   contentStyle={{ borderRadius: '12px', border: '1px solid #EAE5DB', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', fontSize: '13px', padding: '10px 14px' }}
                   labelStyle={{ fontWeight: 'bold', color: '#2D2D2A', marginBottom: '4px' }}
-                  formatter={(value, name) => [name === 'revenue' ? `$${value}` : value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                  formatter={(value, name) => [name === 'revenue' ? `THB ${value}` : value, name.charAt(0).toUpperCase() + name.slice(1)]}
                 />
                 <Bar dataKey="revenue" fill="#4A533D" radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>

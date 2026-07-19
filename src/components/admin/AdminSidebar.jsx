@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminSidebar() {
@@ -20,7 +20,7 @@ export default function AdminSidebar() {
       {/* Brand */}
       <div className="pt-8 px-6 pb-6">
         <p className="text-xl font-serif text-[#2D2D2A] mb-1">Admin Portal</p>
-        <p className="text-xs text-[#5C5C58]">Staff Management</p>
+        <p className="text-xs text-[#5C5C58]">Re-wear System</p>
       </div>
 
       {/* Nav */}
@@ -29,6 +29,7 @@ export default function AdminSidebar() {
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, adminOnly: true },
           { name: 'Inventory', path: '/admin/products', icon: Package },
           { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
+          { name: 'Promotions', path: '/admin/promotions', icon: Tag },
           { name: 'Users', path: '/admin/customers', icon: Users, adminOnly: true },
         ]
           .filter(item => !item.adminOnly || currentUser?.role === 'admin')
@@ -60,7 +61,7 @@ export default function AdminSidebar() {
             Settings
           </Link>
         )}
-        <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-left text-[#5C5C58] hover:text-[#2D2D2A] hover:bg-[#EAE5DB]/50 transition-all text-xs font-medium">
+        <Link href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-left text-[#5C5C58] hover:text-[#2D2D2A] hover:bg-[#EAE5DB]/50 transition-all text-xs font-medium">
           <Store className="h-4 w-4" />
           Storefront
         </Link>

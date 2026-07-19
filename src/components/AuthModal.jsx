@@ -10,7 +10,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginKeepSignedIn, setLoginKeepSignedIn] = useState(false);
+  const [loginKeepSignedIn, setLoginKeepSignedIn] = useState(true);
   
   // Register State
   const [firstName, setFirstName] = useState('');
@@ -19,7 +19,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [phone, setPhone] = useState('');
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [terms, setTerms] = useState(false);
   
   const [error, setError] = useState('');
@@ -55,6 +55,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
       onClose();
       if (result.user?.role === 'admin' || result.user?.role === 'staff') {
         router.push('/admin');
+      } else {
+        router.push('/');
       }
     } else {
       setError(result.error);

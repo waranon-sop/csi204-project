@@ -139,7 +139,7 @@ export default function AdminOrders() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-earth-500 text-sm">{order.date}</td>
-                    <td className="px-6 py-5 font-semibold text-earth-800">${order.total}</td>
+                    <td className="px-6 py-5 font-semibold text-earth-800">THB {order.total}</td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${STATUS_CONFIG[order.status]?.color}`}>
                         {order.status}
@@ -207,7 +207,7 @@ export default function AdminOrders() {
             </div>
             <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Weekly Revenue</p>
           </div>
-          <p className="text-2xl font-bold text-white">${weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+          <p className="text-2xl font-bold text-white">THB {weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
         </div>
       </div>
 
@@ -232,14 +232,38 @@ export default function AdminOrders() {
                 {/* Left: Items + Status + Tracking */}
                 <div className="col-span-2 space-y-5">
 
-                  {/* Update Status */}
+                  {/* Update Status & Tracking */}
                   <div className="bg-[#F9F7F4] border border-earth-200 rounded-2xl p-4">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-earth-400 mb-3">Update Status</h3>
-                    <div className="flex gap-2">
-                      <select value={selectedOrder.status} onChange={(e) => setSelectedOrder({...selectedOrder, status: e.target.value})} className="flex-1 px-3 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium">
+                    <div className="flex flex-col gap-3">
+                      <select value={selectedOrder.status} onChange={(e) => setSelectedOrder({...selectedOrder, status: e.target.value})} className="w-full px-3 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium">
                         {Object.keys(STATUS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button onClick={() => handleSaveOrder(selectedOrder)} className="px-5 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Save</button>
+                      
+                      {selectedOrder.status === 'Shipped' && (
+                        <div className="bg-[#EEF1EA] border border-[#C2CBB8] rounded-xl p-3 flex flex-col gap-2">
+                          <label className="text-xs font-bold uppercase tracking-widest text-[#3A4A2D] flex items-center gap-2">
+                            <Truck className="w-3.5 h-3.5" /> Tracking Number
+                          </label>
+                          <input
+                            type="text"
+                            value={trackingInput}
+                            onChange={(e) => setTrackingInput(e.target.value)}
+                            placeholder="e.g. TH789456123TH"
+                            className="w-full px-3 py-2 border border-[#A4B296] rounded-lg text-sm text-earth-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30"
+                          />
+                        </div>
+                      )}
+
+                      <button 
+                        onClick={() => {
+                          const updated = { ...selectedOrder, trackingNumber: selectedOrder.status === 'Shipped' ? trackingInput : selectedOrder.trackingNumber };
+                          handleSaveOrder(updated);
+                        }} 
+                        className="w-full px-5 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors mt-1"
+                      >
+                        Save Changes
+                      </button>
                     </div>
                   </div>
 
@@ -257,41 +281,13 @@ export default function AdminOrders() {
                               <p className="font-semibold text-earth-800 text-sm">{item.name}</p>
                               <p className="text-xs text-earth-400 mt-0.5">{item.detail}</p>
                             </div>
-                            <p className="font-bold text-earth-800 text-sm">${item.price}</p>
+                            <p className="font-bold text-earth-800 text-sm">THB {item.price}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Tracking */}
-                  <div className="bg-[#EEF1EA] border border-[#C2CBB8] rounded-2xl p-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#3A4A2D] mb-1 flex items-center gap-2">
-                      <Truck className="w-4 h-4" /> Tracking Number
-                    </h3>
-                    <p className="text-xs text-[#5F6B4E] mb-3">Enter and click "Update to Shipped" once parcel is sent.</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={trackingInput}
-                        onChange={(e) => setTrackingInput(e.target.value)}
-                        placeholder="e.g. TH789456123TH"
-                        className="flex-1 px-3 py-2.5 border border-[#A4B296] rounded-xl text-sm text-earth-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30"
-                      />
-                      <button 
-                        onClick={() => {
-                          const updated = { ...selectedOrder, status: 'Shipped', trackingNumber: trackingInput };
-                          handleSaveOrder(updated);
-                        }}
-                        className="px-4 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors whitespace-nowrap"
-                      >
-                        Update to Shipped
-                      </button>
-                    </div>
-                    {selectedOrder.trackingNumber && (
-                      <p className="text-xs text-[#5F6B4E] mt-2">Current: <span className="font-mono font-bold">{selectedOrder.trackingNumber}</span></p>
-                    )}
-                  </div>
                 </div>
 
                 {/* Right: Customer + Slip + Summary */}
@@ -337,15 +333,15 @@ export default function AdminOrders() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between text-earth-600">
                         <span>Subtotal</span>
-                        <span>${(selectedOrder.total - selectedOrder.shipping)}</span>
+                        <span>THB {(selectedOrder.total - selectedOrder.shipping)}</span>
                       </div>
                       <div className="flex justify-between text-earth-600">
                         <span>Shipping</span>
-                        <span>${selectedOrder.shipping}</span>
+                        <span>THB {selectedOrder.shipping}</span>
                       </div>
                       <div className="flex justify-between font-bold text-earth-800 pt-2 border-t border-earth-200">
                         <span>Total</span>
-                        <span>${selectedOrder.total}</span>
+                        <span>THB {selectedOrder.total}</span>
                       </div>
                     </div>
                   </div>

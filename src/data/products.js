@@ -42,7 +42,7 @@ export const mockProducts = [
     description:
       'เสื้อกางเกงยีนส์ฟอกวินเทจแท้ทรงกระบอกตรง ผลิตในปี 1992 ได้รับการซ่อมแซมกระเป๋าด้านหลังและทำความสะอาดอย่างเชี่ยวชาญ สวมใส่ได้ยาวนานหลายทศวรรษ',
     size: '30',
-    condition: 'Vintage Fade (Repaired)',
+    condition: 'Acceptable',
     measurements: 'เอว: 30", เป้า: 11", ยาว: 32"',
   },
   {
@@ -63,7 +63,7 @@ export const mockProducts = [
     description:
       'เชิ้ตผ้าไหมแท้ 100% สีกากีเข้ม ลื่น สบายผิว ผสมผสานสไตล์มินิมอลกับแฟชั่นยุค 2000 ได้อย่างลงตัว ผ่านกระบวนการถนอมเส้นใยโบราณ',
     size: 'M',
-    condition: 'Excellent',
+    condition: 'Very Good',
     measurements: 'อก: 21", ยาว: 27", ไหล่: 18"',
   },
   {
@@ -84,7 +84,7 @@ export const mockProducts = [
     description:
       'เสื้อโค้ตสไตล์ช่างทำมือ ดัดแปลงจากผ้าใบกันใบเรือเก่าและกางเกงคาร์โก้ทหาร มีความหนา ทนทาน และมีเอกลักษณ์ลวดลายเฉพาะตัวเพียงตัวเดียวในโลก',
     size: 'L',
-    condition: 'Distressed (Upcycled)',
+    condition: 'Acceptable',
     measurements: 'อก: 24", ยาว: 29", ไหล่: 20"',
   },
   {
@@ -106,7 +106,7 @@ export const mockProducts = [
     description:
       'เสื้อครอปเบบี้ทีสีเทารุ่นพิเศษ สกรีนลายดาวกางเกงวินเทจ น่ารักสไตล์ Y2K ผ้าฝ้ายออร์แกนิก 100% มีความนุ่มยืดหยุ่นและน้ำหนักเบา',
     size: 'S',
-    condition: 'Deadstock (Unworn)',
+    condition: 'Like New',
     measurements: 'อก: 16", ยาว: 18"',
   },
   {
@@ -127,7 +127,7 @@ export const mockProducts = [
     description:
       'เอี๊ยมยีนส์สไตล์คาร์เพนเตอร์ ผ้าดิบเข้ม หนาทนทาน กระดุมทองเหลืองแท้ ทรงโอเวอร์ไซส์คลาสสิกที่ใช้งานได้ทุกยุคทุกสมัย',
     size: '32',
-    condition: 'Good (Minor wear)',
+    condition: 'Good',
     measurements: 'เอว: 32", ยาว(ไม่รวมสาย): 30"',
   },
   {
@@ -185,7 +185,7 @@ export const mockProducts = [
     description: 'กระโปรงผ้าซิลค์พริ้วทิ้งตัวพิมพ์ลายดอกไม้ ให้ลุคซัมเมอร์สุดคลาสสิก',
     size: 'S',
     color: 'Pink',
-    condition: 'Excellent (Pre-loved)',
+    condition: 'Very Good',
     measurements: 'เอว: 26", ยาว: 30"',
   },
   {
@@ -258,7 +258,7 @@ export const mockProducts = [
     description: 'เสื้อคล้องคอผ้ายีนส์สุดเปรี้ยว สไตล์ Y2K ที่กำลังกลับมาฮิตอีกครั้ง',
     size: 'S',
     color: 'Blue',
-    condition: 'Excellent',
+    condition: 'Very Good',
     measurements: 'อก: 32"',
   },
   {
@@ -327,7 +327,7 @@ export const mockProducts = [
     description: 'เสื้อยืดพิมพ์ลายกราฟิกแนวแอ็บสแตรกต์ สภาพใหม่มาก',
     size: 'XL',
     color: 'White',
-    condition: 'Excellent',
+    condition: 'Very Good',
     measurements: 'อก: 44", ยาว: 29"',
   },
   {
@@ -381,7 +381,7 @@ export const mockProducts = [
     description: 'กางเกงลินินทรงขากว้าง สวมใส่สบายในวันชิลๆ',
     size: 'S',
     color: 'White',
-    condition: 'Excellent',
+    condition: 'Very Good',
     measurements: 'เอว: 26", เป้า: 13", ยาว: 40"',
   },
   {

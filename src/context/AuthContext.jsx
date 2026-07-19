@@ -60,8 +60,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (email, password, keepSignedIn = false) => {
-    const user = users.find(u => u.email === email && u.password === password);
+    const currentUsers = JSON.parse(localStorage.getItem('users')) || users;
+    const user = currentUsers.find(u => u.email === email && u.password === password);
     if (user) {
+      if (user.status === 'suspended') {
+        return { success: false, error: 'This account has been suspended. Please contact an administrator.' };
+      }
       setCurrentUser(user);
       if (keepSignedIn) {
         localStorage.setItem('currentUser', JSON.stringify(user));

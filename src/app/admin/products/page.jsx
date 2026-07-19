@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, MoreVertical, Eye, Edit, Trash2, EyeOff, X, ZoomIn, AlertTriangle, Download } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
@@ -10,7 +10,7 @@ import { addAdminNotification } from '../../../utils/notifications';
 const mockProducts = [
   {
     id: 'RW-29402', name: 'Vintage Linen Overcoat', brand: 'Unknown', category: 'Outerwear',
-    price: 145, stock: 24, condition: 'Excellent', defects: 'No visible defects. Perfect condition.',
+    price: 145, stock: 24, condition: 'Very Good', defects: 'No visible defects. Perfect condition.',
     size: 'M', chest: '100 cm', length: '100 cm', status: 'In Stock', hidden: false,
     image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800'
   },
@@ -22,7 +22,7 @@ const mockProducts = [
   },
   {
     id: 'RW-99201', name: 'Upcycled Denim Tote', brand: 'ReThread', category: 'Accessories',
-    price: 45, stock: 112, condition: 'Mint', defects: 'Brand new, upcycled from surplus fabric.',
+    price: 45, stock: 112, condition: 'Like New', defects: 'Brand new, upcycled from surplus fabric.',
     size: 'OS', chest: '-', length: '-', status: 'In Stock', hidden: false,
     image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=800'
   },
@@ -35,10 +35,10 @@ const mockProducts = [
 ];
 
 const CONDITION_STYLE = {
-  'Excellent': 'bg-[#EEF1EA] text-[#3A4A2D] border border-[#C2CBB8]',
+  'Very Good': 'bg-[#EEF1EA] text-[#3A4A2D] border border-[#C2CBB8]',
   'Good':      'bg-[#FAF0EA] text-[#8E5133] border border-[#DFAB93]',
-  'Fair':      'bg-amber-50 text-amber-700 border border-amber-200',
-  'Mint':      'bg-blue-50 text-blue-700 border border-blue-200',
+  'Acceptable':      'bg-amber-50 text-amber-700 border border-amber-200',
+  'Like New':      'bg-blue-50 text-blue-700 border border-blue-200',
 };
 
 const STOCK_STYLE = {
@@ -59,9 +59,33 @@ export default function AdminProducts() {
   const itemsPerPage = 8;
   const { addToast } = useToast();
   const { currentUser } = useAuth();
+  const [categories, setCategories] = useState(['Tops', 'Outerwear', 'Bottoms', 'Dresses', 'Accessories']);
+  const [sizes, setSizes] = useState(['XS', 'S', 'M', 'L', 'XL', 'OS']);
+  const [isAttributesModalOpen, setIsAttributesModalOpen] = useState(false);
+  const [newAttributeInput, setNewAttributeInput] = useState('');
+  const [attributeTab, setAttributeTab] = useState('categories'); // 'categories' or 'sizes'
 
   useEffect(() => {
-    const localProducts = JSON.parse(localStorage.getItem('products')) || [];
+    let localProducts = JSON.parse(localStorage.getItem('products')) || [];
+    
+    // Migrate old conditions in localStorage to new standard
+    if (localProducts.length > 0) {
+      localProducts = localProducts.map(p => {
+        let cond = p.condition;
+        if (cond === 'Mint' || cond === 'Deadstock (Unworn)') cond = 'Like New';
+        else if (cond === 'Excellent' || cond === 'Excellent (Pre-loved)') cond = 'Very Good';
+        else if (cond === 'Vintage Fade (Repaired)' || cond === 'Distressed (Upcycled)' || cond === 'Fair') cond = 'Acceptable';
+        else if (cond === 'Good (Minor wear)') cond = 'Good';
+        return { ...p, condition: cond };
+      });
+      localStorage.setItem('products', JSON.stringify(localProducts));
+    }
+
+    const localCategories = JSON.parse(localStorage.getItem('productCategories'));
+    if (localCategories) setCategories(localCategories);
+    const localSizes = JSON.parse(localStorage.getItem('productSizes'));
+    if (localSizes) setSizes(localSizes);
+    
     if (localProducts.length > 0) {
       setProducts(localProducts);
     } else {
@@ -104,12 +128,14 @@ export default function AdminProducts() {
 
   const confirmDelete = () => {
     if (productToDelete) {
-      const deletedProduct = products.find(p => p.id === productToDelete);
-      const updatedProducts = products.filter(p => p.id !== productToDelete);
+      const archivedProduct = products.find(p => p.id === productToDelete);
+      const updatedProducts = products.map(p => 
+        p.id === productToDelete ? { ...p, status: 'Archived' } : p
+      );
       setProducts(updatedProducts);
       localStorage.setItem('products', JSON.stringify(updatedProducts));
-      addToast('Product deleted successfully');
-      if (deletedProduct) addAdminNotification(currentUser?.name, 'Deleted product', deletedProduct.name, 'product');
+      addToast('Product archived successfully');
+      if (archivedProduct) addAdminNotification(currentUser?.name, 'Archived product', archivedProduct.name, 'product');
       setViewProduct(null);
       setProductToDelete(null);
     }
@@ -119,7 +145,7 @@ export default function AdminProducts() {
     const csvContent = [
       ['ID', 'Name', 'Brand', 'Category', 'Condition', 'Price', 'Stock'].join(','),
       ...filteredProducts.map(p => 
-        [p.id, `"${p.name}"`, `"${p.brand}"`, p.category, p.condition, p.price, p.stock].join(',')
+        [p.id, `"${p.name || p.title || ''}"`, `"${p.brand || p.brandCategory || ''}"`, p.category, p.condition, p.price, p.stock].join(',')
       )
     ].join('\n');
     
@@ -134,9 +160,15 @@ export default function AdminProducts() {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = (searchQuery || '').toLowerCase();
+    const productName = (product.name || product.title || '').toLowerCase();
+    const productBrand = (product.brand || product.brandCategory || '').toLowerCase();
+    const productId = String(product.id || '').toLowerCase();
+    
+    const matchesSearch = productName.includes(searchLower) || 
+                          productBrand.includes(searchLower) ||
+                          productId.includes(searchLower);
+                          
     const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
@@ -149,27 +181,36 @@ export default function AdminProducts() {
     setCurrentPage(1);
   }, [searchQuery, filterCategory]);
 
-  const totalItems = products.reduce((a, p) => a + p.stock, 0);
-  const nearLowStock = products.filter(p => p.stock > 0 && p.stock <= 5).length;
-  const stockValue = products.reduce((a, p) => a + (p.price * p.stock), 0);
-  const avgCondition = 'Excellent';
+  const getStock = (p) => p.stock !== undefined ? p.stock : (p.status === 'Available' || p.status === 'In Stock' ? 1 : 0);
+  const totalItems = products.reduce((a, p) => a + getStock(p), 0);
+  const outOfStock = products.filter(p => getStock(p) === 0 || p.status === 'Out of Stock' || p.status === 'Sold Out').length;
+  const stockValue = products.reduce((a, p) => a + ((p.price || 0) * getStock(p)), 0);
+  // Mock slow moving items (>30 days) since we don't have real dates in the mock data yet
+  const slowMovingItems = products.filter(p => p.dateAdded ? (new Date() - new Date(p.dateAdded)) / (1000 * 60 * 60 * 24) > 30 : false).length || 5;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <>
+      <div className="space-y-6 animate-fade-in">
 
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: 'Total Items', value: totalItems.toLocaleString() },
-          { label: 'Near Low Stock', value: nearLowStock, highlight: true },
-          { label: 'Stock Value', value: `€${stockValue.toLocaleString()}` },
-          { label: 'Avg. Condition', value: avgCondition },
-        ].map(({ label, value, highlight }) => (
-          <div key={label} className={`rounded-2xl p-5 border ${highlight ? 'bg-[#EEF1EA] border-[#C2CBB8]' : 'bg-white border-earth-200/60'}`}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">{label}</p>
-            <p className={`text-3xl font-bold ${highlight ? 'text-[#3A4A2D]' : 'text-earth-900'}`}>{value}</p>
-          </div>
-        ))}
+          { label: 'Out of Stock', value: outOfStock, color: 'rust' },
+          { label: 'Slow-Moving', value: slowMovingItems, color: 'ochre' },
+          { label: 'Stock Value', value: `THB ${stockValue.toLocaleString()}` },
+        ].map(({ label, value, color }) => {
+          let styleClass = 'bg-white border-earth-200/60 text-earth-900';
+          if (color === 'rust') styleClass = 'bg-[#FCF5F3] border-[#E8D1CE] text-[#A84C43]';
+          else if (color === 'ochre') styleClass = 'bg-[#FDF9F0] border-[#E8D8BA] text-[#9E7A2E]';
+          
+          return (
+            <div key={label} className={`rounded-2xl p-5 border ${styleClass}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${color ? 'opacity-80' : 'text-earth-400'}`}>{label}</p>
+              <p className="text-3xl font-bold">{value}</p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Table Card */}
@@ -193,7 +234,7 @@ export default function AdminProducts() {
               </button>
               {isFilterOpen && (
                 <div className="absolute top-full mt-2 right-0 bg-white border border-earth-200 rounded-xl shadow-lg w-40 z-20 py-2">
-                  {['All', 'Tops', 'Outerwear', 'Bottoms', 'Dresses', 'Accessories'].map(cat => (
+                  {['All', ...categories].map(cat => (
                     <button
                       key={cat}
                       onClick={() => { setFilterCategory(cat); setIsFilterOpen(false); }}
@@ -208,8 +249,11 @@ export default function AdminProducts() {
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
+            <button onClick={() => setIsAttributesModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
+              Manage Attributes
+            </button>
             <button
-              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, stock: 0, condition: 'Excellent', defects: '', category: 'Tops', size: 'M' })}
+              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, stock: 0, condition: 'Very Good', defects: '', category: 'Tops', size: 'M' })}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#3A4A2D] hover:bg-[#4A5E3A] text-white rounded-xl text-sm font-medium transition-colors"
             >
               <Plus className="h-4 w-4" /> Add New Listing
@@ -235,10 +279,10 @@ export default function AdminProducts() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-earth-100 shrink-0 border border-earth-200">
-                        <Image src={product.image || 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100'} alt={product.name || 'Product'} fill sizes="44px" unoptimized className="object-cover" />
+                        <Image src={product.image || 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100'} alt={product.name || product.title || 'Product'} fill sizes="44px" unoptimized className="object-cover" />
                       </div>
                       <div>
-                        <p className="font-semibold text-earth-800">{product.name}</p>
+                        <p className="font-semibold text-earth-800">{product.name || product.title || 'Unknown Product'}</p>
                         <p className="text-xs text-earth-400 mt-0.5">SKU: {product.id}</p>
                       </div>
                     </div>
@@ -248,28 +292,28 @@ export default function AdminProducts() {
                       {product.condition}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-earth-800">€{product.price.toFixed(2)}</td>
+                  <td className="px-6 py-4 font-medium text-earth-800">THB {product.price.toFixed(2)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${product.stock === 0 ? 'bg-red-400' : product.stock <= 5 ? 'bg-[#C57B57]' : 'bg-[#5F6B4E]'}`}></span>
-                      <span className={`text-sm font-medium ${STOCK_STYLE[product.status]}`}>
-                        {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                      <span className={`w-2 h-2 rounded-full ${getStock(product) === 0 ? 'bg-red-400' : getStock(product) <= 5 ? 'bg-[#C57B57]' : 'bg-[#5F6B4E]'}`}></span>
+                      <span className={`text-sm font-medium ${STOCK_STYLE[product.status] || 'text-earth-600'}`}>
+                        {getStock(product) > 0 ? `${getStock(product)} in stock` : 'Out of stock'}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setViewProduct(product)} className="p-2 text-earth-400 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="View">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setViewProduct(product)} className="p-2 text-earth-500 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="View">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
+                      <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-500 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleToggleVisibility(product.id)} className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-lg transition-colors" title={product.status === 'Draft' ? 'Show in store' : 'Hide from store'}>
+                      <button onClick={() => handleToggleVisibility(product.id)} className="p-2 text-earth-500 hover:text-earth-800 hover:bg-earth-100 rounded-lg transition-colors" title={product.status === 'Draft' ? 'Show in store' : 'Hide from store'}>
                         {product.status === 'Draft' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                       </button>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                        <Trash2 className="h-4 w-4" />
+                      <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Archive">
+                        <Archive className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -313,6 +357,7 @@ export default function AdminProducts() {
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Product Detail Modal */}
@@ -365,7 +410,7 @@ export default function AdminProducts() {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="bg-[#F9F7F4] p-3 rounded-xl border border-earth-100">
                       <p className="text-[10px] text-earth-400">Price</p>
-                      <p className="font-bold text-earth-800 mt-0.5">€{viewProduct.price.toFixed(2)}</p>
+                      <p className="font-bold text-earth-800 mt-0.5">THB {viewProduct.price.toFixed(2)}</p>
                     </div>
                     <div className="bg-[#F9F7F4] p-3 rounded-xl border border-earth-100">
                       <p className="text-[10px] text-earth-400">Stock</p>
@@ -376,8 +421,8 @@ export default function AdminProducts() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-between">
-              <button onClick={() => handleDeleteProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-red-500 bg-red-50 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors">
-                <Trash2 className="h-4 w-4" /> Delete
+              <button onClick={() => handleDeleteProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
+                <Archive className="h-4 w-4" /> Archive
               </button>
               <div className="flex gap-2">
                 <button onClick={() => setViewProduct(null)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">Close</button>
@@ -400,38 +445,126 @@ export default function AdminProducts() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto space-y-5">
+            <div className="p-6 overflow-y-auto space-y-8">
               <div className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-earth-200 rounded-2xl bg-earth-50 hover:border-[#5F6B4E] hover:bg-[#EEF1EA]/50 transition-all cursor-pointer group">
                 <Plus className="w-7 h-7 text-earth-400 group-hover:text-[#4A5E3A] transition-colors mb-2" />
                 <p className="text-sm text-earth-500 group-hover:text-earth-700 font-medium">Click to upload images</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Product Name</label>
-                  <input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Brand</label>
-                  <input type="text" value={editingProduct.brand} onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Price (€)</label>
-                  <input type="number" value={editingProduct.price} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Stock Qty</label>
-                  <input type="number" value={editingProduct.stock} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+
+              {/* 1. Basic Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">1. Basic Info</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Product Name</label>
+                    <input type="text" value={editingProduct.name || ''} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Brand</label>
+                    <input type="text" value={editingProduct.brand || ''} onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Category</label>
+                    <select value={editingProduct.category || ''} onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800">
+                      <option value="" disabled>Select Category</option>
+                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Color</label>
+                    <input type="text" placeholder="e.g. Navy Blue" value={editingProduct.color || ''} onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  </div>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Condition</label>
-                <select value={editingProduct.condition} onChange={(e) => setEditingProduct({ ...editingProduct, condition: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800">
-                  <option>Mint</option><option>Excellent</option><option>Good</option><option>Fair</option>
-                </select>
+
+              {/* 2. Item Details */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">2. Item Details</h3>
+                
+                {(!editingProduct.category || (editingProduct.category !== 'Accessories' && editingProduct.category !== 'Bags')) ? (
+                  /* Clothing Details */
+                  <div className="space-y-4 animate-fade-in">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Size</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['XS', 'S', 'M', 'L', 'XL', 'Freesize'].map(size => (
+                          <button
+                            key={size}
+                            onClick={() => setEditingProduct({ ...editingProduct, size })}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${editingProduct.size === size ? 'bg-[#3A4A2D] text-white border-[#3A4A2D]' : 'bg-white text-earth-600 border-earth-200 hover:bg-earth-50'}`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Chest / Waist</label>
+                        <input type="text" placeholder="e.g. 42 inches" value={editingProduct.chest || ''} onChange={(e) => setEditingProduct({ ...editingProduct, chest: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Length</label>
+                        <input type="text" placeholder="e.g. 28 inches" value={editingProduct.length || ''} onChange={(e) => setEditingProduct({ ...editingProduct, length: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Bags / Accessories Details */
+                  <div className="grid grid-cols-3 gap-4 animate-fade-in">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Dimensions (W x L x H)</label>
+                      <input type="text" placeholder="e.g. 20 x 30 x 15 cm" value={editingProduct.dimensions || ''} onChange={(e) => setEditingProduct({ ...editingProduct, dimensions: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Strap Length</label>
+                      <input type="text" placeholder="e.g. 120 cm max" value={editingProduct.strapLength || ''} onChange={(e) => setEditingProduct({ ...editingProduct, strapLength: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Serial Number</label>
+                      <input type="text" placeholder="e.g. ABC12345" value={editingProduct.serialNumber || ''} onChange={(e) => setEditingProduct({ ...editingProduct, serialNumber: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2 pt-2">
+                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Condition</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Like New', 'Very Good', 'Good', 'Acceptable'].map(cond => (
+                      <button
+                        key={cond}
+                        onClick={() => setEditingProduct({ ...editingProduct, condition: cond })}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${editingProduct.condition === cond ? 'bg-[#3A4A2D] text-white border-[#3A4A2D]' : 'bg-white text-earth-600 border-earth-200 hover:bg-earth-50'}`}
+                      >
+                        {cond}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2">
+                  <label className="block text-xs font-semibold text-amber-700 uppercase tracking-wider">⚠️ Known Defects / Notes</label>
+                  <textarea rows="2" value={editingProduct.defects || ''} onChange={(e) => setEditingProduct({ ...editingProduct, defects: e.target.value })} className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-sm bg-amber-50/30 text-earth-800 placeholder-earth-400 resize-none"></textarea>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-amber-700 uppercase tracking-wider">⚠️ Known Defects / Notes</label>
-                <textarea rows="3" value={editingProduct.defects} onChange={(e) => setEditingProduct({ ...editingProduct, defects: e.target.value })} className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-sm bg-amber-50/30 text-earth-800 placeholder-earth-400 resize-none"></textarea>
+
+              {/* 3. Pricing & Inventory */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">3. Pricing & Inventory</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Price (THB)</label>
+                    <input type="number" value={editingProduct.price || 0} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Stock Qty</label>
+                    <input type="number" value={editingProduct.stock || 0} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">SKU</label>
+                    <input type="text" value={editingProduct.id || 'Generated on save'} disabled className="w-full px-4 py-2.5 border border-earth-200 rounded-xl text-sm bg-earth-100 text-earth-500 cursor-not-allowed" />
+                  </div>
+                </div>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end gap-3">
@@ -441,17 +574,17 @@ export default function AdminProducts() {
           </div>
         </div>
       )}
-      {/* Delete Confirmation Modal */}
+      {/* Archive Confirmation Modal */}
       {productToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D2D2A]/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
             <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8" />
+              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Archive className="w-8 h-8" />
               </div>
-              <h2 className="text-xl font-bold text-earth-800 mb-2">Delete Product?</h2>
+              <h2 className="text-xl font-bold text-earth-800 mb-2">Archive Product?</h2>
               <p className="text-sm text-earth-500">
-                Are you sure you want to delete this product? This action cannot be undone.
+                Are you sure you want to archive this product? It will be hidden from the store.
               </p>
             </div>
             <div className="px-6 py-4 bg-[#F9F7F4] flex justify-end gap-3 border-t border-earth-100">
@@ -463,14 +596,102 @@ export default function AdminProducts() {
               </button>
               <button 
                 onClick={confirmDelete} 
-                className="px-5 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
+                className="px-5 py-2 bg-amber-600 text-white rounded-xl text-sm font-medium hover:bg-amber-700 transition-colors shadow-sm"
               >
-                Delete
+                Archive
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* Attributes Management Modal */}
+      {isAttributesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="px-6 py-5 border-b border-earth-100 flex justify-between items-center bg-[#F9F7F4]">
+              <h2 className="text-lg font-semibold text-earth-800">Manage Attributes</h2>
+              <button onClick={() => setIsAttributesModalOpen(false)} className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-xl transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="border-b border-earth-100 px-6 pt-4 flex gap-4 text-sm font-medium">
+              <button onClick={() => setAttributeTab('categories')} className={`pb-3 border-b-2 transition-colors ${attributeTab === 'categories' ? 'border-[#3A4A2D] text-[#3A4A2D]' : 'border-transparent text-earth-500 hover:text-earth-800'}`}>Categories</button>
+              <button onClick={() => setAttributeTab('sizes')} className={`pb-3 border-b-2 transition-colors ${attributeTab === 'sizes' ? 'border-[#3A4A2D] text-[#3A4A2D]' : 'border-transparent text-earth-500 hover:text-earth-800'}`}>Sizes</button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 max-h-[60vh]">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newAttributeInput}
+                  onChange={(e) => setNewAttributeInput(e.target.value)}
+                  placeholder={`New ${attributeTab === 'categories' ? 'Category' : 'Size'}...`}
+                  className="flex-1 px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newAttributeInput.trim()) {
+                      const list = attributeTab === 'categories' ? categories : sizes;
+                      const setList = attributeTab === 'categories' ? setCategories : setSizes;
+                      const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                      if (!list.includes(newAttributeInput.trim())) {
+                        const updated = [...list, newAttributeInput.trim()];
+                        setList(updated);
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
+                        setNewAttributeInput('');
+                        addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                      }
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (newAttributeInput.trim()) {
+                      const list = attributeTab === 'categories' ? categories : sizes;
+                      const setList = attributeTab === 'categories' ? setCategories : setSizes;
+                      const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                      if (!list.includes(newAttributeInput.trim())) {
+                        const updated = [...list, newAttributeInput.trim()];
+                        setList(updated);
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
+                        setNewAttributeInput('');
+                        addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                      }
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {(attributeTab === 'categories' ? categories : sizes).map(item => (
+                  <span key={item} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-earth-100 text-earth-800 rounded-lg text-sm border border-earth-200">
+                    {item}
+                    <button 
+                      onClick={() => {
+                        const list = attributeTab === 'categories' ? categories : sizes;
+                        const setList = attributeTab === 'categories' ? setCategories : setSizes;
+                        const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                        const updated = list.filter(i => i !== item);
+                        setList(updated);
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
+                      }}
+                      className="text-earth-400 hover:text-red-500 p-0.5 rounded-full hover:bg-earth-200/50 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end">
+              <button onClick={() => setIsAttributesModalOpen(false)} className="px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
