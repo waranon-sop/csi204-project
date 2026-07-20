@@ -34,24 +34,22 @@ export default function ProfileDropdown({ isOpen, onClose }) {
     switch (currentUser.role) {
       case 'admin':
         return {
-          title: 'System Administrator',
+          title: 'Administrator',
           color: 'text-[#2D2D2A]',
           icon: ShieldAlert,
           avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Admin Dashboard', path: '/admin', icon: Settings },
-            { name: 'User Roles & Permissions', path: '/admin/users', icon: ShieldAlert },
+            { name: 'Admin Portal', path: '/admin', icon: Settings },
           ],
         };
       case 'staff':
         return {
-          title: 'Quality Inspector',
+          title: 'Staff',
           color: 'text-[#C57B57]',
           icon: Cpu,
           avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Inspection Queue', path: '/admin/inventory', icon: Settings },
-            { name: 'Dispatch Queue', path: '/admin/orders', icon: History },
+            { name: 'Staff Portal', path: '/admin', icon: Settings },
           ],
         };
       case 'customer':

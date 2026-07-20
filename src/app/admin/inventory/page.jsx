@@ -59,7 +59,8 @@ const STATUS_BADGE = {
 };
 
 export default function AdminProducts() {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewProduct, setViewProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -79,34 +80,28 @@ export default function AdminProducts() {
   const [attributeTab, setAttributeTab] = useState('categories'); // 'categories' or 'sizes'
 
   useEffect(() => {
-    let localProducts = JSON.parse(localStorage.getItem('products')) || [];
-    
-    // Migrate old conditions in localStorage to new standard
-    if (localProducts.length > 0) {
-      localProducts = localProducts.map(p => {
-        let cond = p.condition;
-        if (cond === 'Mint' || cond === 'Deadstock (Unworn)') cond = 'Like New';
-        else if (cond === 'Excellent' || cond === 'Excellent (Pre-loved)') cond = 'Very Good';
-        else if (cond === 'Vintage Fade (Repaired)' || cond === 'Distressed (Upcycled)' || cond === 'Fair') cond = 'Acceptable';
-        else if (cond === 'Good (Minor wear)') cond = 'Good';
-        return { ...p, condition: cond };
-      });
-      localStorage.setItem('products', JSON.stringify(localProducts));
-    }
-
-    const localCategories = JSON.parse(localStorage.getItem('productCategories'));
-    if (localCategories) setCategories(localCategories);
-    const localSizes = JSON.parse(localStorage.getItem('productSizes'));
-    if (localSizes) setSizes(localSizes);
-    
-    if (localProducts.length > 0) {
-      setProducts(localProducts);
-    } else {
-      localStorage.setItem('products', JSON.stringify(mockProducts));
-    }
+    const fetchData = async () => {
+      try {
+        const [prodRes, metaRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/metadata')
+        ]);
+        const prodData = await prodRes.json();
+        const metaData = await metaRes.json();
+        
+        setProducts(prodData);
+        if (metaData.categories.length) setCategories(metaData.categories);
+        if (metaData.sizes.length) setSizes(metaData.sizes);
+      } catch (err) {
+        console.error('Failed to fetch inventory data', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     let updatedProducts;
     
     // Auto-correct status based on stock to prevent inconsistencies
@@ -117,63 +112,113 @@ export default function AdminProducts() {
       productToSave.status = 'Available';
     }
 
-    if (productToSave.isNew) {
-      const newProduct = { ...productToSave, id: `RW-${Math.floor(Math.random() * 90000) + 10000}` };
-      delete newProduct.isNew;
-      updatedProducts = [newProduct, ...products];
-      addToast('New product added successfully');
-      addAdminNotification(currentUser?.name, 'Added a new product', newProduct.name, 'product');
-    } else {
-      updatedProducts = products.map(p => p.id === productToSave.id ? productToSave : p);
-      addToast('Product updated successfully');
-      addAdminNotification(currentUser?.name, 'Updated product', productToSave.name, 'product');
+    try {
+      if (productToSave.isNew) {
+        delete productToSave.isNew;
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productToSave)
+        });
+        const newProduct = await res.json();
+        updatedProducts = [newProduct, ...products];
+        addToast('New product added successfully');
+        addAdminNotification(currentUser?.name, 'Added a new product', newProduct.name, 'product');
+      } else {
+        await fetch(`/api/products/${productToSave.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productToSave)
+        });
+        updatedProducts = products.map(p => p.id === productToSave.id ? productToSave : p);
+        addToast('Product updated successfully');
+        addAdminNotification(currentUser?.name, 'Updated product', productToSave.name, 'product');
+      }
+      setProducts(updatedProducts);
+      setEditingProduct(null);
+    } catch (err) {
+      addToast('Failed to save product');
     }
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    setEditingProduct(null);
   };
 
-  const handleToggleVisibility = (id) => {
+  const handleToggleVisibility = async (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    const newStatus = product.status === 'Draft' ? 'Active' : 'Draft';
-    const updatedProducts = products.map(p => p.id === id ? { ...p, status: newStatus } : p);
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    addToast(`Product visibility ${newStatus === 'Draft' ? 'hidden' : 'shown'}`);
-    addAdminNotification(currentUser?.name, newStatus === 'Draft' ? 'Hid product from store' : 'Published product', product.name, 'product');
+    const newStatus = product.status === 'Draft' ? 'Available' : 'Draft';
+    
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const updatedProducts = products.map(p => p.id === id ? { ...p, status: newStatus } : p);
+      setProducts(updatedProducts);
+      addToast(newStatus === 'Draft' ? 'Product moved to draft' : 'Product published');
+    } catch (err) {
+      addToast('Failed to update product visibility');
+    }
   };
 
   const handleDeleteProduct = (id) => {
     setProductToDelete(id);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (productToDelete) {
-      const archivedProduct = products.find(p => p.id === productToDelete);
-      const updatedProducts = products.map(p => 
-        p.id === productToDelete ? { ...p, status: 'Archived' } : p
-      );
-      setProducts(updatedProducts);
-      localStorage.setItem('products', JSON.stringify(updatedProducts));
-      addToast('Product archived successfully');
-      if (archivedProduct) addAdminNotification(currentUser?.name, 'Archived product', archivedProduct.name, 'product');
-      setViewProduct(null);
-      setProductToDelete(null);
+      const deletedProduct = products.find(p => p.id === productToDelete);
+      
+      try {
+        await fetch(`/api/products/${productToDelete}`, { method: 'DELETE' });
+        const updatedProducts = products.filter(p => p.id !== productToDelete);
+        setProducts(updatedProducts);
+        addToast('Product deleted successfully');
+        if (deletedProduct) addAdminNotification(currentUser?.name, 'Deleted product', deletedProduct.name, 'product');
+        setProductToDelete(null);
+      } catch (err) {
+        addToast('Failed to delete product');
+      }
     }
   };
 
-  const handleRestoreProduct = (id) => {
+  const handleArchive = async (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    const updatedProducts = products.map(p =>
-      p.id === id ? { ...p, status: 'Available' } : p
-    );
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
-    addToast(`"${product.name}" restored and set to Available`);
-    addAdminNotification(currentUser?.name, 'Restored product', product.name, 'product');
-    setViewProduct(prev => prev?.id === id ? { ...prev, status: 'Available' } : prev);
+    
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Archived' })
+      });
+      const updatedProducts = products.map(p => p.id === id ? { ...p, status: 'Archived' } : p);
+      setProducts(updatedProducts);
+      addToast('Product archived');
+      addAdminNotification(currentUser?.name, 'Archived product', product.name, 'product');
+    } catch (err) {
+      addToast('Failed to archive product');
+    }
+  };
+
+  const handleRestoreProduct = async (id) => {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+    try {
+      await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Available' })
+      });
+      const updatedProducts = products.map(p =>
+        p.id === id ? { ...p, status: 'Available' } : p
+      );
+      setProducts(updatedProducts);
+      addToast(`"${product.name}" restored and set to Available`);
+      addAdminNotification(currentUser?.name, 'Restored product', product.name, 'product');
+      setViewProduct(prev => prev?.id === id ? { ...prev, status: 'Available' } : prev);
+    } catch (err) {
+      addToast('Failed to restore product');
+    }
   };
 
   const handleExport = () => {
@@ -751,33 +796,51 @@ export default function AdminProducts() {
                   onChange={(e) => setNewAttributeInput(e.target.value)}
                   placeholder={`New ${attributeTab === 'categories' ? 'Category' : 'Size'}...`}
                   className="flex-1 px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800"
-                  onKeyDown={(e) => {
+                  onKeyDown={async (e) => {
                     if (e.key === 'Enter' && newAttributeInput.trim()) {
                       const list = attributeTab === 'categories' ? categories : sizes;
                       const setList = attributeTab === 'categories' ? setCategories : setSizes;
-                      const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                      const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
+                      
                       if (!list.includes(newAttributeInput.trim())) {
                         const updated = [...list, newAttributeInput.trim()];
-                        setList(updated);
-                        localStorage.setItem(storageKey, JSON.stringify(updated));
-                        setNewAttributeInput('');
-                        addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                        try {
+                          await fetch('/api/metadata', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ [attrType]: updated })
+                          });
+                          setList(updated);
+                          setNewAttributeInput('');
+                          addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                        } catch (err) {
+                          addToast('Failed to add attribute');
+                        }
                       }
                     }
                   }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (newAttributeInput.trim()) {
                       const list = attributeTab === 'categories' ? categories : sizes;
                       const setList = attributeTab === 'categories' ? setCategories : setSizes;
-                      const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                      const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
+                      
                       if (!list.includes(newAttributeInput.trim())) {
                         const updated = [...list, newAttributeInput.trim()];
-                        setList(updated);
-                        localStorage.setItem(storageKey, JSON.stringify(updated));
-                        setNewAttributeInput('');
-                        addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                        try {
+                          await fetch('/api/metadata', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ [attrType]: updated })
+                          });
+                          setList(updated);
+                          setNewAttributeInput('');
+                          addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                        } catch (err) {
+                          addToast('Failed to add attribute');
+                        }
                       }
                     }
                   }}
@@ -792,13 +855,22 @@ export default function AdminProducts() {
                   <span key={item} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-earth-100 text-earth-800 rounded-lg text-sm border border-earth-200">
                     {item}
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         const list = attributeTab === 'categories' ? categories : sizes;
                         const setList = attributeTab === 'categories' ? setCategories : setSizes;
-                        const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
+                        const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
                         const updated = list.filter(i => i !== item);
-                        setList(updated);
-                        localStorage.setItem(storageKey, JSON.stringify(updated));
+                        
+                        try {
+                          await fetch('/api/metadata', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ [attrType]: updated })
+                          });
+                          setList(updated);
+                        } catch (err) {
+                          addToast('Failed to delete attribute');
+                        }
                       }}
                       className="text-earth-400 hover:text-red-500 p-0.5 rounded-full hover:bg-earth-200/50 transition-colors"
                     >

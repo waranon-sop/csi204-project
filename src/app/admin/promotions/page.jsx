@@ -13,7 +13,8 @@ const mockPromotions = [
 ];
 
 export default function AdminPromotions() {
-  const [promotions, setPromotions] = useState(mockPromotions);
+  const [promotions, setPromotions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingPromo, setEditingPromo] = useState(null);
   const [promoToDelete, setPromoToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,45 +22,69 @@ export default function AdminPromotions() {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    const localPromos = JSON.parse(localStorage.getItem('promotions')) || [];
-    if (localPromos.length > 0) {
-      setPromotions(localPromos);
-    } else {
-      localStorage.setItem('promotions', JSON.stringify(mockPromotions));
-    }
+    const fetchPromotions = async () => {
+      try {
+        const res = await fetch('/api/promotions');
+        const data = await res.json();
+        setPromotions(data);
+      } catch (err) {
+        console.error('Failed to load promotions', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPromotions();
   }, []);
 
-  const handleSavePromo = () => {
+  const handleSavePromo = async () => {
     let updatedPromos;
-    if (editingPromo.isNew) {
-      const newPromo = { ...editingPromo, id: `PROMO-${Math.floor(Math.random() * 900) + 100}` };
-      delete newPromo.isNew;
-      updatedPromos = [newPromo, ...promotions];
-      addToast('New promotion added successfully');
-      addAdminNotification(currentUser?.name, 'Created a new discount code', newPromo.code, 'promotion');
-    } else {
-      updatedPromos = promotions.map(p => p.id === editingPromo.id ? editingPromo : p);
-      addToast('Promotion updated successfully');
-      addAdminNotification(currentUser?.name, 'Updated discount code', editingPromo.code, 'promotion');
+    try {
+      if (editingPromo.isNew) {
+        const newPromo = { ...editingPromo };
+        delete newPromo.isNew;
+        const res = await fetch('/api/promotions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newPromo)
+        });
+        const createdPromo = await res.json();
+        updatedPromos = [createdPromo, ...promotions];
+        addToast('New promotion added successfully');
+        addAdminNotification(currentUser?.name, 'Created a new discount code', createdPromo.code, 'promotion');
+      } else {
+        await fetch(`/api/promotions/${editingPromo.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingPromo)
+        });
+        updatedPromos = promotions.map(p => p.id === editingPromo.id ? editingPromo : p);
+        addToast('Promotion updated successfully');
+        addAdminNotification(currentUser?.name, 'Updated discount code', editingPromo.code, 'promotion');
+      }
+      setPromotions(updatedPromos);
+      setEditingPromo(null);
+    } catch (err) {
+      addToast('Failed to save promotion');
     }
-    setPromotions(updatedPromos);
-    localStorage.setItem('promotions', JSON.stringify(updatedPromos));
-    setEditingPromo(null);
   };
 
   const handleDeletePromo = (id) => {
     setPromoToDelete(id);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (promoToDelete) {
       const deletedPromo = promotions.find(p => p.id === promoToDelete);
-      const updatedPromos = promotions.filter(p => p.id !== promoToDelete);
-      setPromotions(updatedPromos);
-      localStorage.setItem('promotions', JSON.stringify(updatedPromos));
-      addToast('Promotion deleted successfully');
-      if (deletedPromo) addAdminNotification(currentUser?.name, 'Deleted discount code', deletedPromo.code, 'promotion');
-      setPromoToDelete(null);
+      try {
+        await fetch(`/api/promotions/${promoToDelete}`, { method: 'DELETE' });
+        const updatedPromos = promotions.filter(p => p.id !== promoToDelete);
+        setPromotions(updatedPromos);
+        addToast('Promotion deleted successfully');
+        if (deletedPromo) addAdminNotification(currentUser?.name, 'Deleted discount code', deletedPromo.code, 'promotion');
+        setPromoToDelete(null);
+      } catch (err) {
+        addToast('Failed to delete promotion');
+      }
     }
   };
 

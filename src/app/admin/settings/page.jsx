@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -24,14 +25,20 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    // Load existing settings
-    const saved = localStorage.getItem('storeSettings');
-    if (saved) {
-      setSettings(JSON.parse(saved));
-    } else {
-      // Initialize if empty so other components can read it
-      localStorage.setItem('storeSettings', JSON.stringify(settings));
-    }
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (Object.keys(data).length > 0) {
+          setSettings(data);
+        }
+      } catch (err) {
+        console.error('Failed to load settings', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
   }, []);
 
   const handleChange = (e) => {
@@ -42,16 +49,22 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     
-    // Simulate API delay
-    setTimeout(() => {
-      localStorage.setItem('storeSettings', JSON.stringify(settings));
-      setIsSaving(false);
+    try {
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
       showToast('Settings saved successfully');
-    }, 600);
+    } catch (err) {
+      showToast('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const tabs = [

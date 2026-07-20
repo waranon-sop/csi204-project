@@ -51,7 +51,8 @@ const STATUS_CONFIG = {
 };
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState(mockOrders);
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingInput, setTrackingInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -62,21 +63,42 @@ export default function AdminOrders() {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    const localOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    if (localOrders.length > 0) {
-      setOrders(localOrders);
-    } else {
-      localStorage.setItem('orders', JSON.stringify(mockOrders));
-    }
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        setOrders(data);
+      } catch (err) {
+        console.error('Failed to load orders', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
   }, []);
 
-  const handleSaveOrder = (updatedOrder) => {
-    const updatedOrders = orders.map(o => o.id === updatedOrder.id ? updatedOrder : o);
-    setOrders(updatedOrders);
-    localStorage.setItem('orders', JSON.stringify(updatedOrders));
-    setSelectedOrder(updatedOrder);
-    addToast(`Order ${updatedOrder.id} updated successfully`);
-    addAdminNotification(currentUser?.name, `Updated order status to ${updatedOrder.status}`, updatedOrder.id, 'order');
+  const handleSaveOrder = async (updatedOrder) => {
+    try {
+      await fetch(`/api/orders/${updatedOrder.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedOrder)
+      });
+      
+      const updatedOrders = orders.map(o => o.id === updatedOrder.id ? updatedOrder : o);
+      setOrders(updatedOrders);
+      setSelectedOrder(updatedOrder);
+      addToast(`Order ${updatedOrder.id} updated successfully`);
+      addAdminNotification(currentUser?.name, `Updated order ${updatedOrder.id}`, updatedOrder.id, 'order');
+    } catch (err) {
+      addToast('Failed to update order');
+    }
+  };
+
+  const handleStatusChange = (newStatus) => {
+    if (selectedOrder) {
+      handleSaveOrder({ ...selectedOrder, status: newStatus });
+    }
   };
 
   const filtered = orders.filter(o => {

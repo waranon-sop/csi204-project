@@ -74,12 +74,8 @@ export default function Sidebar() {
         </div>
         <div>
           <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
-          <p className="text-xs text-sage-600 font-medium">
-            {user.role === 'admin' 
-              ? 'System Administrator' 
-              : user.role === 'staff' 
-                ? 'Quality Inspector' 
-                : 'Eco Hero Member'}
+          <p className="text-xs text-sage-600 font-medium capitalize">
+            {user.role === 'admin' ? 'Administrator' : user.role === 'staff' ? 'Staff' : 'Customer'}
           </p>
         </div>
       </div>

@@ -56,11 +56,13 @@ const mockActivityLog = [
 
 export default function AdminUsersManagement() {
   const { isAllowed } = useAdminGuard();
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activityLog, setActivityLog] = useState(mockActivityLog);
   const [activeTab, setActiveTab] = useState('staff');
-  const [editingUser, setEditingUser] = useState(null);
-  const [detailsUser, setDetailsUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null); // unified modal
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingUser, setEditingUser] = useState(null); // temp edit state inside unified modal
   const [userToSuspend, setUserToSuspend] = useState(null);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [activityFilter, setActivityFilter] = useState('all');
@@ -72,12 +74,18 @@ export default function AdminUsersManagement() {
   const { addToast } = useToast();
 
   useEffect(() => {
-    const localUsers = JSON.parse(localStorage.getItem('users')) || [];
-    if (localUsers.length > 0) {
-      setUsers(localUsers);
-    } else {
-      localStorage.setItem('users', JSON.stringify(mockUsers));
-    }
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        setUsers(data);
+      } catch (err) {
+        console.error('Failed to fetch users', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUsers();
 
     const localActivity = JSON.parse(localStorage.getItem('adminNotifications'));
     if (localActivity && localActivity.length > 0) {
@@ -87,21 +95,42 @@ export default function AdminUsersManagement() {
     }
   }, []);
 
-  const handleSaveUser = () => {
+  const openUserModal = (user, editMode = false) => {
+    setSelectedUser(user);
+    setEditingUser({ ...user });
+    setIsEditMode(editMode);
+  };
+
+  const closeUserModal = () => {
+    setSelectedUser(null);
+    setEditingUser(null);
+    setIsEditMode(false);
+  };
+
+  const handleSaveUser = async () => {
     // Prevent admin from changing their own role to non-admin
     if (editingUser.id === currentUser?.id && editingUser.role !== 'admin') {
       addToast('You cannot change your own admin role.');
-      setEditingUser(null);
       return;
     }
-    const updatedUsers = users.map(u => u.id === editingUser.id ? editingUser : u);
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    addToast('User role updated successfully');
-    setEditingUser(null);
+    
+    try {
+      await fetch(`/api/users/${editingUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingUser)
+      });
+      const updatedUsers = users.map(u => u.id === editingUser.id ? editingUser : u);
+      setUsers(updatedUsers);
+      addToast('User updated successfully');
+      setSelectedUser(editingUser);
+      setIsEditMode(false);
+    } catch (err) {
+      addToast('Failed to update user');
+    }
   };
 
-  const handleAddStaff = (e) => {
+  const handleAddStaff = async (e) => {
     e.preventDefault();
     if (!newStaff.name || !newStaff.email || !newStaff.password) return;
     const randomNum = Math.floor(Math.random() * 9000) + 1000;
@@ -113,61 +142,102 @@ export default function AdminUsersManagement() {
       orders: 0,
       avatar: null // Will show initial letter fallback
     };
-    const updatedUsers = [addedUser, ...users];
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    addToast('New team member added successfully');
-    addAdminNotification(currentUser?.name, 'Added a new team member', newStaff.name, 'user');
-    setIsAddStaffModalOpen(false);
-    setNewStaff({ name: '', email: '', password: '', role: 'staff' });
+    
+    try {
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addedUser)
+      });
+      const updatedUsers = [addedUser, ...users];
+      setUsers(updatedUsers);
+      addToast('New team member added successfully');
+      addAdminNotification(currentUser?.name, 'Added a new team member', newStaff.name, 'user');
+      setIsAddStaffModalOpen(false);
+      setNewStaff({ name: '', email: '', password: '', role: 'staff' });
+    } catch (err) {
+      addToast('Failed to add user');
+    }
   };
 
   const handleBanUser = (id) => {
     setUserToSuspend(id);
   };
 
-  const confirmSuspend = () => {
+  const confirmSuspend = async () => {
     if (userToSuspend) {
       const suspendedUser = users.find(u => u.id === userToSuspend);
-      const updatedUsers = users.map(u => u.id === userToSuspend ? { ...u, status: 'suspended' } : u);
-      setUsers(updatedUsers);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      const updatedUser = { ...suspendedUser, status: 'suspended' };
+      
+      try {
+        await fetch(`/api/users/${userToSuspend}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedUser)
+        });
+        
+        const updatedUsers = users.map(u => u.id === userToSuspend ? updatedUser : u);
+        setUsers(updatedUsers);
 
-      // Kick the user's active session immediately
-      const activeSession =
-        JSON.parse(sessionStorage.getItem('currentUser')) ||
-        JSON.parse(localStorage.getItem('currentUser'));
-      if (activeSession && activeSession.id === userToSuspend) {
-        localStorage.removeItem('currentUser');
-        sessionStorage.removeItem('currentUser');
+        // Kick the user's active session immediately
+        const activeSession =
+          JSON.parse(sessionStorage.getItem('currentUser')) ||
+          JSON.parse(localStorage.getItem('currentUser'));
+        if (activeSession && activeSession.id === userToSuspend) {
+          localStorage.removeItem('currentUser');
+          sessionStorage.removeItem('currentUser');
+        }
+
+        addToast('Account has been suspended.');
+        if (suspendedUser) addAdminNotification(currentUser?.name, 'Suspended user', suspendedUser.name, 'user');
+        closeUserModal();
+        setUserToSuspend(null);
+      } catch (err) {
+        addToast('Failed to suspend user');
       }
-
-      addToast('Account has been suspended.');
-      if (suspendedUser) addAdminNotification(currentUser?.name, 'Suspended user', suspendedUser.name, 'user');
-      setEditingUser(null);
-      setDetailsUser(null);
-      setUserToSuspend(null);
     }
   };
 
-  const handleUnsuspendUser = (id) => {
-    const updatedUsers = users.map(u => u.id === id ? { ...u, status: 'active' } : u);
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    addToast('Account has been activated.');
-    const user = users.find(u => u.id === id);
-    if (user) addAdminNotification(currentUser?.name, 'Activated user', user.name, 'user');
-    setEditingUser(null);
+  const handleUnsuspendUser = async (id) => {
+    const userToUpdate = users.find(u => u.id === id);
+    if (!userToUpdate) return;
+    
+    const updatedUser = { ...userToUpdate, status: 'active' };
+    
+    try {
+      await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      });
+      const updatedUsers = users.map(u => u.id === id ? updatedUser : u);
+      setUsers(updatedUsers);
+      addToast('Account has been activated.');
+      addAdminNotification(currentUser?.name, 'Activated user', userToUpdate.name, 'user');
+      setEditingUser(null);
+    } catch (err) {
+      addToast('Failed to activate account');
+    }
   };
 
-  const handleResetPassword = (user) => {
+  const handleResetPassword = async (user) => {
     const DEFAULT_PASSWORD = 'Rewear1234!';
-    const currentUsers = JSON.parse(localStorage.getItem('users')) || users;
-    const updatedUsers = currentUsers.map(u => u.id === user.id ? { ...u, password: DEFAULT_PASSWORD } : u);
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    addToast(`Password reset to "Rewear1234!" for ${user.name}`);
-    addAdminNotification(currentUser?.name, 'Reset password for', user.name, 'user');
+    const updatedUser = { ...user, password: DEFAULT_PASSWORD };
+    
+    try {
+      await fetch(`/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      });
+      
+      const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
+      setUsers(updatedUsers);
+      addToast('Password has been reset to default');
+      addAdminNotification(currentUser?.name, 'Reset password', user.name, 'user');
+    } catch (err) {
+      addToast('Failed to reset password');
+    }
   };
 
   const getRoleBadge = (role) => {
@@ -197,14 +267,25 @@ export default function AdminUsersManagement() {
   };
 
   const getStatusBadge = (user) => {
-    const isSuspended = user.status === 'suspended';
-    return isSuspended ? (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCF5F3] text-[#A84C43] border border-[#E8D1CE] uppercase tracking-wider">
-        <Ban className="w-2.5 h-2.5" /> Suspended
-      </span>
-    ) : (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EEF1EA] text-[#3A4A2D] border border-[#C9D1C1] uppercase tracking-wider">
-        <CheckCircle2 className="w-2.5 h-2.5" /> Active
+    if (user.status === 'suspended') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCF5F3] text-[#A84C43] border border-[#E8D1CE] uppercase tracking-wider">
+          <Ban className="w-2.5 h-2.5" /> Suspended
+        </span>
+      );
+    }
+    
+    if (user.online) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EEF1EA] text-[#3A4A2D] border border-[#C9D1C1] uppercase tracking-wider">
+          <CheckCircle2 className="w-2.5 h-2.5" /> Active
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-earth-100 text-earth-500 border border-earth-200 uppercase tracking-wider">
+        <Clock className="w-2.5 h-2.5" /> Offline
       </span>
     );
   };
@@ -320,9 +401,6 @@ export default function AdminUsersManagement() {
                 {activeTab === 'customers' && (
                   <th className="px-6 py-4 font-semibold">Join Date</th>
                 )}
-                {activeTab === 'staff' && (
-                  <th className="px-6 py-4 font-semibold text-center">Managed Orders</th>
-                )}
                 {activeTab === 'customers' && (
                   <th className="px-6 py-4 font-semibold text-center">Orders Placed</th>
                 )}
@@ -369,24 +447,15 @@ export default function AdminUsersManagement() {
                       {user.joinDate}
                     </td>
                   )}
-                  <td className="px-6 py-4 text-center text-earth-600">
-                    {activeTab === 'staff' && user.role === 'admin' ? '-' : user.orders}
-                  </td>
+                  {activeTab === 'customers' && (
+                    <td className="px-6 py-4 text-center text-earth-600">{user.orders}</td>
+                  )}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {((currentUser ? currentUser.email : 'admin@rewear.com') !== user.email) && (
-                        <button 
-                          className="p-1.5 text-earth-400 hover:text-earth-600 hover:bg-earth-50 rounded transition-colors" 
-                          title="Edit Role"
-                          onClick={(e) => { e.stopPropagation(); setEditingUser(user); }}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                      )}
                       <button 
                         className="p-1.5 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded transition-colors" 
                         title="View Details" 
-                        onClick={(e) => { e.stopPropagation(); setDetailsUser(user); }}
+                        onClick={(e) => { e.stopPropagation(); openUserModal(user, false); }}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
@@ -524,256 +593,189 @@ export default function AdminUsersManagement() {
         </div>
       )}
 
-      {/* Edit Role Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-earth-100 flex justify-between items-center bg-earth-50/50">
-              <h2 className="text-lg font-bold text-earth-800">Edit User Role</h2>
-              <button 
-                onClick={() => setEditingUser(null)}
-                className="text-earth-400 hover:text-earth-600 p-1.5 hover:bg-earth-100 rounded-full transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-earth-200 bg-earth-100 shrink-0 flex items-center justify-center">
-                  {editingUser.avatar && !editingUser.avatar.includes('unsplash.com') ? (
-                    <img 
-                      src={editingUser.avatar} 
-                      alt={editingUser.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-earth-600 font-bold text-lg uppercase">
-                      {editingUser.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-earth-800">{editingUser.name}</p>
-                  <p className="text-xs text-earth-500">{editingUser.email}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <label className="block text-sm font-semibold text-earth-700">Change Password</label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-earth-400" />
-                  <input
-                    type="text"
-                    value={editingUser.password || ''}
-                    onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
-                    placeholder="Type to set a new password..."
-                    className="w-full px-4 py-2 pl-9 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-earth-500/30 text-sm bg-earth-50 text-earth-800"
-                  />
-                </div>
-                <p className="text-[10px] text-earth-500">Admins can manually set passwords for staff here.</p>
-              </div>
-
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-earth-700">Assign Role</label>
-                <div className="space-y-2">
-                  <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${editingUser.role === 'admin' ? 'border-earth-500 bg-earth-50/50' : 'border-earth-200 hover:bg-earth-50'}`}>
-                    <input type="radio" name="role" className="text-earth-600 focus:ring-earth-500 w-4 h-4" checked={editingUser.role === 'admin'} onChange={() => setEditingUser({...editingUser, role: 'admin'})} />
-                    <div className="ml-3 flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4 text-earth-800" />
-                      <div>
-                        <p className="text-sm font-medium text-earth-800">Admin</p>
-                        <p className="text-xs text-earth-500">Full system access</p>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${editingUser.role === 'staff' ? 'border-earth-500 bg-earth-50/50' : 'border-earth-200 hover:bg-earth-50'}`}>
-                    <input type="radio" name="role" className="text-earth-600 focus:ring-earth-500 w-4 h-4" checked={editingUser.role === 'staff'} onChange={() => setEditingUser({...editingUser, role: 'staff'})} />
-                    <div className="ml-3 flex items-center gap-2">
-                      <Cpu className="w-4 h-4 text-earth-600" />
-                      <div>
-                        <p className="text-sm font-medium text-earth-800">Staff</p>
-                        <p className="text-xs text-earth-500">Can manage products & orders</p>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  {/* Customer role option removed as per user request */}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 border-t border-earth-100 bg-earth-50/50 flex justify-between items-center gap-3">
-              {editingUser.id !== currentUser?.id && (
-                editingUser.status === 'suspended' ? (
-                  <button 
-                    onClick={() => handleUnsuspendUser(editingUser.id)}
-                    className="px-4 py-2 text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Activate
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => handleBanUser(editingUser.id)}
-                    className="px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg font-medium transition-colors flex items-center gap-2"
-                  >
-                    <Ban className="w-4 h-4" />
-                    Suspend
-                  </button>
-                )
-              )}
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 text-sm text-earth-600 bg-white border border-earth-300 rounded-lg hover:bg-earth-50 font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleSaveUser}
-                  className="px-4 py-2 text-sm text-white bg-earth-600 rounded-lg hover:bg-earth-700 font-medium shadow-sm transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Details Modal */}
-      {detailsUser && (
+      {/* Unified User Details / Edit Modal */}
+      {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="p-5 border-b border-earth-100 flex justify-between items-center bg-earth-50/50">
-              <h2 className="text-lg font-bold text-earth-800">Staff Details</h2>
-              <button 
-                onClick={() => setDetailsUser(null)}
-                className="text-earth-400 hover:text-earth-600 p-1.5 hover:bg-earth-100 rounded-full transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto space-y-5">
-              {/* Section 1: Basic Info */}
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-earth-200 bg-earth-100 shrink-0 flex items-center justify-center">
-                  {detailsUser.avatar && !detailsUser.avatar.includes('unsplash.com') ? (
-                    <img 
-                      src={detailsUser.avatar} 
-                      alt={detailsUser.name}
-                      className="w-full h-full object-cover"
-                    />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-earth-200 bg-earth-100 flex items-center justify-center shrink-0">
+                  {selectedUser.avatar && !selectedUser.avatar.includes('unsplash.com') ? (
+                    <img src={selectedUser.avatar} alt={selectedUser.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-earth-600 font-bold text-2xl uppercase">
-                      {detailsUser.name.charAt(0)}
-                    </span>
+                    <span className="text-earth-600 font-bold uppercase">{selectedUser.name.charAt(0)}</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-earth-800 text-lg truncate">{detailsUser.name}</h3>
-                  <p className="text-sm text-earth-500 truncate">{detailsUser.email}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {getRoleBadge(detailsUser.role)}
-                    {getStatusBadge(detailsUser)}
-                  </div>
+                <div>
+                  <p className="font-bold text-earth-800 leading-none">{selectedUser.name}</p>
+                  <p className="text-xs text-earth-500 mt-0.5">{selectedUser.email}</p>
                 </div>
               </div>
+              <button onClick={closeUserModal} className="text-earth-400 hover:text-earth-600 p-1.5 hover:bg-earth-100 rounded-full transition-colors">✕</button>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
-                  <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Position</p>
-                  <p className="text-sm font-semibold text-earth-800 capitalize">{detailsUser.role}</p>
-                </div>
-                <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
-                  <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Added on</p>
-                  <p className="text-sm font-semibold text-earth-800">{detailsUser.joinDate || '—'}</p>
-                </div>
+            {/* Tab Bar (only for staff/admin that aren't self) */}
+            {(selectedUser.role === 'staff' || selectedUser.role === 'admin') && selectedUser.id !== currentUser?.id && (
+              <div className="flex border-b border-earth-200 bg-earth-50/50">
+                <button
+                  onClick={() => setIsEditMode(false)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
+                    !isEditMode ? 'border-[#3A4A2D] text-[#3A4A2D]' : 'border-transparent text-earth-400 hover:text-earth-600'
+                  }`}
+                >Details</button>
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
+                    isEditMode ? 'border-[#3A4A2D] text-[#3A4A2D]' : 'border-transparent text-earth-400 hover:text-earth-600'
+                  }`}
+                >Edit</button>
               </div>
+            )}
 
-              {/* Section 2: Contact Information (For all users) */}
-              <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
-                <h4 className="text-xs font-bold text-earth-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <User className="w-3.5 h-3.5" /> Contact Information
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-earth-400 text-xs mb-1">Email Address</p>
-                    <p className="font-semibold text-earth-700 truncate" title={detailsUser.email}>{detailsUser.email || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-earth-400 text-xs mb-1">Phone Number</p>
-                    <p className="font-semibold text-earth-700">{detailsUser.phone || '—'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Customer Details */}
-              {detailsUser.role === 'customer' && (
-                <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-earth-400 text-xs mb-1">Join Date</p>
-                      <p className="font-semibold text-earth-700">{detailsUser.joinDate}</p>
+            <div className="p-6 overflow-y-auto flex-1">
+              {!isEditMode ? (
+                /* ── VIEW MODE ── */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
+                      <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Role</p>
+                      <div>{getRoleBadge(selectedUser.role)}</div>
                     </div>
-                    <div>
-                      <p className="text-earth-400 text-xs mb-1">Total Orders</p>
-                      <p className="font-semibold text-earth-700">{detailsUser.orders} orders</p>
+                    <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
+                      <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Status</p>
+                      <div>{getStatusBadge(selectedUser)}</div>
+                    </div>
+                    <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
+                      <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Employee ID</p>
+                      <p className="text-sm font-semibold text-earth-800">{selectedUser.id}</p>
+                    </div>
+                    <div className="bg-earth-50 rounded-xl p-4 border border-earth-100">
+                      <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-1">Join Date</p>
+                      <p className="text-sm font-semibold text-earth-800">{selectedUser.joinDate || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
+                    <h4 className="text-xs font-bold text-earth-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <User className="w-3.5 h-3.5" /> Contact
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-earth-400 text-xs mb-1">Email</p>
+                        <p className="font-semibold text-earth-700 truncate">{selectedUser.email || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-earth-400 text-xs mb-1">Phone</p>
+                        <p className="font-semibold text-earth-700">{selectedUser.phone || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedUser.role === 'customer' && (
+                    <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-earth-400 text-xs mb-1">Join Date</p>
+                          <p className="font-semibold text-earth-700">{selectedUser.joinDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-earth-400 text-xs mb-1">Total Orders</p>
+                          <p className="font-semibold text-earth-700">{selectedUser.orders} orders</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons — staff/admin only, not self */}
+                  {(selectedUser.role === 'staff' || selectedUser.role === 'admin') && selectedUser.id !== currentUser?.id && (
+                    <div className="space-y-2 pt-1">
+                      <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-2">Account Management</p>
+                      {selectedUser.status !== 'suspended' && (
+                        <button
+                          onClick={() => { handleResetPassword(selectedUser); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-earth-700 bg-earth-50 border border-earth-200 rounded-xl hover:bg-earth-100 transition-colors"
+                        >
+                          <RefreshCcw className="w-4 h-4 text-earth-500" />
+                          Reset Password
+                          <span className="ml-auto text-xs text-earth-400">→ Rewear1234!</span>
+                        </button>
+                      )}
+                      {selectedUser.status !== 'suspended' ? (
+                        <button
+                          onClick={() => handleBanUser(selectedUser.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
+                        >
+                          <Ban className="w-4 h-4" /> Suspend Account
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { handleUnsuspendUser(selectedUser.id); setSelectedUser({...selectedUser, status: 'active'}); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors"
+                        >
+                          <CheckCircle2 className="w-4 h-4" /> Activate Account
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── EDIT MODE ── */
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-earth-700">Change Password</label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-earth-400" />
+                      <input
+                        type="text"
+                        value={editingUser?.password || ''}
+                        onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
+                        placeholder="Type to set a new password..."
+                        className="w-full px-4 py-2 pl-9 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-earth-500/30 text-sm bg-earth-50 text-earth-800"
+                      />
+                    </div>
+                    <p className="text-[10px] text-earth-500">Leave blank to keep the current password.</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-earth-700">Assign Role</label>
+                    <div className="space-y-2">
+                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${editingUser?.role === 'admin' ? 'border-earth-500 bg-earth-50/50' : 'border-earth-200 hover:bg-earth-50'}`}>
+                        <input type="radio" name="role" className="w-4 h-4" checked={editingUser?.role === 'admin'} onChange={() => setEditingUser({...editingUser, role: 'admin'})} />
+                        <div className="ml-3 flex items-center gap-2">
+                          <ShieldAlert className="w-4 h-4 text-earth-800" />
+                          <div>
+                            <p className="text-sm font-medium text-earth-800">Admin</p>
+                            <p className="text-xs text-earth-500">Full system access</p>
+                          </div>
+                        </div>
+                      </label>
+                      <label className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${editingUser?.role === 'staff' ? 'border-earth-500 bg-earth-50/50' : 'border-earth-200 hover:bg-earth-50'}`}>
+                        <input type="radio" name="role" className="w-4 h-4" checked={editingUser?.role === 'staff'} onChange={() => setEditingUser({...editingUser, role: 'staff'})} />
+                        <div className="ml-3 flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-earth-600" />
+                          <div>
+                            <p className="text-sm font-medium text-earth-800">Staff</p>
+                            <p className="text-xs text-earth-500">Can manage products & orders</p>
+                          </div>
+                        </div>
+                      </label>
                     </div>
                   </div>
                 </div>
               )}
-
-              {/* Section 3: Action Buttons (staff/admin only, not self) */}
-              {(detailsUser.role === 'staff' || detailsUser.role === 'admin') && detailsUser.id !== currentUser?.id && (
-                <div className="space-y-2 pt-1">
-                  <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-2">Account Management</p>
-                  <button
-                    onClick={() => { setEditingUser(detailsUser); setDetailsUser(null); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-earth-700 bg-earth-50 border border-earth-200 rounded-xl hover:bg-earth-100 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4 text-earth-500" />
-                    Edit Profile & Role
-                  </button>
-                  {detailsUser.status !== 'suspended' && (
-                    <button
-                      onClick={() => { handleResetPassword(detailsUser); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-earth-700 bg-earth-50 border border-earth-200 rounded-xl hover:bg-earth-100 transition-colors"
-                    >
-                      <RefreshCcw className="w-4 h-4 text-earth-500" />
-                      Reset Password
-                      <span className="ml-auto text-xs text-earth-400">→ Rewear1234!</span>
-                    </button>
-                  )}
-                  {detailsUser.status !== 'suspended' ? (
-                    <button
-                      onClick={() => handleBanUser(detailsUser.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors"
-                    >
-                      <Ban className="w-4 h-4" />
-                      Suspend Account
-                    </button>
-                  ) : (
-                    <div className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-earth-400 bg-earth-50 border border-earth-200 rounded-xl">
-                      <Ban className="w-4 h-4" />
-                      Account is already suspended
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            <div className="p-4 border-t border-earth-100 bg-earth-50/50 flex justify-end">
-              <button 
-                onClick={() => setDetailsUser(null)}
-                className="px-6 py-2 text-sm text-earth-600 bg-white border border-earth-300 rounded-lg hover:bg-earth-50 font-medium transition-colors shadow-sm"
-              >
-                Close
-              </button>
+            {/* Footer */}
+            <div className="p-4 border-t border-earth-100 bg-earth-50/50 flex justify-end gap-2">
+              {isEditMode ? (
+                <>
+                  <button onClick={() => setIsEditMode(false)} className="px-5 py-2 text-sm text-earth-600 bg-white border border-earth-300 rounded-lg hover:bg-earth-50 font-medium transition-colors">Cancel</button>
+                  <button onClick={handleSaveUser} className="px-5 py-2 text-sm text-white bg-earth-600 rounded-lg hover:bg-earth-700 font-medium shadow-sm transition-colors">Save Changes</button>
+                </>
+              ) : (
+                <button onClick={closeUserModal} className="px-6 py-2 text-sm text-earth-600 bg-white border border-earth-300 rounded-lg hover:bg-earth-50 font-medium transition-colors shadow-sm">Close</button>
+              )}
             </div>
           </div>
         </div>

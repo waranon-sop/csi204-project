@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [timeFilter, setTimeFilter] = useState('Month');
   const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
   const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342 });
 
@@ -27,67 +28,77 @@ export default function AdminDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [ordersRes, settingsRes] = await Promise.all([
+          fetch('/api/orders'),
+          fetch('/api/settings')
+        ]);
+        const localOrders = await ordersRes.json();
+        const storedSettings = await settingsRes.json();
 
-    const localOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    setOrders(localOrders);
-    const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
+        setOrders(localOrders);
+        const now = new Date();
+        const thisMonth = now.getMonth();
+        const thisYear = now.getFullYear();
 
-    // Calculate Eco Stats
-    const deliveredOrders = localOrders.filter(order => {
-      if (order.status !== 'Delivered') return false;
-      const d = new Date(order.createdAt || order.date);
-      if (timeFilter === 'Month') return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      if (timeFilter === 'Week') return d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000);
-      if (timeFilter === 'Day') return d.getDate() === now.getDate() && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-      return true;
-    });
+        // Calculate Eco Stats
+        const deliveredOrders = localOrders.filter(order => {
+          if (order.status !== 'Delivered') return false;
+          const d = new Date(order.createdAt || order.date);
+          if (timeFilter === 'Month') return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+          if (timeFilter === 'Week') return d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000);
+          if (timeFilter === 'Day') return d.getDate() === now.getDate() && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+          return true;
+        });
 
-    let base = deliveredOrders.reduce((sum, o) => sum + (o.items?.length || o.itemCount || 1), 0);
-    // Add dummy fallback numbers so the UI reacts satisfyingly to the toggle
-    if (base === 0) {
-      if (timeFilter === 'Month') base = 892;
-      if (timeFilter === 'Week') base = 214;
-      if (timeFilter === 'Day') base = 35;
-    }
+        let base = deliveredOrders.reduce((sum, o) => sum + (o.items?.length || o.itemCount || 1), 0);
+        // Add dummy fallback numbers so the UI reacts satisfyingly to the toggle
+        if (base === 0) {
+          if (timeFilter === 'Month') base = 892;
+          if (timeFilter === 'Week') base = 214;
+          if (timeFilter === 'Day') base = 35;
+        }
 
-    // Fetch Eco Multipliers from Settings
-    let ecoWater = 2700;
-    let ecoCO2 = 6.5;
-    let ecoWaste = 0.2;
-    try {
-      const storedSettings = JSON.parse(localStorage.getItem('storeSettings'));
-      if (storedSettings) {
-        ecoWater = storedSettings.ecoWater || ecoWater;
-        ecoCO2 = storedSettings.ecoCO2 || ecoCO2;
-        ecoWaste = storedSettings.ecoWaste || ecoWaste;
+        // Fetch Eco Multipliers from Settings
+        let ecoWater = 2700;
+        let ecoCO2 = 6.5;
+        let ecoWaste = 0.2;
+        
+        if (storedSettings && Object.keys(storedSettings).length > 0) {
+          ecoWater = storedSettings.ecoWater || ecoWater;
+          ecoCO2 = storedSettings.ecoCO2 || ecoCO2;
+          ecoWaste = storedSettings.ecoWaste || ecoWaste;
+        }
+
+        setEcoStats({
+          items: base,
+          water: (base * ecoWater).toLocaleString(),
+          co2: (base * ecoCO2).toFixed(1),
+          waste: (base * ecoWaste).toFixed(1),
+        });
+
+        const confirmedOrders = localOrders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
+        const totalRev = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+        
+        const active = localOrders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
+
+        let fallbackRev = 12480;
+        if (timeFilter === 'Week') fallbackRev = 3450;
+        if (timeFilter === 'Day') fallbackRev = 540;
+
+        setDashboardStats({
+          revenue: totalRev > 0 ? totalRev : fallbackRev,
+          activeOrders: active > 0 ? active : (timeFilter === 'Day' ? 12 : (timeFilter === 'Week' ? 85 : 342))
+        });
+      } catch (err) {
+        console.error('Failed to load dashboard data', err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      // Ignore parsing error
-    }
-
-    setEcoStats({
-      items: base,
-      water: (base * ecoWater).toLocaleString(),
-      co2: (base * ecoCO2).toFixed(1),
-      waste: (base * ecoWaste).toFixed(1),
-    });
-
-    const confirmedOrders = localOrders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
-    const totalRev = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-    
-    const active = localOrders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
-
-    let fallbackRev = 12480;
-    if (timeFilter === 'Week') fallbackRev = 3450;
-    if (timeFilter === 'Day') fallbackRev = 540;
-
-    setDashboardStats({
-      revenue: totalRev > 0 ? totalRev : fallbackRev,
-      activeOrders: active > 0 ? active : (timeFilter === 'Day' ? 12 : (timeFilter === 'Week' ? 85 : 342))
-    });
-
+    };
+    fetchData();
   }, [timeFilter]);
 
   const getChartData = () => {

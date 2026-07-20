@@ -1,0 +1,162 @@
+{
+  "users": [
+    {
+      "id": "ADM-0001",
+      "name": "ยิ่งยศ ผู้ดูแลระบบ",
+      "email": "admin@rewear.com",
+      "password": "admin",
+      "role": "admin",
+      "status": "active",
+      "joinDate": "2024-01-01"
+    },
+    {
+      "id": "STF-0001",
+      "name": "สมหญิง พนักงาน",
+      "email": "staff@rewear.com",
+      "password": "staff",
+      "role": "staff",
+      "status": "active",
+      "joinDate": "2024-01-02"
+    }
+  ],
+  "storeSettings": {
+    "storeName": "Re-Wear Store",
+    "contactEmail": "support@rewear.com",
+    "currency": "USD ($)",
+    "ecoWater": 2700,
+    "ecoCO2": 6.5,
+    "ecoWaste": 0.2,
+    "shippingFlatRate": 5,
+    "freeShippingThreshold": 50
+  },
+  "notifications": [],
+  "orders": [
+    {
+      "id": "#RW-92031",
+      "customer": "Sarah Jenkins",
+      "email": "sarah.j@example.com",
+      "phone": "+66 81 234 5678",
+      "address": "123 Green Avenue, Phaya Thai, Bangkok, 10400, Thailand",
+      "date": "Oct 24, 2023",
+      "total": 185,
+      "shipping": 15,
+      "status": "Pending",
+      "trackingNumber": "",
+      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
+      "slipImage": null,
+      "items": [
+        {
+          "name": "Vintage Heritage Trench",
+          "detail": "Size: M · Camel",
+          "price": 170,
+          "image": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100"
+        }
+      ]
+    },
+    {
+      "id": "#RW-92032",
+      "customer": "Michael Chen",
+      "email": "m.chen@example.com",
+      "phone": "+66 86 543 2100",
+      "address": "45 Sukhumvit Soi 11, Watthana, Bangkok, 10110, Thailand",
+      "date": "Oct 23, 2023",
+      "total": 72,
+      "shipping": 15,
+      "status": "Shipped",
+      "trackingNumber": "TH789456123TH",
+      "avatar": "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100",
+      "slipImage": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300",
+      "items": [
+        {
+          "name": "Raw Linen Resort Shirt",
+          "detail": "Size: L · Forest",
+          "price": 57,
+          "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=100"
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "RW-29402",
+      "name": "Vintage Linen Overcoat",
+      "brand": "Unknown",
+      "category": "Outerwear",
+      "price": 145,
+      "stock": 24,
+      "condition": "Very Good",
+      "defects": "No visible defects. Perfect condition.",
+      "size": "M",
+      "chest": "100 cm",
+      "length": "100 cm",
+      "status": "In Stock",
+      "hidden": false,
+      "image": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+      "id": "RW-18239",
+      "name": "Raw Silk Trousers",
+      "brand": "Silk & Co.",
+      "category": "Bottoms",
+      "price": 89,
+      "stock": 4,
+      "condition": "Good",
+      "defects": "Minor pull thread on right inner seam.",
+      "size": "L",
+      "chest": "-",
+      "length": "102 cm",
+      "status": "Low Stock",
+      "hidden": false,
+      "image": "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800"
+    }
+  ],
+  "promotions": [
+    {
+      "id": "PROMO-001",
+      "code": "WELCOME10",
+      "type": "percentage",
+      "value": 10,
+      "status": "Active",
+      "usageLimit": 100,
+      "used": 45,
+      "expiryDate": "2027-12-31"
+    },
+    {
+      "id": "PROMO-002",
+      "code": "SUMMER20",
+      "type": "fixed",
+      "value": 20,
+      "status": "Expired",
+      "usageLimit": 500,
+      "used": 500,
+      "expiryDate": "2026-06-30"
+    },
+    {
+      "id": "PROMO-003",
+      "code": "FREESHIP",
+      "type": "shipping",
+      "value": 15,
+      "status": "Active",
+      "usageLimit": 1000,
+      "used": 120,
+      "expiryDate": "2027-12-31"
+    }
+  ],
+  "productCategories": [
+    "Tops",
+    "Outerwear",
+    "Bottoms",
+    "Dresses",
+    "Accessories"
+  ],
+  "productSizes": [
+    "XXS",
+    "XS",
+    "S",
+    "M",
+    "L",
+    "XL",
+    "XXL",
+    "OS"
+  ]
+}
