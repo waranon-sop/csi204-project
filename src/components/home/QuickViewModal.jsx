@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { X, Check, ShoppingBag, Heart, Leaf, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import {
+  X,
+  Check,
+  ShoppingBag,
+  Heart,
+  Leaf,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function QuickViewModal({
   selectedProduct,
@@ -19,25 +28,35 @@ export default function QuickViewModal({
     let water = 2700;
     let co2 = 5;
 
-    const catUpper = (category || '').toUpperCase();
-    if (catUpper.includes('DENIM') || catUpper.includes('JEAN') || catUpper.includes('BOTTOM')) {
+    const catUpper = (category || "").toUpperCase();
+    if (
+      catUpper.includes("DENIM") ||
+      catUpper.includes("JEAN") ||
+      catUpper.includes("BOTTOM")
+    ) {
       water = 7500;
       co2 = 15;
-    } else if (catUpper.includes('JACKET') || catUpper.includes('HEAVYWEAR') || catUpper.includes('OUTERWEAR')) {
+    } else if (
+      catUpper.includes("JACKET") ||
+      catUpper.includes("HEAVYWEAR") ||
+      catUpper.includes("OUTERWEAR")
+    ) {
       water = 5000;
       co2 = 20;
     }
 
     const treeEquivalent = (co2 / 22).toFixed(2);
-    
+
     return {
       waterSaved: `${water.toLocaleString()} L`,
       carbonSaved: `${co2} kg CO₂e`,
-      treeEquivalent: `${treeEquivalent} Trees/yr`
+      treeEquivalent: `${treeEquivalent} Trees/yr`,
     };
   };
 
-  const ecoImpact = selectedProduct ? getEcoImpact(selectedProduct.category) : null;
+  const ecoImpact = selectedProduct
+    ? getEcoImpact(selectedProduct.category)
+    : null;
   const { addToCart, cartItems } = useCart();
   const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
@@ -52,13 +71,15 @@ export default function QuickViewModal({
 
   if (!selectedProduct) return null;
 
-  const images = selectedProduct ? [selectedProduct.image, selectedProduct.hoverImage].filter(Boolean) : [];
-  
+  const images = selectedProduct
+    ? [selectedProduct.image, selectedProduct.hoverImage].filter(Boolean)
+    : [];
+
   const nextImage = (e) => {
     e.stopPropagation();
     setCurrentImageIdx((prev) => (prev + 1) % images.length);
   };
-  
+
   const prevImage = (e) => {
     e.stopPropagation();
     setCurrentImageIdx((prev) => (prev - 1 + images.length) % images.length);
@@ -88,32 +109,35 @@ export default function QuickViewModal({
             {images.length > 1 && (
               <>
                 {/* Arrow Buttons */}
-                <button 
+                <button
                   onClick={prevImage}
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-[#2D2D2A] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white transition-all hover:scale-110 shadow-sm"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={nextImage}
                   className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 text-[#2D2D2A] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white transition-all hover:scale-110 shadow-sm"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
-                
+
                 {/* Dots */}
                 <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 z-10">
                   {images.map((_, idx) => (
-                    <button 
+                    <button
                       key={idx}
-                      onClick={(e) => { e.stopPropagation(); setCurrentImageIdx(idx); }}
-                      className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIdx ? 'bg-white w-3' : 'bg-white/50 hover:bg-white/80'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIdx(idx);
+                      }}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIdx ? "bg-white w-3" : "bg-white/50 hover:bg-white/80"}`}
                     />
                   ))}
                 </div>
               </>
             )}
-            
+
             {selectedProduct.badge && (
               <span className="absolute top-6 left-6 text-[9px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-full bg-white/95 text-[#2D2D2A] border border-[#EAE5DB]/65 z-10">
                 {selectedProduct.badge}
@@ -126,7 +150,13 @@ export default function QuickViewModal({
             <div className="space-y-4">
               <div>
                 <span className="text-[10px] font-semibold text-primary uppercase tracking-widest">
-                  {selectedProduct.brandCategory.split(' • ')[0]}
+                  {
+                    (
+                      selectedProduct.brandCategory ||
+                      selectedProduct.brand ||
+                      ""
+                    ).split(" • ")[0]
+                  }
                 </span>
                 <h2 className="font-serif text-2xl md:text-3xl font-semibold text-[#2D2D2A] mt-1">
                   {selectedProduct.title}
@@ -153,19 +183,25 @@ export default function QuickViewModal({
                   <span className="text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3" /> Condition
                   </span>
-                  <p className="text-xs font-bold text-[#2D2D2A]">{selectedProduct.condition}</p>
+                  <p className="text-xs font-bold text-[#2D2D2A]">
+                    {selectedProduct.condition}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest flex items-center gap-1">
                     Tag Size
                   </span>
-                  <p className="text-xs font-bold text-[#2D2D2A]">{selectedProduct.size}</p>
+                  <p className="text-xs font-bold text-[#2D2D2A]">
+                    {selectedProduct.size}
+                  </p>
                 </div>
                 <div className="space-y-1 col-span-2 pt-2 border-t border-[#EAE5DB]/50">
                   <span className="text-[9px] font-bold text-[#8B8B88] uppercase tracking-widest flex items-center gap-1">
                     Measurements
                   </span>
-                  <p className="text-xs font-medium text-[#2D2D2A]">{selectedProduct.measurements}</p>
+                  <p className="text-xs font-medium text-[#2D2D2A]">
+                    {selectedProduct.measurements}
+                  </p>
                 </div>
               </div>
             </div>
@@ -178,19 +214,25 @@ export default function QuickViewModal({
               </span>
               <div className="grid grid-cols-3 gap-2 pt-1.5 text-center">
                 <div className="space-y-0.5">
-                  <span className="block text-[8px] text-[#8B8B88] uppercase">CO₂ Offset</span>
+                  <span className="block text-[8px] text-[#8B8B88] uppercase">
+                    CO₂ Offset
+                  </span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
                     {ecoImpact?.carbonSaved}
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="block text-[8px] text-[#8B8B88] uppercase">Water Saved</span>
+                  <span className="block text-[8px] text-[#8B8B88] uppercase">
+                    Water Saved
+                  </span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
                     {ecoImpact?.waterSaved}
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="block text-[8px] text-[#8B8B88] uppercase">Tree Equiv.</span>
+                  <span className="block text-[8px] text-[#8B8B88] uppercase">
+                    Tree Equiv.
+                  </span>
                   <span className="block text-xs font-bold text-[#2D2D2A]">
                     {ecoImpact?.treeEquivalent}
                   </span>
@@ -202,28 +244,29 @@ export default function QuickViewModal({
             <div className="pt-2 flex flex-col gap-3">
               <div className="flex gap-3">
                 <button
-                  disabled={isAdded || selectedProduct.status === 'Reserved'}
+                  disabled={(currentUser && currentUser.role !== 'customer') || isAdded || selectedProduct.status === 'Reserved'}
                   onClick={() => {
                     if (!currentUser) {
                       openAuthModal('login');
                     } else if (currentUser.role === 'customer') {
-                      if (!isAdded && selectedProduct.status !== 'Reserved') {
+                      if (!isAdded && selectedProduct.status !== 'Reserved' && selectedProduct.status !== 'Out of Stock' && selectedProduct.stock !== 0) {
                         addToCart(selectedProduct);
                         setSelectedProduct(null);
                       }
                     }
-                    // admin/staff → ไม่ควรซื้อของได้ ไม่ทำอะไร
                   }}
                   className={`flex-1 py-3.5 px-6 rounded-xl text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                    selectedProduct.status === 'Reserved'
+                    (currentUser && currentUser.role !== 'customer')
+                      ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
+                      : selectedProduct.status === 'Reserved'
                       ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
                       : isAdded
                       ? 'bg-sage-600 text-white'
                       : 'btn-slide-primary bg-primary text-white shadow-md'
                   }`}
                 >
-                  {selectedProduct.status === 'Reserved' ? (
-                    'ติดจอง (Reserved)'
+                  {selectedProduct.status === "Reserved" ? (
+                    "ติดจอง (Reserved)"
                   ) : isAdded ? (
                     <>
                       <Check className="h-4 w-4" />
@@ -236,21 +279,23 @@ export default function QuickViewModal({
                     </>
                   )}
                 </button>
-                <button 
+                <button
                   onClick={() => setIsLiked(!isLiked)}
                   className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
-                    isLiked 
-                      ? 'border-clay-400 bg-clay-50 text-clay-600' 
-                      : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
+                    isLiked
+                      ? "border-clay-400 bg-clay-50 text-clay-600"
+                      : "border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]"
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : ''}`} />
+                  <Heart
+                    className={`h-4 w-4 ${isLiked ? "fill-current text-clay-600" : ""}`}
+                  />
                 </button>
               </div>
-              
+
               {/* View Full Details Link */}
               <div className="text-center mt-2">
-                <Link 
+                <Link
                   href={`/product/${selectedProduct.id}`}
                   onClick={() => setSelectedProduct(null)}
                   className="text-[11px] text-[#5C5C5A] hover:text-[#2D2D2A] underline underline-offset-4 decoration-[#EAE5DB] hover:decoration-[#2D2D2A] transition-colors"
@@ -271,4 +316,3 @@ export default function QuickViewModal({
     </div>
   );
 }
-

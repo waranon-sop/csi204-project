@@ -1,7 +1,6 @@
 # Re-wear - แพลตฟอร์มส่งต่อเสื้อผ้ามือสอง 
 
 [![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&style=flat-square)](https://nextjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=flat-square)](https://nodejs.org/)
 [![Status](https://img.shields.io/badge/Status-Development-blue?style=flat-square)](#)
 
 > ️ **Circular Fashion:** โครงการนี้จัดทำขึ้นเพื่อประกอบการเรียนวิชา **CSI204 ดิจิทัลแพลตฟอร์มสำหรับพัฒนาซอฟต์แวร์** โดยเป็นระบบ e-Commerce แพลตฟอร์มสำหรับการส่งต่อเสื้อผ้ามือสอง
@@ -31,7 +30,6 @@
 | ชื่อโครงการ | Re-wear (แพลตฟอร์มส่งต่อเสื้อผ้ามือสอง) |
 | ผู้จัดทำ | 1. นางสาวพิมพ์มาดา คงดี / 67154952<br>2. นายวรานนท์ โสปรก / 67155008<br>3. นายณัฐพงศ์ หาญชัยภา / 67152565 |
 | วิชา | CSI204 Digital Platform for Software Development |
-| อาจารย์ผู้สอน | Mr. Thinnaphat Borirak |
 | วันที่จัดทำ | 4 กรกฎาคม 2026 |
 
 ---
@@ -100,7 +98,10 @@
 | Frontend | **Next.js 15** (App Router + React) |
 | Styling | Tailwind CSS v3 (Earth Tone Style Guide Mapped) |
 | Icons | Lucide React |
+| Charts | Recharts (Bar Chart บน Admin Dashboard) |
 | Image Optimization | next/image (Automatic WebP + Lazy Load) |
+| State Management | React Context API (Auth, Cart, Toast) |
+| Storage | localStorage / sessionStorage (Mock Database) |
 | Version Control | Git + GitHub |
 | เครื่องมือช่วยพัฒนา | Figma, Draw.io / Lucidchart |
 
@@ -120,10 +121,25 @@ re-wear/
 │ │ ├── profile/ # หน้าตั้งค่าโปรไฟล์
 │ │ ├── payment/ # หน้าช่องทางชำระเงิน
 │ │ ├── eco-impact/ # หน้าแดชบอร์ดรักษ์โลก
-│ │ └── layout.jsx # Layout หลัก (Navbar + Footer ครอบทุกหน้า)
-│ ├── components/ # คอมโพเนนต์ที่ใช้ซ้ำ (Navbar, Footer, Sidebar, CartDrawer)
-│ ├── context/ # Global State (CartContext, UserContext)
+│ │ ├── layout.jsx # Layout หลัก (Navbar + Footer ครอบทุกหน้า)
+│ │ └── admin/ # Admin Panel (ต้อง Login ก่อน)
+│ │ ├── layout.jsx # Admin Layout (Sidebar + Topbar)
+│ │ ├── page.jsx # Dashboard (Admin Only)
+│ │ ├── inventory/ # จัดการสินค้าคงคลัง
+│ │ ├── orders/ # จัดการคำสั่งซื้อ
+│ │ ├── promotions/ # จัดการโปรโมชัน/โค้ดส่วนลด
+│ │ ├── users/ # จัดการผู้ใช้งาน (Admin Only)
+│ │ └── settings/ # ตั้งค่าร้านค้า (Admin Only)
+│ ├── components/ # คอมโพเนนต์ที่ใช้ซ้ำ
+│ │ ├── Navbar.jsx, Footer.jsx, CartDrawer.jsx, AuthModal.jsx
+│ │ ├── admin/ # AdminSidebar.jsx, AdminTopbar.jsx
+│ │ └── ui/ # ToastProvider.jsx
+│ ├── context/ # Global State (AuthContext, CartContext)
+│ ├── hooks/
+│ │ └── useAdminGuard.js # Route Protection (Admin-only pages)
 │ ├── data/ # ข้อมูล Mock (products.js)
+│ ├── utils/
+│ │ └── notifications.js # Helper บันทึก Admin Activity Log
 │ └── styles/ # ไฟล์ CSS หลัก
 ├── docs/ # เอกสารวิเคราะห์และออกแบบระบบ
 ├── next.config.mjs # ตั้งค่า Next.js (Image Optimization)
@@ -151,11 +167,14 @@ re-wear/
 
 | บทบาท | Email | Password | สิทธิ์การเข้าถึง |
 |---|---|---|---|
-| **ผู้ดูแลระบบ (Admin)** | `admin` | `admin` | เข้าได้ทุกหน้า (Dashboard, Inventory, Orders, Users, Settings) |
-| **พนักงาน (Staff)** | `staff` | `staff` | เข้าได้เฉพาะ Inventory และ Orders เท่านั้น |
-| **ลูกค้า (Customer)** | ลงทะเบียนผ่าน `/register` | - | เข้าถึงหน้าร้านค้า ตะกร้าสินค้า และประวัติคำสั่งซื้อ |
+| **ผู้ดูแลระบบ (Admin)** | `admin` | `admin` | ทุกหน้า: Dashboard, Inventory, Orders, Promotions, Users, Settings |
+| **พนักงาน (Staff)** | `staff` | `staff` | เฉพาะ: Inventory, Orders, Promotions (ไม่มีสิทธิ์ Dashboard, Users, Settings) |
+| **ลูกค้า (Customer)** | ลงทะเบียนผ่านหน้าแรก | - | หน้าร้านค้า, ตะกร้า, ประวัติออเดอร์, Eco-Impact, Wardrobe |
 
-> **หมายเหตุ:** บัญชี `admin` และ `staff` จะถูกสร้างอัตโนมัติเมื่อเปิดใช้งานระบบครั้งแรก
+> **หมายเหตุ:**
+> - บัญชี `admin` และ `staff` จะถูกสร้างอัตโนมัติเมื่อเปิดใช้งานระบบครั้งแรก
+> - ข้อมูลทั้งหมดจัดเก็บใน **localStorage** ของบราวเซอร์ (Mock Database)
+> - Staff ที่พยายามเข้าหน้า Admin-Only ผ่าน URL ตรงๆ จะถูก **Redirect อัตโนมัติ** พร้อมแจ้งเตือน
 
 ---
 

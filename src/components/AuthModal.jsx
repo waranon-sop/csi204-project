@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Eye, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
 
 export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   // Login State
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginKeepSignedIn, setLoginKeepSignedIn] = useState(false);
+  const [loginKeepSignedIn, setLoginKeepSignedIn] = useState(true);
   
   // Register State
   const [firstName, setFirstName] = useState('');
@@ -19,7 +20,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [phone, setPhone] = useState('');
-  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [terms, setTerms] = useState(false);
   
   const [error, setError] = useState('');
@@ -32,6 +33,47 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
       setError('');
     }
   }, [isOpen, initialView]);
+
+  const switchView = (newView) => {
+    setView(newView);
+    setError('');
+  };
+
+  const handleGoogleCustomLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Fetch user info using the access token
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        const userInfo = await res.json();
+        
+        const result = loginWithGoogle({
+          email: userInfo.email,
+          name: userInfo.name || 'Google User',
+          picture: userInfo.picture
+        });
+
+        if (result.success) {
+          onClose();
+          if (result.user?.role === 'admin' || result.user?.role === 'staff') {
+            router.push('/admin');
+          }
+        } else if (result.action === 'register') {
+          // Pre-fill and switch to register
+          setFirstName(userInfo.given_name || userInfo.name?.split(' ')[0] || '');
+          setLastName(userInfo.family_name || userInfo.name?.split(' ').slice(1).join(' ') || '');
+          setRegEmail(userInfo.email);
+          switchView('register');
+        }
+      } catch (err) {
+        setError('Error fetching Google user info');
+      }
+    },
+    onError: () => {
+      setError('Google Login Failed');
+    }
+  });
 
   if (!isOpen) return null;
 
@@ -55,6 +97,8 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
       onClose();
       if (result.user?.role === 'admin' || result.user?.role === 'staff') {
         router.push('/admin');
+      } else {
+        router.push('/');
       }
     } else {
       setError(result.error);
@@ -90,10 +134,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     }
   };
 
-  const switchView = (newView) => {
-    setView(newView);
-    setError('');
-  };
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
@@ -114,31 +155,6 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                 {error}
               </div>
             )}
-
-            <button
-              onClick={() => {
-                loginWithGoogle();
-                onClose();
-              }}
-              className="w-full py-4 mb-6 bg-white border border-[#EAE5DB] text-[#2D2D2A] font-bold tracking-widest uppercase hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-3"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
-                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-              </svg>
-              Continue with Google
-            </button>
-
-            <div className="relative flex items-center justify-center mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#EAE5DB]"></div>
-              </div>
-              <div className="relative bg-white px-4 text-xs font-bold text-[#8B8B88] tracking-widest uppercase">
-                Or sign in with email
-              </div>
-            </div>
 
             <form onSubmit={handleLoginSubmit} className="space-y-6">
               <div>
@@ -175,6 +191,29 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
               >
                 Sign In
               </button>
+
+              <div className="relative flex items-center justify-center my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#EAE5DB]"></div>
+                </div>
+                <div className="relative bg-white px-4 text-xs font-bold text-[#8B8B88] tracking-widest uppercase">
+                  OR
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleGoogleCustomLogin()}
+                className="w-full py-4 bg-white border border-[#EAE5DB] text-[#2D2D2A] font-bold tracking-widest uppercase hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-3 mb-4"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
+                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Continue with Google
+              </button>
               
               <button
                 type="button"
@@ -204,31 +243,6 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                 {error}
               </div>
             )}
-
-            <button
-              onClick={() => {
-                loginWithGoogle();
-                onClose();
-              }}
-              className="w-full py-4 mb-6 bg-white border border-[#EAE5DB] text-[#2D2D2A] font-bold tracking-widest uppercase hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-3"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
-                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-              </svg>
-              Continue with Google
-            </button>
-
-            <div className="relative flex items-center justify-center mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#EAE5DB]"></div>
-              </div>
-              <div className="relative bg-white px-4 text-xs font-bold text-[#8B8B88] tracking-widest uppercase">
-                Or register with email
-              </div>
-            </div>
 
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -323,6 +337,29 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
                 className="w-full py-4 mt-6 bg-[#5F6B4E] hover:bg-[#4A543C] text-white font-bold tracking-widest uppercase transition-colors"
               >
                 Submit
+              </button>
+
+              <div className="relative flex items-center justify-center my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#EAE5DB]"></div>
+                </div>
+                <div className="relative bg-white px-4 text-xs font-bold text-[#8B8B88] tracking-widest uppercase">
+                  OR
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleGoogleCustomLogin()}
+                className="w-full py-4 bg-white border border-[#EAE5DB] text-[#2D2D2A] font-bold tracking-widest uppercase hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-3 mb-4"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
+                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Continue with Google
               </button>
               
               <button

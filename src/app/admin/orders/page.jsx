@@ -55,6 +55,9 @@ export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingInput, setTrackingInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const { addToast } = useToast();
   const { currentUser } = useAuth();
 
@@ -76,13 +79,58 @@ export default function AdminOrders() {
     addAdminNotification(currentUser?.name, `Updated order status to ${updatedOrder.status}`, updatedOrder.id, 'order');
   };
 
-  const filtered = statusFilter === 'All' ? orders : orders.filter(o => o.status === statusFilter);
+  const filtered = orders.filter(o => {
+    const searchLower = (searchQuery || '').toLowerCase();
+    const matchesSearch = o.id.toLowerCase().includes(searchLower) || 
+                          o.customer.toLowerCase().includes(searchLower);
+    const matchesStatus = statusFilter === 'All' || o.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedOrders = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
   const pending = orders.filter(o => o.status === 'Pending').length;
   const inTransit = orders.filter(o => o.status === 'Shipped').length;
   const weeklyRevenue = orders.reduce((a, o) => a + ((o.status === 'Shipped' || o.status === 'Delivered') ? o.total : 0), 0);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <>
+      <div className="space-y-6 animate-fade-in">
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-xl bg-[#FAF0EA] flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#C57B57]" />
+              </div>
+            <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Total Pending</p>
+          </div>
+          <p className="text-2xl font-bold text-earth-800">{pending} Orders</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-[#EEF1EA] flex items-center justify-center">
+              <Truck className="w-4 h-4 text-[#3A4A2D]" />
+            </div>
+            <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">In Transit Today</p>
+          </div>
+          <p className="text-2xl font-bold text-earth-800">{inTransit} Orders</p>
+        </div>
+        <div className="bg-[#3A4A2D] rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Weekly Revenue</p>
+          </div>
+          <p className="text-2xl font-bold text-white">THB {weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+        </div>
+      </div>
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl border border-earth-200/60 overflow-hidden">
@@ -93,6 +141,8 @@ export default function AdminOrders() {
             <input
               type="text"
               placeholder="Search orders..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800 placeholder-earth-400"
             />
           </div>
@@ -120,10 +170,10 @@ export default function AdminOrders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-earth-100 text-sm">
-              {filtered.map((order) => {
+              {paginatedOrders.map((order) => {
                 const firstItem = order.items[0];
                 return (
-                  <tr key={order.id} className="hover:bg-[#F9F7F4] transition-colors group cursor-pointer" onClick={() => { setSelectedOrder(order); setTrackingInput(order.trackingNumber || ''); }}>
+                  <tr key={order.id} className="hover:bg-[#F9F7F4] transition-colors group">
                     <td className="px-6 py-5">
                       <p className="font-semibold text-earth-800">{order.id}</p>
                     </td>
@@ -139,7 +189,7 @@ export default function AdminOrders() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-earth-500 text-sm">{order.date}</td>
-                    <td className="px-6 py-5 font-semibold text-earth-800">${order.total}</td>
+                    <td className="px-6 py-5 font-semibold text-earth-800">THB {order.total}</td>
                     <td className="px-6 py-5">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${STATUS_CONFIG[order.status]?.color}`}>
                         {order.status}
@@ -147,7 +197,7 @@ export default function AdminOrders() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <button
-                        className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-lg transition-colors"
                         onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); setTrackingInput(order.trackingNumber || ''); }}
                         title="View Details"
                       >
@@ -157,7 +207,7 @@ export default function AdminOrders() {
                   </tr>
                 );
               })}
-              {filtered.length === 0 && (
+              {paginatedOrders.length === 0 && (
                 <tr><td colSpan={6} className="px-6 py-10 text-center text-earth-400">No orders found.</td></tr>
               )}
             </tbody>
@@ -166,50 +216,36 @@ export default function AdminOrders() {
 
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-earth-100 flex items-center justify-between text-sm text-earth-500">
-          <p>Showing {filtered.length > 0 ? 1 : 0} to {filtered.length} of {orders.length} orders</p>
+          <p>Showing {filtered.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} orders</p>
           <div className="flex gap-1">
-            <button className="w-8 h-8 border border-earth-200 rounded-lg hover:bg-earth-50 disabled:opacity-40" disabled>‹</button>
-            <button className="w-8 h-8 bg-[#3A4A2D] text-white rounded-lg font-medium text-sm">1</button>
-            <button className="w-8 h-8 border border-earth-200 rounded-lg hover:bg-earth-50">2</button>
-            <button className="w-8 h-8 border border-earth-200 rounded-lg hover:bg-earth-50">3</button>
-            <button className="w-8 h-8 border border-earth-200 rounded-lg hover:bg-earth-50">›</button>
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center border border-earth-200 rounded-lg hover:bg-earth-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button 
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 rounded-lg text-sm font-medium ${currentPage === page ? 'bg-[#3A4A2D] text-white' : 'border border-earth-200 hover:bg-earth-50'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="w-8 h-8 flex items-center justify-center border border-earth-200 rounded-lg hover:bg-earth-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
           </div>
         </div>
+      </div>
       </div>
 
-      {/* Bottom Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#FAF0EA] flex items-center justify-center">
-              <Package className="w-4 h-4 text-[#C57B57]" />
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Total Pending</p>
-              <span className="text-[10px] bg-[#C57B57] text-white px-2 py-0.5 rounded-full font-bold">+12%</span>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-earth-800">{pending} Orders</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-earth-200/60 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-[#EEF1EA] flex items-center justify-center">
-              <Truck className="w-4 h-4 text-[#3A4A2D]" />
-            </div>
-            <p className="text-xs font-semibold text-earth-400 uppercase tracking-wider">In Transit Today</p>
-          </div>
-          <p className="text-2xl font-bold text-earth-800">{inTransit} Orders</p>
-        </div>
-        <div className="bg-[#3A4A2D] rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-              <CheckCircle2 className="w-4 h-4 text-white" />
-            </div>
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Weekly Revenue</p>
-          </div>
-          <p className="text-2xl font-bold text-white">${weeklyRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-        </div>
-      </div>
 
       {/* Order Detail Modal */}
       {selectedOrder && (
@@ -232,14 +268,38 @@ export default function AdminOrders() {
                 {/* Left: Items + Status + Tracking */}
                 <div className="col-span-2 space-y-5">
 
-                  {/* Update Status */}
+                  {/* Update Status & Tracking */}
                   <div className="bg-[#F9F7F4] border border-earth-200 rounded-2xl p-4">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-earth-400 mb-3">Update Status</h3>
-                    <div className="flex gap-2">
-                      <select value={selectedOrder.status} onChange={(e) => setSelectedOrder({...selectedOrder, status: e.target.value})} className="flex-1 px-3 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium">
+                    <div className="flex flex-col gap-3">
+                      <select value={selectedOrder.status} onChange={(e) => setSelectedOrder({...selectedOrder, status: e.target.value})} className="w-full px-3 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium">
                         {Object.keys(STATUS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button onClick={() => handleSaveOrder(selectedOrder)} className="px-5 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Save</button>
+                      
+                      {selectedOrder.status === 'Shipped' && (
+                        <div className="bg-[#EEF1EA] border border-[#C2CBB8] rounded-xl p-3 flex flex-col gap-2">
+                          <label className="text-xs font-bold uppercase tracking-widest text-[#3A4A2D] flex items-center gap-2">
+                            <Truck className="w-3.5 h-3.5" /> Tracking Number
+                          </label>
+                          <input
+                            type="text"
+                            value={trackingInput}
+                            onChange={(e) => setTrackingInput(e.target.value)}
+                            placeholder="e.g. TH789456123TH"
+                            className="w-full px-3 py-2 border border-[#A4B296] rounded-lg text-sm text-earth-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30"
+                          />
+                        </div>
+                      )}
+
+                      <button 
+                        onClick={() => {
+                          const updated = { ...selectedOrder, trackingNumber: selectedOrder.status === 'Shipped' ? trackingInput : selectedOrder.trackingNumber };
+                          handleSaveOrder(updated);
+                        }} 
+                        className="w-full px-5 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors mt-1"
+                      >
+                        Save Changes
+                      </button>
                     </div>
                   </div>
 
@@ -257,41 +317,13 @@ export default function AdminOrders() {
                               <p className="font-semibold text-earth-800 text-sm">{item.name}</p>
                               <p className="text-xs text-earth-400 mt-0.5">{item.detail}</p>
                             </div>
-                            <p className="font-bold text-earth-800 text-sm">${item.price}</p>
+                            <p className="font-bold text-earth-800 text-sm">THB {item.price}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Tracking */}
-                  <div className="bg-[#EEF1EA] border border-[#C2CBB8] rounded-2xl p-4">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#3A4A2D] mb-1 flex items-center gap-2">
-                      <Truck className="w-4 h-4" /> Tracking Number
-                    </h3>
-                    <p className="text-xs text-[#5F6B4E] mb-3">Enter and click "Update to Shipped" once parcel is sent.</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={trackingInput}
-                        onChange={(e) => setTrackingInput(e.target.value)}
-                        placeholder="e.g. TH789456123TH"
-                        className="flex-1 px-3 py-2.5 border border-[#A4B296] rounded-xl text-sm text-earth-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30"
-                      />
-                      <button 
-                        onClick={() => {
-                          const updated = { ...selectedOrder, status: 'Shipped', trackingNumber: trackingInput };
-                          handleSaveOrder(updated);
-                        }}
-                        className="px-4 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors whitespace-nowrap"
-                      >
-                        Update to Shipped
-                      </button>
-                    </div>
-                    {selectedOrder.trackingNumber && (
-                      <p className="text-xs text-[#5F6B4E] mt-2">Current: <span className="font-mono font-bold">{selectedOrder.trackingNumber}</span></p>
-                    )}
-                  </div>
                 </div>
 
                 {/* Right: Customer + Slip + Summary */}
@@ -337,15 +369,15 @@ export default function AdminOrders() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between text-earth-600">
                         <span>Subtotal</span>
-                        <span>${(selectedOrder.total - selectedOrder.shipping)}</span>
+                        <span>THB {(selectedOrder.total - selectedOrder.shipping)}</span>
                       </div>
                       <div className="flex justify-between text-earth-600">
                         <span>Shipping</span>
-                        <span>${selectedOrder.shipping}</span>
+                        <span>THB {selectedOrder.shipping}</span>
                       </div>
                       <div className="flex justify-between font-bold text-earth-800 pt-2 border-t border-earth-200">
                         <span>Total</span>
-                        <span>${selectedOrder.total}</span>
+                        <span>THB {selectedOrder.total}</span>
                       </div>
                     </div>
                   </div>
@@ -359,6 +391,6 @@ export default function AdminOrders() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

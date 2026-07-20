@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, updateProductStatus } from '../../utils/localStorageHelper';
+import { createOrder, processOrderInventory } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
@@ -31,6 +31,45 @@ export default function CheckoutPage() {
 
   // Promo Code State
   const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoSuccess, setPromoSuccess] = useState('');
+
+  const handleApplyPromo = () => {
+    setPromoError('');
+    setPromoSuccess('');
+    if (!promoCode.trim()) return;
+
+    const promos = JSON.parse(localStorage.getItem('promotions')) || [];
+    const promo = promos.find(p => p.code === promoCode.toUpperCase());
+
+    if (!promo) {
+      setPromoError('Invalid discount code.');
+      return;
+    }
+    if (promo.status !== 'Active') {
+      setPromoError('This code is no longer active.');
+      return;
+    }
+    if (promo.used >= promo.usageLimit) {
+      setPromoError('This code has reached its usage limit.');
+      return;
+    }
+    if (promo.expiryDate && new Date(promo.expiryDate) < new Date()) {
+      setPromoError('This code has expired.');
+      return;
+    }
+
+    setAppliedPromo(promo);
+    setPromoSuccess(`Applied: ${promo.code}`);
+    setPromoCode('');
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoSuccess('');
+    setPromoError('');
+  };
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
@@ -45,18 +84,42 @@ export default function CheckoutPage() {
 
     const orderData = {
       userId: currentUser?.id,
-      userName: `${deliveryForm.firstName} ${deliveryForm.lastName}`.trim() || currentUser?.name || 'Guest',
-      total: cartTotal,
+      customer: `${deliveryForm.firstName} ${deliveryForm.lastName}`.trim() || currentUser?.name || 'Guest',
+      email: currentUser?.email || 'guest@example.com',
+      phone: deliveryForm.phone || '+66 81 234 5678',
+      address: `${deliveryForm.address1} ${deliveryForm.address2 ? deliveryForm.address2 + ' ' : ''}${deliveryForm.subDistrict}, ${deliveryForm.district}, ${deliveryForm.province} ${deliveryForm.postcode}`,
+      total: finalTotal, 
+      subTotal: subTotal,
+      shipping: shipping,
+      discount: discountAmount,
+      promoCode: appliedPromo?.code || null,
       itemsCount: cartItems.length,
       carbonSaved: carbonStr,
-      itemSummary: cartItems.map(i => i.title).join(', '),
-      items: cartItems.map(i => ({ id: i.id, title: i.title, price: i.price, image: i.image })),
-      trackingNumber: null,
-      shippingAddress: `${deliveryForm.address1} ${deliveryForm.province} ${deliveryForm.postcode}`
+      itemSummary: cartItems.map(i => i.title || i.name).join(', '),
+      items: cartItems.map(i => ({ 
+        id: i.id, 
+        name: i.title || i.name, 
+        detail: i.size ? `Size: ${i.size}` : i.brandCategory || 'Unique Item',
+        price: i.price, 
+        image: i.image || i.hoverImage 
+      })),
+      trackingNumber: '',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100', // Default avatar
+      slipImage: null
     };
 
     createOrder(orderData);
-    cartItems.forEach(item => updateProductStatus(item.id, 'Sold Out'));
+    processOrderInventory(cartItems);
+    
+    // Increment promo usage if applied
+    if (appliedPromo) {
+      const promos = JSON.parse(localStorage.getItem('promotions')) || [];
+      const updatedPromos = promos.map(p => 
+        p.id === appliedPromo.id ? { ...p, used: p.used + 1 } : p
+      );
+      localStorage.setItem('promotions', JSON.stringify(updatedPromos));
+    }
+    
     clearCart();
 
     setTimeout(() => {
@@ -76,7 +139,21 @@ export default function CheckoutPage() {
     );
   }
 
-  const isFreeShipping = subTotal >= 500;
+  const isFreeShipping = subTotal >= 500 || (appliedPromo && appliedPromo.type === 'shipping');
+  let finalShipping = isFreeShipping ? 0 : shipping;
+  let finalShippingDiscount = isFreeShipping ? shipping : 0;
+  
+  let discountAmount = 0;
+  if (appliedPromo) {
+    if (appliedPromo.type === 'percentage') {
+      discountAmount = Math.floor(subTotal * (appliedPromo.value / 100));
+    } else if (appliedPromo.type === 'fixed') {
+      discountAmount = appliedPromo.value;
+    }
+  }
+  
+  // ensure total doesn't go below 0
+  const finalTotal = Math.max(0, subTotal + finalShipping - discountAmount);
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] py-8 font-sans">
@@ -306,30 +383,62 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>การจัดส่ง</span>
-                  <span className="font-medium text-[#2D2D2A]">THB {shipping}.00</span>
+                  <span className="font-medium text-[#2D2D2A]">THB {finalShipping}.00</span>
                 </div>
-                {shippingDiscount > 0 && (
+                {finalShippingDiscount > 0 && (
                   <div className="flex justify-between text-[#C57B57]">
                     <span>ส่วนลดค่าส่ง</span>
-                    <span className="font-bold">-THB {shippingDiscount}.00</span>
+                    <span className="font-bold">-THB {finalShippingDiscount}.00</span>
+                  </div>
+                )}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-[#C57B57]">
+                    <span>ส่วนลด (Promo)</span>
+                    <span className="font-bold">-THB {discountAmount}.00</span>
                   </div>
                 )}
                 <div className="flex justify-between pt-2 border-t border-[#EAE5DB] font-bold text-sm text-[#2D2D2A]">
                   <span>รวมยอดที่ต้องชำระ</span>
-                  <span>THB {cartTotal}.00</span>
+                  <span>THB {finalTotal}.00</span>
                 </div>
               </div>
 
               {/* Promo Code section */}
               <div className="border-t border-[#EAE5DB] pt-4 mb-4">
-                <div className="flex justify-between items-center text-xs font-bold text-[#2D2D2A] cursor-pointer hover:text-[#C57B57]">
+                <div className="flex justify-between items-center text-xs font-bold text-[#2D2D2A]">
                   <span>เพิ่มโค้ดส่วนลด</span>
-                  <ChevronRight className="w-4 h-4" />
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <input type="text" placeholder="โค้ดโปรโมชั่น" className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none" value={promoCode} onChange={e => setPromoCode(e.target.value)} />
-                  <button className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold">ส่ง</button>
-                </div>
+                
+                {appliedPromo ? (
+                  <div className="mt-3 p-3 bg-[#DEF7EC] border border-[#03543F]/20 rounded flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-bold text-[#03543F]">{appliedPromo.code}</span>
+                      <p className="text-[10px] text-[#03543F]/70">
+                        {appliedPromo.type === 'percentage' && `${appliedPromo.value}% Off`}
+                        {appliedPromo.type === 'fixed' && `THB ${appliedPromo.value} Off`}
+                        {appliedPromo.type === 'shipping' && `Free Shipping`}
+                      </p>
+                    </div>
+                    <button onClick={handleRemovePromo} className="text-[#03543F] hover:text-[#023B2C] text-xs underline">
+                      นำออก
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="โค้ดโปรโมชั่น" 
+                        className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none uppercase" 
+                        value={promoCode} 
+                        onChange={e => setPromoCode(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                      />
+                      <button onClick={handleApplyPromo} className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold hover:bg-[#4A4A4A]">ส่ง</button>
+                    </div>
+                    {promoError && <p className="text-red-500 text-[10px] mt-1">{promoError}</p>}
+                  </div>
+                )}
               </div>
 
               {/* Free Shipping Note */}

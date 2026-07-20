@@ -68,98 +68,63 @@ export default function Navbar() {
       ).slice(0, 4)
     : [];
 
-  // Determine navigation menu links dynamically based on user role
+  // All roles see the same customer-facing navigation
   const getNavLinks = () => {
-    switch (currentUser?.role) {
-      case 'staff':
-        return [
-          { name: 'Quality Queue', path: '/wardrobe' },
-          { name: 'Orders Dispatch', path: '/orders' },
-        ];
-      case 'admin':
-        return [
-          { name: 'Admin Dashboard', path: '/admin' },
-          { name: 'User Management', path: '/admin/customers' },
-          { name: 'Products', path: '/admin/products' },
-          { name: 'Orders', path: '/admin/orders' },
-        ];
-      case 'customer':
-      default:
-        return [
-          { name: 'NEW', path: '/search?q=New' },
-          { 
-            name: 'CLOTHING', 
-            path: '#',
-            hasMegaMenu: true,
-            megaMenuData: {
-              items: [
-                { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
-                { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
-                { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
-                { name: 'Pants & Jeans', path: '/search?q=Pants&cat=CLOTHING' },
-                { name: 'Outerwear', path: '/search?q=Outerwear&cat=CLOTHING' },
-              ]
-            }
-          },
-          { 
-            name: 'ACCESSORIES', 
-            path: '#',
-            hasMegaMenu: true,
-            megaMenuData: {
-              items: [
-                { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
-                { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
-                { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
-                { name: 'Rings', path: '/search?q=Rings&cat=ACCESSORIES' },
-                { name: 'Handbags', path: '/search?q=Handbags&cat=ACCESSORIES' },
-              ]
-            }
-          },
-          { 
-            name: 'SALE', 
-            path: '#',
-            hasMegaMenu: true,
-            megaMenuData: {
-              items: [
-                { name: '10% OFF', path: '/search?q=10%25%20OFF&cat=SALE' },
-                { name: '20% OFF', path: '/search?q=20%25%20OFF&cat=SALE' },
-                { name: '30% OFF', path: '/search?q=30%25%20OFF&cat=SALE' },
-                { name: '50% OFF', path: '/search?q=50%25%20OFF&cat=SALE' },
-                { name: '70% OFF', path: '/search?q=70%25%20OFF&cat=SALE' },
-              ]
-            }
-          },
-          ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
-        ];
-    }
+    return [
+      { name: 'NEW', path: '/search?q=New' },
+      { 
+        name: 'CLOTHING', 
+        path: '#',
+        hasMegaMenu: true,
+        megaMenuData: {
+          items: [
+            { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
+            { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
+            { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
+            { name: 'Pants & Jeans', path: '/search?q=Pants&cat=CLOTHING' },
+            { name: 'Outerwear', path: '/search?q=Outerwear&cat=CLOTHING' },
+          ]
+        }
+      },
+      { 
+        name: 'ACCESSORIES', 
+        path: '#',
+        hasMegaMenu: true,
+        megaMenuData: {
+          items: [
+            { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
+            { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
+            { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
+            { name: 'Rings', path: '/search?q=Rings&cat=ACCESSORIES' },
+            { name: 'Handbags', path: '/search?q=Handbags&cat=ACCESSORIES' },
+          ]
+        }
+      },
+      { 
+        name: 'SALE', 
+        path: '#',
+        hasMegaMenu: true,
+        megaMenuData: {
+          items: [
+            { name: '10% OFF', path: '/search?q=10%25%20OFF&cat=SALE' },
+            { name: '20% OFF', path: '/search?q=20%25%20OFF&cat=SALE' },
+            { name: '30% OFF', path: '/search?q=30%25%20OFF&cat=SALE' },
+            { name: '50% OFF', path: '/search?q=50%25%20OFF&cat=SALE' },
+            { name: '70% OFF', path: '/search?q=70%25%20OFF&cat=SALE' },
+          ]
+        }
+      },
+      ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
+    ];
   };
 
   const navLinks = getNavLinks();
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-[#EAE5DB]">
-      {/* Role Indicator Banner */}
-      {currentUser && currentUser.role !== 'customer' && (
-        <div className={`py-1 px-6 text-center text-[9px] font-bold text-white tracking-widest flex items-center justify-center gap-1.5 ${
-          currentUser.role === 'admin' ? 'bg-[#5F6B4E]' : 'bg-[#C57B57]'
-        }`}>
-          {currentUser.role === 'admin' ? (
-            <>
-              <ShieldAlert className="h-3 w-3" />
-              ADMIN CONSOLE • {currentUser.name}
-            </>
-          ) : (
-            <>
-              <Cpu className="h-3 w-3" />
-              STAFF PANEL • {currentUser.name}
-            </>
-          )}
-        </div>
-      )}
 
 
-
-      {/* Tier 2: Main Header */}
+      {/* Main Header */}
       <div className="w-full px-6 md:px-12 lg:px-16 relative">
         <div className="flex justify-between h-[80px] items-center">
           
@@ -294,19 +259,17 @@ export default function Navbar() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-7 h-7 rounded-full overflow-hidden border border-[#EAE5DB] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none relative"
                 >
-                  <Image 
-                    src={
-                      currentUser.role === 'admin'
-                        ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'
-                        : currentUser.role === 'staff'
-                          ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100'
-                          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
-                    } 
-                    alt="Avatar" 
-                    fill
-                    sizes="28px"
-                    className="object-cover" 
-                  />
+                  {currentUser?.avatar ? (
+                    <img 
+                      src={currentUser.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#EAE5DB] flex items-center justify-center text-xs font-bold text-[#2D2D2A] uppercase">
+                      {currentUser?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
                 </button>
                 <ProfileDropdown isOpen={isDropdownOpen} onClose={() => setIsDropdownOpen(false)} currentUser={currentUser} />
               </div>

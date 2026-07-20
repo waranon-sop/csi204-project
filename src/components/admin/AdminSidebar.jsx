@@ -2,12 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser } = useAuth();
 
   const isActive = (path) => {
@@ -20,16 +21,17 @@ export default function AdminSidebar() {
       {/* Brand */}
       <div className="pt-8 px-6 pb-6">
         <p className="text-xl font-serif text-[#2D2D2A] mb-1">Admin Portal</p>
-        <p className="text-xs text-[#5C5C58]">Staff Management</p>
+        <p className="text-xs text-[#5C5C58]">Re-wear System</p>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-1">
         {[
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, adminOnly: true },
-          { name: 'Inventory', path: '/admin/products', icon: Package },
+          { name: 'Inventory', path: '/admin/inventory', icon: Package },
           { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
-          { name: 'Users', path: '/admin/customers', icon: Users, adminOnly: true },
+          { name: 'Promotions', path: '/admin/promotions', icon: Tag },
+          { name: 'Users', path: '/admin/users', icon: Users, adminOnly: true },
         ]
           .filter(item => !item.adminOnly || currentUser?.role === 'admin')
           .map((item) => {
@@ -60,7 +62,7 @@ export default function AdminSidebar() {
             Settings
           </Link>
         )}
-        <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-left text-[#5C5C58] hover:text-[#2D2D2A] hover:bg-[#EAE5DB]/50 transition-all text-xs font-medium">
+        <Link href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-left text-[#5C5C58] hover:text-[#2D2D2A] hover:bg-[#EAE5DB]/50 transition-all text-xs font-medium">
           <Store className="h-4 w-4" />
           Storefront
         </Link>
@@ -72,7 +74,7 @@ export default function AdminSidebar() {
 
       {/* Staff Profile */}
       <div className="border-t border-[#EAE5DB] px-5 py-4 mb-4">
-        <div className="flex items-center gap-3">
+        <button onClick={() => router.push('/profile')} className="w-full text-left flex items-center gap-3 hover:bg-[#EAE5DB]/50 p-2 -mx-2 rounded-lg transition-colors cursor-pointer">
           <div className="w-8 h-8 rounded-full bg-[#EAE5DB] overflow-hidden flex items-center justify-center text-xs font-bold text-[#2D2D2A] shrink-0 border border-[#D8D2C8]">
             {currentUser?.avatar ? (
               <img src={currentUser.avatar} alt="Staff" className="w-full h-full object-cover" />
@@ -84,7 +86,7 @@ export default function AdminSidebar() {
             <p className="text-xs font-semibold text-[#2D2D2A] leading-none">{currentUser?.name || 'Staff Profile'}</p>
             <p className="text-[9px] text-[#8B8B88] mt-1 uppercase tracking-widest font-semibold">{currentUser?.role || 'Administrator'}</p>
           </div>
-        </div>
+        </button>
       </div>
     </aside>
   );

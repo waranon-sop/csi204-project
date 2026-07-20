@@ -7,7 +7,10 @@ import { useAuth } from '../context/AuthContext';
 
 export default function RewardsWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const { openAuthModal } = useAuth();
+  const { openAuthModal, currentUser } = useAuth();
+
+  // Only show for customers (not admin or staff)
+  if (currentUser?.role === 'admin' || currentUser?.role === 'staff') return null;
 
   return (
     <div className="fixed bottom-0 right-8 z-[60] flex flex-col items-end">
@@ -44,7 +47,7 @@ export default function RewardsWidget() {
               <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
                 <Leaf className="w-5 h-5" strokeWidth={1.5} />
               </div>
-              <span className="text-[9px] text-[#8B8B88] font-bold">Points Per $</span>
+              <span className="text-[9px] text-[#8B8B88] font-bold">Points Per THB</span>
             </div>
             
             <div className="flex flex-col items-center gap-2">

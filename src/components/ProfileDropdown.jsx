@@ -40,7 +40,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
           avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
           menu: [
             { name: 'Admin Dashboard', path: '/admin', icon: Settings },
-            { name: 'User Roles & Permissions', path: '/admin/customers', icon: ShieldAlert },
+            { name: 'User Roles & Permissions', path: '/admin/users', icon: ShieldAlert },
           ],
         };
       case 'staff':
@@ -50,7 +50,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
           icon: Cpu,
           avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Inspection Queue', path: '/admin/products', icon: Settings },
+            { name: 'Inspection Queue', path: '/admin/inventory', icon: Settings },
             { name: 'Dispatch Queue', path: '/admin/orders', icon: History },
           ],
         };
@@ -80,15 +80,22 @@ export default function ProfileDropdown({ isOpen, onClose }) {
       className="absolute right-0 top-full mt-3 w-80 bg-[#FCFBF7] rounded-[1.8rem] border border-[#F2E9DC] shadow-xl shadow-[#2D2D2A]/5 p-6 z-50 transition-all duration-200 transform origin-top-right animate-fade-in font-sans"
     >
       {/* Profile Header (Dynamic) */}
-      <div className="flex items-center gap-4 pb-5 border-b border-[#F2E9DC] mb-4">
+      <button 
+        onClick={() => { router.push('/profile'); onClose(); }}
+        className="w-full flex items-center gap-4 pb-4 border-b border-[#F2E9DC] mb-4 text-left hover:bg-earth-50/50 p-2 -mx-2 rounded-xl transition-colors cursor-pointer"
+      >
         <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#F2E9DC] shadow-sm shrink-0">
-          <Image 
-            src={roleDetails.avatar} 
-            alt={`${currentUser.name} avatar`} 
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
+          {currentUser?.avatar ? (
+            <img 
+              src={currentUser.avatar} 
+              alt={`${currentUser.name} avatar`} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-[#EAE5DB] flex items-center justify-center text-xl font-bold text-[#2D2D2A] uppercase">
+              {currentUser?.name?.charAt(0) || 'U'}
+            </div>
+          )}
         </div>
         <div className="text-left">
           <h3 className="font-semibold text-[#2D2D2A] text-base leading-snug">{currentUser.name}</h3>
@@ -97,7 +104,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
             {roleDetails.title}
           </span>
         </div>
-      </div>
+      </button>
 
       {/* Menu Links (Dynamic based on Role) */}
       <nav className="space-y-1 mb-6">

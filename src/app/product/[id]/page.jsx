@@ -8,6 +8,7 @@ import { Heart, RefreshCcw, ShieldCheck, Shirt, MapPin, Leaf, Info } from 'lucid
 import { mockProducts } from '../../../data/products';
 import AnimatedPage from '../../../components/AnimatedPage';
 import { useCart } from '../../../context/CartContext';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const { cartItems, addToCart } = useCart();
+  const { currentUser, openAuthModal } = useAuth();
 
   useEffect(() => {
     // Scroll to top on mount/id change
@@ -165,10 +167,20 @@ export default function ProductDetail() {
           <div className="space-y-4 pt-2">
             <div className="flex gap-4">
               <button 
-                onClick={() => addToCart(product)}
-                disabled={isAdded}
+                onClick={() => {
+                  if (!currentUser) {
+                    openAuthModal('login');
+                  } else if (currentUser.role === 'customer') {
+                    if (!isAdded) {
+                      addToCart(product);
+                    }
+                  }
+                }}
+                disabled={(currentUser && currentUser.role !== 'customer') || isAdded}
                 className={`flex-1 py-4 px-6 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all shadow-md flex justify-center items-center gap-2 ${
-                  isAdded ? 'bg-sage-600 text-white' : 'bg-[#4A543C] hover:bg-[#3A432F] text-white'
+                  (currentUser && currentUser.role !== 'customer')
+                    ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
+                    : isAdded ? 'bg-sage-600 text-white' : 'bg-[#4A543C] hover:bg-[#3A432F] text-white'
                 }`}
               >
                 {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}

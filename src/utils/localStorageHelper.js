@@ -1,7 +1,7 @@
 import { mockProducts } from '../data/products';
 
-const PRODUCTS_KEY = 're_wear_products';
-const ORDERS_KEY = 're_wear_orders';
+const PRODUCTS_KEY = 'products';
+const ORDERS_KEY = 'orders';
 
 export const initializeProducts = () => {
   if (typeof window === 'undefined') return [];
@@ -38,6 +38,32 @@ export const updateProductStatus = (productId, status) => {
     }
     return p;
   });
+  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new Event('productsUpdated'));
+};
+
+export const processOrderInventory = (cartItems) => {
+  if (typeof window === 'undefined') return;
+  const products = getProducts();
+  
+  const updated = products.map(p => {
+    const itemInCart = cartItems.find(item => item.id === p.id);
+    if (itemInCart) {
+      if (p.stock !== undefined) {
+         const newStock = Math.max(0, p.stock - (itemInCart.quantity || 1));
+         return {
+           ...p,
+           stock: newStock,
+           status: newStock === 0 ? 'Out of Stock' : p.status,
+           reservedAt: null
+         };
+      } else {
+         return { ...p, status: 'Sold Out', reservedAt: null };
+      }
+    }
+    return p;
+  });
+  
   localStorage.setItem(PRODUCTS_KEY, JSON.stringify(updated));
   window.dispatchEvent(new Event('productsUpdated'));
 };
