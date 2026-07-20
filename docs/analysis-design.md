@@ -38,7 +38,9 @@
 | F-05 | จัดการสต็อกสินค้า | พนักงานสามารถเพิ่ม แก้ไข ลบ และตรวจสอบสินค้า | High |
 | F-06 | จัดการคำสั่งซื้อ | พนักงานสามารถตรวจสอบและเปลี่ยนสถานะคำสั่งซื้อ | High |
 | F-07 | Dashboard ผู้ดูแล | ผู้ดูแลระบบสามารถดูภาพรวมและรายงานระบบ | Medium |
-| F-08 | จัดการผู้ใช้งาน | ผู้ดูแลระบบสามารถจัดการข้อมูลสมาชิกและสิทธิ์พนักงาน | High |
+| F-08 | จัดการผู้ใช้งาน | ผู้ดูแลระบบสามารถจัดการข้อมูลสมาชิกและสิทธิ์พนักงาน พร้อมแยกรหัส (ADM/STF/USR) | High |
+| F-09 | Eco Impact Tracking | ระบบแสดงผลการลดการใช้น้ำ, CO2, และขยะ สำหรับลูกค้าและแอดมิน | Medium |
+| F-10 | ระบบสะสมแต้ม (Rewards) | Widget สำหรับลูกค้าสะสมแต้มและรับส่วนลด (Gamification) | Low |
 
 ### 2.2 Non-Functional Requirements (SLA Targets)
 
@@ -139,14 +141,15 @@ graph TD
 ```json
 {
  "users": [
- { "id": "U01", "role": "customer", "name": "ฟ้าใส", "email": "fah@email.com" },
- { "id": "S01", "role": "staff", "name": "ก้องเกียรติ", "email": "staff@email.com" }
+ { "id": "USR-1024", "role": "customer", "name": "ฟ้าใส", "email": "fah@email.com", "ecoStatus": "Eco Hero" },
+ { "id": "STF-0001", "role": "staff", "name": "ก้องเกียรติ", "email": "staff@rewear.com", "joinDate": "01 Jan 2024" },
+ { "id": "ADM-0001", "role": "admin", "name": "ยิ่งยศ", "email": "admin@rewear.com", "joinDate": "01 Jan 2024" }
  ],
  "products": [
- { "id": "P01", "name": "Vintage Denim Jacket", "price": 450, "stock": 1, "status": "Available" }
+ { "id": "RW-29402", "name": "Vintage Linen Overcoat", "price": 145, "stock": 1, "condition": "Very Good" }
  ],
  "orders": [
- { "id": "O01", "customerId": "U01", "status": "Pending", "totalAmount": 450 }
+ { "id": "#RW-92031", "customerId": "USR-1024", "status": "Pending", "totalAmount": 450 }
  ]
 }
 ```
@@ -169,10 +172,14 @@ erDiagram
  Order ||--o| Payment : has
 
  User {
- string userid
- string fullName
+ string id
+ string role
+ string name
  string email
  string password
+ string ecoStatus
+ string joinDate
+ string avatar
  }
  Product {
  string productid
@@ -228,6 +235,8 @@ erDiagram
 | **Functional Requirements** | ครบ 8 รายการ (F-01 ถึง F-08) |
 | **จำนวนหน้าที่พัฒนา** | 14 หน้า (Customer: 8 หน้า, Admin Panel: 6 หน้า) |
 | **Role-based System** | จัดการสิทธิ์ 3 บทบาทผ่าน AuthContext และ Route Protection (`useAdminGuard`) |
+| **ID System** | จัดการรหัสตามกลุ่มผู้ใช้ (ADM-xxxx, STF-xxxx, USR-xxxx) |
+| **UX & Gamification** | มี Dashboard สรุปผล Eco Impact และมี Rewards Widget กระตุ้นยอดขาย |
 | **Design Principles** | นำมาประยุกต์ใช้ 9 หลักการ (SoC, SRP, Modularity, Loose Coupling ฯลฯ) |
 | **เทคโนโลยีหลัก** | Next.js 15 (App Router), Tailwind CSS, Lucide React, Recharts |
 

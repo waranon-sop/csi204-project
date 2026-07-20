@@ -104,12 +104,14 @@ export default function AdminUsersManagement() {
   const handleAddStaff = (e) => {
     e.preventDefault();
     if (!newStaff.name || !newStaff.email || !newStaff.password) return;
+    const randomNum = Math.floor(Math.random() * 9000) + 1000;
+    const idPrefix = newStaff.role === 'admin' ? 'ADM' : 'STF';
     const addedUser = {
-      id: `USR-${Math.floor(Math.random() * 900) + 100}`,
+      id: `${idPrefix}-${randomNum}`,
       ...newStaff,
       joinDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       orders: 0,
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100' // Default avatar
+      avatar: null // Will show initial letter fallback
     };
     const updatedUsers = [addedUser, ...users];
     setUsers(updatedUsers);
@@ -328,22 +330,25 @@ export default function AdminUsersManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-earth-100 text-sm">
-              {filteredUsers.map((user) => (
+              {filteredUsers.map((user, index) => (
                 <tr 
-                  key={user.id} 
+                  key={`${user.id}-${index}`} 
                   className="hover:bg-earth-50/80 transition-colors group"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-earth-200 bg-earth-100 shrink-0">
-                        <Image 
-                          src={user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'} 
-                          alt={user.name}
-                          fill
-                          sizes="40px"
-                          unoptimized
-                          className="object-cover"
-                        />
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-earth-200 bg-earth-100 shrink-0 flex items-center justify-center">
+                        {user.avatar && !user.avatar.includes('unsplash.com') ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-earth-600 font-bold text-sm uppercase">
+                            {user.name.charAt(0)}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-earth-800">{user.name}</p>
@@ -535,20 +540,38 @@ export default function AdminUsersManagement() {
             
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-earth-200 bg-earth-100 shrink-0">
-                  <Image 
-                    src={editingUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'} 
-                    alt={editingUser.name}
-                    fill
-                    sizes="48px"
-                    unoptimized
-                    className="object-cover"
-                  />
+                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-earth-200 bg-earth-100 shrink-0 flex items-center justify-center">
+                  {editingUser.avatar && !editingUser.avatar.includes('unsplash.com') ? (
+                    <img 
+                      src={editingUser.avatar} 
+                      alt={editingUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-earth-600 font-bold text-lg uppercase">
+                      {editingUser.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-earth-800">{editingUser.name}</p>
                   <p className="text-xs text-earth-500">{editingUser.email}</p>
                 </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <label className="block text-sm font-semibold text-earth-700">Change Password</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-earth-400" />
+                  <input
+                    type="text"
+                    value={editingUser.password || ''}
+                    onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
+                    placeholder="Type to set a new password..."
+                    className="w-full px-4 py-2 pl-9 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-earth-500/30 text-sm bg-earth-50 text-earth-800"
+                  />
+                </div>
+                <p className="text-[10px] text-earth-500">Admins can manually set passwords for staff here.</p>
               </div>
 
               <div className="space-y-3">
@@ -638,12 +661,18 @@ export default function AdminUsersManagement() {
             <div className="p-6 overflow-y-auto space-y-5">
               {/* Section 1: Basic Info */}
               <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-earth-200 bg-earth-100 shrink-0">
-                  <Image 
-                    src={detailsUser.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'} 
-                    alt={detailsUser.name}
-                    fill sizes="64px" unoptimized className="object-cover"
-                  />
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-earth-200 bg-earth-100 shrink-0 flex items-center justify-center">
+                  {detailsUser.avatar && !detailsUser.avatar.includes('unsplash.com') ? (
+                    <img 
+                      src={detailsUser.avatar} 
+                      alt={detailsUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-earth-600 font-bold text-2xl uppercase">
+                      {detailsUser.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-earth-800 text-lg truncate">{detailsUser.name}</h3>
@@ -666,24 +695,22 @@ export default function AdminUsersManagement() {
                 </div>
               </div>
 
-              {/* Section 2: Work Schedule (staff/admin only) */}
-              {(detailsUser.role === 'staff' || detailsUser.role === 'admin') && (
-                <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
-                  <h4 className="text-xs font-bold text-earth-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5" /> Work Schedule
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-earth-400 text-xs mb-1">Working Hours</p>
-                      <p className="font-semibold text-earth-700">09:00 – 18:00</p>
-                    </div>
-                    <div>
-                      <p className="text-earth-400 text-xs mb-1">Days Off</p>
-                      <p className="font-semibold text-earth-700">Sat, Sun</p>
-                    </div>
+              {/* Section 2: Contact Information (For all users) */}
+              <div className="bg-earth-50 p-4 rounded-xl border border-earth-100">
+                <h4 className="text-xs font-bold text-earth-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5" /> Contact Information
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-earth-400 text-xs mb-1">Email Address</p>
+                    <p className="font-semibold text-earth-700 truncate" title={detailsUser.email}>{detailsUser.email || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-earth-400 text-xs mb-1">Phone Number</p>
+                    <p className="font-semibold text-earth-700">{detailsUser.phone || '—'}</p>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Customer Details */}
               {detailsUser.role === 'customer' && (

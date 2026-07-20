@@ -173,7 +173,7 @@ export default function AdminOrders() {
               {paginatedOrders.map((order) => {
                 const firstItem = order.items[0];
                 return (
-                  <tr key={order.id} className="hover:bg-[#F9F7F4] transition-colors group cursor-pointer" onClick={() => { setSelectedOrder(order); setTrackingInput(order.trackingNumber || ''); }}>
+                  <tr key={order.id} className="hover:bg-[#F9F7F4] transition-colors group">
                     <td className="px-6 py-5">
                       <p className="font-semibold text-earth-800">{order.id}</p>
                     </td>

@@ -259,19 +259,17 @@ export default function Navbar() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-7 h-7 rounded-full overflow-hidden border border-[#EAE5DB] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none relative"
                 >
-                  <Image 
-                    src={
-                      currentUser.role === 'admin'
-                        ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100'
-                        : currentUser.role === 'staff'
-                          ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=100'
-                          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
-                    } 
-                    alt="Avatar" 
-                    fill
-                    sizes="28px"
-                    className="object-cover" 
-                  />
+                  {currentUser?.avatar ? (
+                    <img 
+                      src={currentUser.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#EAE5DB] flex items-center justify-center text-xs font-bold text-[#2D2D2A] uppercase">
+                      {currentUser?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
                 </button>
                 <ProfileDropdown isOpen={isDropdownOpen} onClose={() => setIsDropdownOpen(false)} currentUser={currentUser} />
               </div>
