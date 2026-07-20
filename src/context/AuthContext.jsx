@@ -9,11 +9,11 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
-  
+
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState('login');
-  
+
   // Pending Google Data
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
 
@@ -29,18 +29,32 @@ export function AuthProvider({ children }) {
   // Initialize from localStorage and sessionStorage
   useEffect(() => {
     let storedUsers = JSON.parse(localStorage.getItem('users')) || [];
-    
+    let ranksUpdated = false;
+
+    // Migrate old ranks for users
+    storedUsers = storedUsers.map(u => {
+      if (u.rank === 'Monstrosa') {
+        ranksUpdated = true;
+        return { ...u, rank: 'Harvest' };
+      }
+      if (u.rank === 'Variegata') {
+        ranksUpdated = true;
+        return { ...u, rank: 'Fruit' };
+      }
+      return u;
+    });
+
     // Seed initial admin if not exists
     if (!storedUsers.find(u => u.email === 'admin')) {
       const seedAdmin = {
         id: 'seed-admin-001',
         name: 'ยิ่งยศ ผู้ดูแลระบบ',
-        email: 'admin', 
+        email: 'admin',
         password: 'admin',
         role: 'admin'
       };
       storedUsers = [seedAdmin, ...storedUsers];
-      localStorage.setItem('users', JSON.stringify(storedUsers));
+      ranksUpdated = true;
     }
 
     // Seed initial staff if not exists
@@ -48,16 +62,28 @@ export function AuthProvider({ children }) {
       const seedStaff = {
         id: 'seed-staff-001',
         name: 'สมหญิง พนักงาน',
-        email: 'staff', 
+        email: 'staff',
         password: 'staff',
         role: 'staff'
       };
       storedUsers = [seedStaff, ...storedUsers];
+      ranksUpdated = true;
+    }
+
+    if (ranksUpdated) {
       localStorage.setItem('users', JSON.stringify(storedUsers));
     }
 
-    const storedSession = JSON.parse(sessionStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('currentUser')) || null;
-    
+    let storedSession = JSON.parse(sessionStorage.getItem('currentUser')) || JSON.parse(localStorage.getItem('currentUser')) || null;
+
+    if (storedSession) {
+      if (storedSession.rank === 'Monstrosa') storedSession.rank = 'Harvest';
+      if (storedSession.rank === 'Variegata') storedSession.rank = 'Fruit';
+
+      if (sessionStorage.getItem('currentUser')) sessionStorage.setItem('currentUser', JSON.stringify(storedSession));
+      if (localStorage.getItem('currentUser')) localStorage.setItem('currentUser', JSON.stringify(storedSession));
+    }
+
     setUsers(storedUsers);
     setCurrentUser(storedSession);
   }, []);
@@ -96,7 +122,7 @@ export function AuthProvider({ children }) {
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
+
     // Auto-login after register
     setCurrentUser(newUser);
     if (keepSignedIn) {
@@ -115,7 +141,7 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = (googleData) => {
     // googleData contains email and name from decoded JWT
     let user = users.find(u => u.email === googleData.email);
-    
+
     if (!user) {
       // First time user: save data and require registration
       setPendingGoogleUser(googleData);
@@ -126,7 +152,7 @@ export function AuthProvider({ children }) {
     setCurrentUser(user);
     localStorage.setItem('currentUser', JSON.stringify(user));
     sessionStorage.removeItem('currentUser');
-    
+
     return { success: true };
   };
 
@@ -145,10 +171,10 @@ export function AuthProvider({ children }) {
     if (!currentUser || currentUser.role !== 'customer') return;
 
     const newSpending = (currentUser.total_spending || 0) + amount;
-    
+
     let newRank = 'Seed';
-    if (newSpending >= 25000) newRank = 'Monstrosa';
-    else if (newSpending >= 12000) newRank = 'Variegata';
+    if (newSpending >= 25000) newRank = 'Harvest';
+    else if (newSpending >= 12000) newRank = 'Fruit';
     else if (newSpending >= 6000) newRank = 'Bloom';
     else if (newSpending >= 2000) newRank = 'Sprout';
 
@@ -157,15 +183,15 @@ export function AuthProvider({ children }) {
 
   const updateUser = (updates) => {
     if (!currentUser) return;
-    
+
     const updatedUser = { ...currentUser, ...updates };
-    
+
     const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
     setUsers(updatedUsers);
     localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
+
     setCurrentUser(updatedUser);
-    
+
     if (localStorage.getItem('currentUser')) {
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     } else if (sessionStorage.getItem('currentUser')) {

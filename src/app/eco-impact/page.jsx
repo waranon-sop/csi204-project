@@ -4,15 +4,16 @@ import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { Leaf, Award, Gift, Flame, Droplet, TreePine, Info, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const getRewardsByRank = (rank) => {
-  if (rank === 'Monstrosa') {
+  if (rank === 'Harvest') {
     return [
       { id: 1, title: '30% Discount Coupon or 500 THB Cash', pointsRequired: 500, description: 'Maximum discount (Requires points)', isAuto: false, available: true },
       { id: 2, title: 'Overnight Cart Lock (24h)', pointsRequired: 0, description: 'Lock items in your cart for 24 hours without using points', isAuto: true, available: true },
-      { id: 3, title: 'Personal Shopper', pointsRequired: 0, description: 'Request specific vintage styles/brands and get notified first when they arrive', isAuto: true, available: true },
+      { id: 3, title: 'Personal Shopper', pointsRequired: 0, description: 'Request specific vintage styles/brands and get notified first when they arrive', isAuto: false, available: true, link: '/personal-shopper' },
     ];
-  } else if (rank === 'Bloom' || rank === 'Variegata') {
+  } else if (rank === 'Bloom' || rank === 'Fruit') {
     return [
       { id: 1, title: '15% - 20% Discount Coupon', pointsRequired: 300, description: 'Use points for special discounts', isAuto: false, available: true },
       { id: 2, title: 'Free Express Delivery', pointsRequired: 0, description: 'Fastest shipping directly to your door', isAuto: true, available: true },
@@ -42,6 +43,7 @@ const oneTimeMissions = [
 
 export default function EcoImpact() {
   const { currentUser } = useAuth();
+  const router = useRouter();
   
   const spending = currentUser?.total_spending || 0;
   let nextRank = '';
@@ -59,11 +61,11 @@ export default function EcoImpact() {
     spendingNeeded = 6000 - spending;
     progressPercent = ((spending - 2000) / 4000) * 100;
   } else if (spending < 12000) {
-    nextRank = 'Variegata';
+    nextRank = 'Fruit';
     spendingNeeded = 12000 - spending;
     progressPercent = ((spending - 6000) / 6000) * 100;
   } else if (spending < 25000) {
-    nextRank = 'Monstrosa';
+    nextRank = 'Harvest';
     spendingNeeded = 25000 - spending;
     progressPercent = ((spending - 12000) / 13000) * 100;
   } else {
@@ -147,16 +149,19 @@ export default function EcoImpact() {
                     </div>
 
                     <button 
-                      disabled={!reward.available || reward.isAuto}
+                      disabled={!reward.available || (reward.isAuto && !reward.link)}
+                      onClick={() => reward.link ? router.push(reward.link) : null}
                       className={`w-full mt-6 py-2 rounded-full text-xs font-semibold transition-all ${
-                        reward.isAuto
-                          ? 'bg-earth-100 text-earth-600 border border-earth-200 cursor-default'
-                          : reward.available 
-                            ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift' 
-                            : 'bg-earth-100 text-earth-400 cursor-not-allowed'
+                        reward.link
+                          ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift'
+                          : reward.isAuto
+                            ? 'bg-earth-100 text-earth-600 border border-earth-200 cursor-default'
+                            : reward.available 
+                              ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift' 
+                              : 'bg-earth-100 text-earth-400 cursor-not-allowed'
                       }`}
                     >
-                      {reward.isAuto ? 'Your Privilege (Activated)' : reward.available ? 'Redeem Reward' : 'Temporarily Unavailable'}
+                      {reward.link ? 'Use Service' : reward.isAuto ? 'Your Privilege (Activated)' : reward.available ? 'Redeem Reward' : 'Temporarily Unavailable'}
                     </button>
                   </div>
                 ))}
