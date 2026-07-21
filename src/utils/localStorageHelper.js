@@ -72,7 +72,7 @@ export const createOrder = (orderData) => {
   
   const newOrder = {
     id: `RW-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    date: new Intl.DateTimeFormat('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date()),
+    date: new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date()),
     status: 'Pending',
     ...orderData,
   };
@@ -88,4 +88,30 @@ export const getOrdersByUser = (userId) => {
   if (!stored) return [];
   const orders = JSON.parse(stored);
   return orders.filter(o => o.userId === userId);
+};
+
+export const getOrderById = (orderId) => {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem(ORDERS_KEY);
+  if (!stored) return null;
+  const orders = JSON.parse(stored);
+  return orders.find(o => o.id === orderId) || null;
+};
+
+export const updateOrder = (orderId, updates) => {
+  if (typeof window === 'undefined') return;
+  const stored = localStorage.getItem(ORDERS_KEY);
+  if (!stored) return;
+  const orders = JSON.parse(stored);
+  const updatedOrders = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(updatedOrders));
+};
+
+export const updateUserById = (userId, updates) => {
+  if (typeof window === 'undefined') return;
+  const storedUsers = localStorage.getItem('users');
+  if (!storedUsers) return;
+  const users = JSON.parse(storedUsers);
+  const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
+  localStorage.setItem('users', JSON.stringify(updatedUsers));
 };

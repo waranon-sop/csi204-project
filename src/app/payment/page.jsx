@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, updateProductStatus } from '../../utils/localStorageHelper';
+import { createOrder, updateProductStatus, updateUserById } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart } = useCart();
-  const { currentUser, addSpending } = useAuth();
+  const { currentUser, addSpending, updateUser } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment
@@ -31,6 +31,9 @@ export default function CheckoutPage() {
 
   // Promo Code State
   const [promoCode, setPromoCode] = useState('');
+
+  // Eco Options State
+  const [noPackaging, setNoPackaging] = useState(false);
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
@@ -59,8 +62,18 @@ export default function CheckoutPage() {
     cartItems.forEach(item => updateProductStatus(item.id, 'Sold Out'));
     clearCart();
 
-    if (addSpending && currentUser) {
-      addSpending(cartTotal);
+    if (currentUser) {
+      if (addSpending) addSpending(cartTotal);
+      if (updateUser) {
+        const updates = { hasEcoShipping: true };
+        if (noPackaging) updates.hasNoPackaging = true;
+        updateUser(updates);
+      }
+
+      if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
+        updateUserById(currentUser.referredBy, { hasInvited: true });
+        if (updateUser) updateUser({ hasMadeFirstPurchase: true });
+      }
     }
 
     setTimeout(() => {
@@ -121,6 +134,18 @@ export default function CheckoutPage() {
                     </div>
                     <span className="text-sm font-medium">THB 55.00</span>
                   </div>
+                </div>
+
+                {/* Eco Packaging Option */}
+                <div>
+                  <h2 className="text-sm font-bold text-[#2D2D2A] mb-4">แพ็กเกจจิ้ง (Packaging)</h2>
+                  <label className={`flex items-start gap-3 p-4 border rounded cursor-pointer transition-colors ${noPackaging ? 'border-[#4A543C] bg-[#F4F6F0]' : 'border-[#EAE5DB] bg-white'}`}>
+                    <input type="checkbox" checked={noPackaging} onChange={(e) => setNoPackaging(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#4A543C]" />
+                    <div>
+                      <span className="text-sm font-bold text-[#2D2D2A]">Pack in one box / No plastic wrapping 📦</span>
+                      <p className="text-xs text-[#8B8B88] mt-1">ช่วยลดขยะพลาสติกและกล่องกระดาษ (Collect Eco Points)</p>
+                    </div>
+                  </label>
                 </div>
 
                 {/* Shipping Address Form */}

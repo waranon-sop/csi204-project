@@ -89,7 +89,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (email, password, keepSignedIn = false) => {
-    const user = users.find(u => u.email === email && u.password === password);
+    // Fetch fresh from localStorage to avoid stale state in SPA
+    const freshUsers = JSON.parse(localStorage.getItem('users')) || users;
+    const user = freshUsers.find(u => u.email === email && u.password === password);
     if (user) {
       setCurrentUser(user);
       if (keepSignedIn) {
@@ -99,6 +101,8 @@ export function AuthProvider({ children }) {
         sessionStorage.setItem('currentUser', JSON.stringify(user));
         localStorage.removeItem('currentUser');
       }
+      // Sync users state with the fresh data
+      setUsers(freshUsers);
       return { success: true, user };
     }
     return { success: false, error: 'Invalid email or password' };
@@ -109,12 +113,15 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Email already exists' };
     }
 
+    const referredBy = localStorage.getItem('referredBy');
+
     const newUser = {
       id: Date.now().toString(),
       name,
       email,
       password,
       phone,
+      referredBy: referredBy || null,
       role: 'customer', // Default role
       rank: 'Seed'
     };
@@ -134,6 +141,7 @@ export function AuthProvider({ children }) {
     }
 
     setPendingGoogleUser(null); // Clear any pending data
+    localStorage.removeItem('referredBy');
 
     return { success: true };
   };
@@ -178,25 +186,49 @@ export function AuthProvider({ children }) {
     else if (newSpending >= 6000) newRank = 'Bloom';
     else if (newSpending >= 2000) newRank = 'Sprout';
 
-    updateUser({ total_spending: newSpending, rank: newRank });
+    const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
+    const newPoints = currentPoints + amount;
+
+    updateUser({ total_spending: newSpending, rank: newRank, points: newPoints });
   };
 
-  const updateUser = (updates) => {
+  const claimMission = (missionId, points) => {
     if (!currentUser) return;
 
-    const updatedUser = { ...currentUser, ...updates };
+    const completedMissions = currentUser.completedMissions || [];
+    if (completedMissions.includes(missionId)) return; // Already claimed
 
-    const updatedUsers = users.map(u => u.id === currentUser.id ? updatedUser : u);
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    // Initialize points to total_spending if it's the first time
+    const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
+    const newPoints = currentPoints + points;
+    const newCompleted = [...completedMissions, missionId];
 
-    setCurrentUser(updatedUser);
+    updateUser({ points: newPoints, completedMissions: newCompleted });
+  };
 
-    if (localStorage.getItem('currentUser')) {
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    } else if (sessionStorage.getItem('currentUser')) {
-      sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
+
+  const updateUser = (updates) => {
+    setCurrentUser(prevUser => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, ...updates };
+
+      setUsers(prevUsers => {
+        // Fetch fresh users from localStorage to avoid overwriting changes made by other functions (like updateUserById)
+        const currentUsers = JSON.parse(localStorage.getItem('users')) || prevUsers;
+        const updatedUsersList = currentUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
+        localStorage.setItem('users', JSON.stringify(updatedUsersList));
+        return updatedUsersList;
+      });
+
+      if (localStorage.getItem('currentUser')) {
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+      if (sessionStorage.getItem('currentUser')) {
+        sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+
+      return updatedUser;
+    });
   };
 
   const value = {
@@ -209,6 +241,7 @@ export function AuthProvider({ children }) {
     setDemoUser,
     addSpending,
     updateUser,
+    claimMission,
     isAuthModalOpen,
     authModalView,
     openAuthModal,

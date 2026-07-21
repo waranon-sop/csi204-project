@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
-import { User, Mail, Phone, MapPin, Shield, Check } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Check, Gift } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileSettings() {
@@ -24,6 +24,7 @@ export default function ProfileSettings() {
     address: '',
     ecoStatus: '',
     picture: '',
+    birthday: '',
   });
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function ProfileSettings() {
         address: currentUser.address || '',
         ecoStatus: getDisplayRank(currentUser),
         picture: currentUser.picture || '',
+        birthday: currentUser.birthday || '',
       }));
     }
   }, [currentUser]);
@@ -87,8 +89,8 @@ export default function ProfileSettings() {
             
             {/* Header */}
             <div className="border-b border-earth-100 pb-5 mb-6">
-              <h1 className="text-2xl font-bold text-earth-900">การตั้งค่าโปรไฟล์</h1>
-              <p className="text-xs text-earth-500 mt-1">จัดการข้อมูลส่วนตัว รายละเอียดที่อยู่จัดส่ง และข้อมูลความยั่งยืนของคุณ</p>
+              <h1 className="text-2xl font-bold text-earth-900">Profile Settings</h1>
+              <p className="text-xs text-earth-500 mt-1">Manage your personal information, shipping details, and sustainability data.</p>
             </div>
 
             {/* Profile Pic Upload */}
@@ -107,7 +109,7 @@ export default function ProfileSettings() {
                 )}
               </div>
               <div className="text-center sm:text-left space-y-2">
-                <h3 className="font-semibold text-earth-800 text-sm">รูปโปรไฟล์</h3>
+                <h3 className="font-semibold text-earth-800 text-sm">Profile Picture</h3>
                 <div className="flex gap-2">
                   <input 
                     type="file" 
@@ -121,17 +123,17 @@ export default function ProfileSettings() {
                     onClick={() => fileInputRef.current?.click()}
                     className="bg-sage-600 hover:bg-sage-700 text-white text-xs font-medium px-4 py-2 rounded-full transition-colors shadow-sm"
                   >
-                    เปลี่ยนรูปใหม่
+                    Upload New Photo
                   </button>
                   <button 
                     type="button"
                     onClick={handleRemovePic}
                     className="bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors"
                   >
-                    ลบออก
+                    Remove
                   </button>
                 </div>
-                <p className="text-[10px] text-earth-400">อนุญาตไฟล์ JPG, PNG ขนาดไม่เกิน 2MB</p>
+                <p className="text-[10px] text-earth-400">Allowed files: JPG, PNG. Max size: 2MB</p>
               </div>
             </div>
 
@@ -141,14 +143,15 @@ export default function ProfileSettings() {
                 
                 {/* Full name */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-earth-700 block">ชื่อ-นามสกุล</label>
+                  <label className="text-xs font-semibold text-earth-700 block">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="text"
                       value={formData.fullName}
                       onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      placeholder="e.g. John Doe"
                       required
                     />
                   </div>
@@ -156,14 +159,15 @@ export default function ProfileSettings() {
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-earth-700 block">อีเมลติดต่อ</label>
+                  <label className="text-xs font-semibold text-earth-700 block">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      placeholder="e.g. john@example.com"
                       required
                     />
                   </div>
@@ -171,24 +175,45 @@ export default function ProfileSettings() {
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-earth-700 block">เบอร์โทรศัพท์</label>
+                  <label className="text-xs font-semibold text-earth-700 block">Phone Number</label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      placeholder="e.g. 0812345678"
                       required
                     />
                   </div>
                 </div>
 
+                {/* Birthday (Read Only) */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-earth-700 block">Birthday</label>
+                  <div className="relative">
+                    <Gift className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
+                    <input
+                      type="text"
+                      value={formData.birthday || ''}
+                      disabled
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-500 font-medium cursor-not-allowed transition-all"
+                      placeholder="Not provided"
+                    />
+                  </div>
+                  {!formData.birthday && (
+                    <p className="text-[10px] text-sage-600">
+                      * Add your birthday via the Rewards widget to earn a special gift!
+                    </p>
+                  )}
+                </div>
+
                 {/* Eco status info */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-earth-700 block">ระดับสมาชิกสีเขียว</label>
+                  <label className="text-xs font-semibold text-earth-700 block">Eco Membership Tier</label>
                   <div className="relative">
-                    <Shield className="absolute left-3.5 top-3 h-4.5 w-4.5 text-sage-500" />
+                    <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-sage-500" />
                     <input
                       type="text"
                       value={formData.ecoStatus}
@@ -201,14 +226,15 @@ export default function ProfileSettings() {
 
               {/* Delivery Address */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-earth-700 block">ที่อยู่สำหรับจัดส่งและการคืนเสื้อผ้า</label>
+                <label className="text-xs font-semibold text-earth-700 block">Shipping and Return Address</label>
                 <div className="relative">
-                  <MapPin className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-earth-400" />
+                  <MapPin className="absolute left-3.5 top-4 w-5 h-5 text-earth-400" />
                   <textarea
                     rows="3"
                     value={formData.address}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all resize-none"
+                    placeholder="Enter your full shipping address (House No., Street, City, ZIP)..."
                     required
                   />
                 </div>
@@ -220,7 +246,7 @@ export default function ProfileSettings() {
                   {saved && (
                     <span className="flex items-center gap-1 text-xs text-sage-700 font-medium animate-bounce">
                       <Check className="h-4 w-4 bg-sage-100 text-sage-800 rounded-full p-0.5" />
-                      บันทึกข้อมูลเรียบร้อยแล้ว!
+                      Changes saved successfully!
                     </span>
                   )}
                 </div>
@@ -228,7 +254,7 @@ export default function ProfileSettings() {
                   type="submit"
                   className="bg-sage-600 hover:bg-sage-700 text-white font-medium px-8 py-3 rounded-full hover-lift hover-glow transition-all"
                 >
-                  บันทึกการเปลี่ยนแปลง
+                  Save Changes
                 </button>
               </div>
             </form>

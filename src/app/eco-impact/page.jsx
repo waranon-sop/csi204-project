@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
-import { Leaf, Award, Gift, Flame, Droplet, TreePine, Info, X } from 'lucide-react';
+import { Leaf, Award, Gift, Flame, Droplet, TreePine, Info, X, Recycle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { getOrdersByUser } from '../../utils/localStorageHelper';
 
 const getRewardsByRank = (rank) => {
   if (rank === 'Harvest') {
@@ -20,7 +21,7 @@ const getRewardsByRank = (rank) => {
       { id: 3, title: 'Early Access', pointsRequired: 0, description: 'Get access to "New Arrivals" 12 hours before regular members', isAuto: true, available: true },
     ];
   }
-  
+
   // Default for Seed & Sprout
   return [
     { id: 1, title: '5% - 10% Discount Coupon', pointsRequired: 150, description: 'Use points for discount', isAuto: false, available: true },
@@ -42,15 +43,68 @@ const oneTimeMissions = [
 ];
 
 export default function EcoImpact() {
-  const { currentUser } = useAuth();
+  const { currentUser, claimMission, updateUser } = useAuth();
   const router = useRouter();
-  
+
+  const [justClaimed, setJustClaimed] = useState(null);
+  const completedMissions = currentUser?.completedMissions || [];
+
+  const handleClaim = (missionId, points) => {
+    claimMission(missionId, points);
+    setJustClaimed(missionId);
+    setTimeout(() => setJustClaimed(null), 2000);
+  };
+
   const spending = currentUser?.total_spending || 0;
   let nextRank = '';
   let spendingNeeded = 0;
   let progressPercent = 0;
   let currentRank = currentUser?.rank || 'Seed';
   const [showEcoInfo, setShowEcoInfo] = useState(false);
+  const [activeMockModal, setActiveMockModal] = useState(null);
+  const [deliveredItemsCount, setDeliveredItemsCount] = useState(0);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      const orders = getOrdersByUser(currentUser.id);
+      const deliveredOrders = orders.filter(o => o.status === 'Delivered');
+      let totalItems = 0;
+      deliveredOrders.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          totalItems += order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        }
+      });
+      setDeliveredItemsCount(totalItems);
+    } else {
+      setDeliveredItemsCount(0);
+    }
+  }, [currentUser?.id]);
+
+  const checkCondition = (missionId) => {
+    if (missionId === 'onetime-1') {
+      return !!(currentUser?.name && currentUser?.phone && currentUser?.address);
+    }
+    if (missionId === 'daily-1') return !!currentUser?.hasEcoShipping;
+    if (missionId === 'daily-2') return !!currentUser?.hasNoPackaging;
+    if (missionId === 'daily-3') return !!currentUser?.hasReviewed;
+    if (missionId === 'daily-4') return !!currentUser?.hasPhotoReviewed;
+    if (missionId === 'daily-5') return !!currentUser?.hasInvited;
+    return false;
+  };
+
+  const handleSimulateAction = (missionId) => {
+    if (missionId === 'daily-3' || missionId === 'daily-4') router.push('/orders');
+    else if (missionId === 'daily-5') setActiveMockModal('invite');
+    else if (missionId === 'onetime-1') router.push('/profile');
+    else if (missionId === 'daily-1' || missionId === 'daily-2') router.push('/'); // Shop to checkout
+  };
+
+  const submitMockAction = (flagName) => {
+    if (updateUser) {
+      updateUser({ [flagName]: true });
+    }
+    setActiveMockModal(null);
+  };
 
   if (spending < 2000) {
     nextRank = 'Sprout';
@@ -74,13 +128,13 @@ export default function EcoImpact() {
     progressPercent = 100;
   }
 
-  const ecoPoints = currentUser?.total_spending || 0;
+  const ecoPoints = currentUser?.points !== undefined ? currentUser.points : (currentUser?.total_spending || 0);
   const rewards = getRewardsByRank(currentRank);
 
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 font-sans">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
+
         {/* Sidebar Left */}
         <div className="lg:col-span-1">
           <Sidebar />
@@ -88,7 +142,7 @@ export default function EcoImpact() {
 
         {/* Content Right */}
         <div className="lg:col-span-3 space-y-8">
-          
+
           {/* 1. Member Status */}
           <div className="bg-white rounded-2xl border border-earth-200/60 p-6 sm:p-8 shadow-sm">
             <h2 className="text-xl font-bold text-earth-900 mb-2">Current Member Status: <span className="text-sage-600">{currentRank}</span></h2>
@@ -126,11 +180,10 @@ export default function EcoImpact() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {rewards.map((reward) => (
-                  <div 
-                    key={reward.id} 
-                    className={`border border-earth-200 rounded-2xl p-5 flex flex-col justify-between hover:border-sage-500 transition-all ${
-                      !reward.available ? 'opacity-65' : ''
-                    }`}
+                  <div
+                    key={reward.id}
+                    className={`border border-earth-200 rounded-2xl p-5 flex flex-col justify-between hover:border-sage-500 transition-all ${!reward.available ? 'opacity-65' : ''
+                      }`}
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
@@ -148,18 +201,17 @@ export default function EcoImpact() {
                       <p className="text-xs text-earth-500 leading-normal">{reward.description}</p>
                     </div>
 
-                    <button 
+                    <button
                       disabled={!reward.available || (reward.isAuto && !reward.link)}
                       onClick={() => reward.link ? router.push(reward.link) : null}
-                      className={`w-full mt-6 py-2 rounded-full text-xs font-semibold transition-all ${
-                        reward.link
-                          ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift'
-                          : reward.isAuto
-                            ? 'bg-earth-100 text-earth-600 border border-earth-200 cursor-default'
-                            : reward.available 
-                              ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift' 
-                              : 'bg-earth-100 text-earth-400 cursor-not-allowed'
-                      }`}
+                      className={`w-full mt-6 py-2 rounded-full text-xs font-semibold transition-all ${reward.link
+                        ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift'
+                        : reward.isAuto
+                          ? 'bg-earth-100 text-earth-600 border border-earth-200 cursor-default'
+                          : reward.available
+                            ? 'bg-sage-600 hover:bg-sage-700 text-white hover-lift'
+                            : 'bg-earth-100 text-earth-400 cursor-not-allowed'
+                        }`}
                     >
                       {reward.link ? 'Use Service' : reward.isAuto ? 'Your Privilege (Activated)' : reward.available ? 'Redeem Reward' : 'Temporarily Unavailable'}
                     </button>
@@ -184,7 +236,7 @@ export default function EcoImpact() {
                   <div>
                     <h2 className="text-xl font-bold flex items-center gap-2">
                       Eco Achievements
-                      <button 
+                      <button
                         onClick={() => setShowEcoInfo(true)}
                         className="text-sage-100 hover:text-white transition-colors"
                         title="Learn more about eco achievements"
@@ -204,7 +256,7 @@ export default function EcoImpact() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-sage-100 font-medium">Carbon Reduced</span>
-                    <span className="block text-lg font-bold">15.8 kg CO₂e</span>
+                    <span className="block text-lg font-bold">{(deliveredItemsCount * 6.5).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg CO₂e</span>
                   </div>
                 </div>
 
@@ -214,17 +266,17 @@ export default function EcoImpact() {
                   </div>
                   <div>
                     <span className="block text-[10px] text-sage-100 font-medium">Water Saved</span>
-                    <span className="block text-lg font-bold">11,200 L</span>
+                    <span className="block text-lg font-bold">{(deliveredItemsCount * 2700).toLocaleString()} L</span>
                   </div>
                 </div>
 
                 <div className="bg-white/10 border border-white/20 p-4 rounded-2xl flex items-center gap-4">
                   <div className="p-2.5 bg-sage-400/30 text-sage-100 rounded-xl">
-                    <TreePine className="h-6 w-6" />
+                    <Recycle className="h-6 w-6" />
                   </div>
                   <div>
-                    <span className="block text-[10px] text-sage-100 font-medium">Equivalent Trees</span>
-                    <span className="block text-lg font-bold">1.6 Trees</span>
+                    <span className="block text-[10px] text-sage-100 font-medium">Waste Diverted</span>
+                    <span className="block text-lg font-bold">{(deliveredItemsCount * 0.2).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg</span>
                   </div>
                 </div>
               </div>
@@ -248,17 +300,41 @@ export default function EcoImpact() {
                   <span className="text-sage-600">♻️</span> Daily Missions
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {dailyMissions.map(mission => (
-                    <div key={mission.id} className="border border-earth-200 p-4 rounded-xl flex items-start gap-3 hover:border-sage-400 transition-colors">
-                      <div className="bg-sage-50 text-sage-700 font-bold text-[10px] px-2 py-1 rounded-md shrink-0 mt-0.5">
-                        +{mission.points}
+                  {dailyMissions.map(mission => {
+                    const isCompleted = completedMissions.includes(`daily-${mission.id}`);
+                    return (
+                      <div key={mission.id} className={`border p-4 rounded-xl flex items-start justify-between gap-3 transition-colors ${isCompleted ? 'border-earth-200 bg-earth-50/50 opacity-60' : 'border-earth-200 hover:border-sage-400 bg-white'}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`font-bold text-[10px] px-2 py-1 rounded-md shrink-0 mt-0.5 ${isCompleted ? 'bg-earth-200 text-earth-600' : 'bg-sage-50 text-sage-700'}`}>
+                            +{mission.points}
+                          </div>
+                          <div>
+                            <h4 className={`font-semibold text-sm ${isCompleted ? 'text-earth-600 line-through' : 'text-earth-800'}`}>{mission.title}</h4>
+                            <p className="text-xs text-earth-500 mt-1">{mission.desc}</p>
+                          </div>
+                        </div>
+                        {isCompleted ? (
+                          <div className="text-[10px] font-bold text-earth-500 bg-earth-100 px-3 py-1.5 rounded-full shrink-0">
+                            Completed
+                          </div>
+                        ) : checkCondition(`daily-${mission.id}`) ? (
+                          <button
+                            onClick={() => handleClaim(`daily-${mission.id}`, mission.points)}
+                            className="text-[10px] font-bold text-white bg-sage-600 hover:bg-sage-700 px-4 py-1.5 rounded-full shrink-0 transition-colors shadow-sm relative overflow-hidden"
+                          >
+                            {justClaimed === `daily-${mission.id}` ? 'Claimed!' : 'Claim'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleSimulateAction(`daily-${mission.id}`)}
+                            className="text-[10px] font-bold text-earth-500 bg-earth-100 hover:bg-earth-200 px-4 py-1.5 rounded-full shrink-0 transition-colors shadow-sm"
+                          >
+                            To Do
+                          </button>
+                        )}
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-sm text-earth-800">{mission.title}</h4>
-                        <p className="text-xs text-earth-500 mt-1">{mission.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -268,17 +344,41 @@ export default function EcoImpact() {
                   <span className="text-yellow-500">⭐</span> One-time Missions
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {oneTimeMissions.map(mission => (
-                    <div key={mission.id} className="border border-earth-200 p-4 rounded-xl flex items-start gap-3 hover:border-sage-400 transition-colors">
-                      <div className="bg-sage-50 text-sage-700 font-bold text-[10px] px-2 py-1 rounded-md shrink-0 mt-0.5">
-                        +{mission.points}
+                  {oneTimeMissions.map(mission => {
+                    const isCompleted = completedMissions.includes(`onetime-${mission.id}`);
+                    return (
+                      <div key={mission.id} className={`border p-4 rounded-xl flex items-start justify-between gap-3 transition-colors ${isCompleted ? 'border-earth-200 bg-earth-50/50 opacity-60' : 'border-earth-200 hover:border-sage-400 bg-white'}`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`font-bold text-[10px] px-2 py-1 rounded-md shrink-0 mt-0.5 ${isCompleted ? 'bg-earth-200 text-earth-600' : 'bg-sage-50 text-sage-700'}`}>
+                            +{mission.points}
+                          </div>
+                          <div>
+                            <h4 className={`font-semibold text-sm ${isCompleted ? 'text-earth-600 line-through' : 'text-earth-800'}`}>{mission.title}</h4>
+                            <p className="text-xs text-earth-500 mt-1">{mission.desc}</p>
+                          </div>
+                        </div>
+                        {isCompleted ? (
+                          <div className="text-[10px] font-bold text-earth-500 bg-earth-100 px-3 py-1.5 rounded-full shrink-0">
+                            Completed
+                          </div>
+                        ) : checkCondition(`onetime-${mission.id}`) ? (
+                          <button
+                            onClick={() => handleClaim(`onetime-${mission.id}`, mission.points)}
+                            className="text-[10px] font-bold text-white bg-sage-600 hover:bg-sage-700 px-4 py-1.5 rounded-full shrink-0 transition-colors shadow-sm relative overflow-hidden"
+                          >
+                            {justClaimed === `onetime-${mission.id}` ? 'Claimed!' : 'Claim'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleSimulateAction(`onetime-${mission.id}`)}
+                            className="text-[10px] font-bold text-earth-500 bg-earth-100 hover:bg-earth-200 px-4 py-1.5 rounded-full shrink-0 transition-colors shadow-sm"
+                          >
+                            To Do
+                          </button>
+                        )}
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-sm text-earth-800">{mission.title}</h4>
-                        <p className="text-xs text-earth-500 mt-1">{mission.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -292,7 +392,7 @@ export default function EcoImpact() {
       {showEcoInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
-            <button 
+            <button
               onClick={() => setShowEcoInfo(false)}
               className="absolute top-4 right-4 text-earth-400 hover:text-earth-600 bg-earth-100 hover:bg-earth-200 p-1.5 rounded-full transition-colors"
             >
@@ -332,7 +432,7 @@ export default function EcoImpact() {
                 </div>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setShowEcoInfo(false)}
               className="w-full mt-6 bg-sage-600 text-white font-bold py-3 rounded-xl hover:bg-sage-700 hover:shadow-md transition-all active:scale-[0.98]"
             >
@@ -342,6 +442,25 @@ export default function EcoImpact() {
         </div>
       )}
 
+      {/* Invite Modal for displaying referral link */}
+      {activeMockModal === 'invite' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-200 text-center">
+            <h3 className="text-lg font-bold text-earth-900 mb-2">Invite a Friend</h3>
+            <p className="text-sm text-earth-500 mb-4">Share this link with a friend. When they sign up and make their first purchase, you'll earn points!</p>
+
+            <div className="bg-earth-50 border border-earth-200 p-3 rounded-xl mb-6">
+              <span className="text-xs font-mono text-earth-700 break-all select-all">
+                {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser?.id}` : ''}
+              </span>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setActiveMockModal(null)} className="w-full px-4 py-2 bg-sage-600 rounded-xl text-white font-bold hover:bg-sage-700">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
