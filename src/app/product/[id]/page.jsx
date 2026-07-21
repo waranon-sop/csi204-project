@@ -9,14 +9,15 @@ import { mockProducts } from '../../../data/products';
 import AnimatedPage from '../../../components/AnimatedPage';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useFavorites } from '../../../context/FavoritesContext';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState('');
-  const [isLiked, setIsLiked] = useState(false);
   const { cartItems, addToCart } = useCart();
   const { currentUser, openAuthModal } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   useEffect(() => {
     // Scroll to top on mount/id change
@@ -25,7 +26,6 @@ export default function ProductDetail() {
     const found = mockProducts.find((p) => p.id === parseInt(id)) || mockProducts[0];
     setProduct(found);
     setActiveImage(found.hoverImage || found.image);
-    setIsLiked(false);
   }, [id]);
 
   if (!product) return null;
@@ -186,12 +186,12 @@ export default function ProductDetail() {
                 {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}
               </button>
               <button 
-                onClick={() => setIsLiked(!isLiked)}
+                onClick={() => toggleFavorite(product)}
                 className={`p-4 rounded-xl border transition-all ${
-                  isLiked ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
+                  isFavorite(product.id) ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
                 }`}
               >
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
+                <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
               </button>
             </div>
             

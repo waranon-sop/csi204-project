@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
-import { User, Mail, Phone, MapPin, Shield, Check, Lock, ShieldCheck, Box, FileText, Activity } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Check, Lock, ShieldCheck, Box, FileText, Activity, Gift } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateUser } = useAuth();
+  const fileInputRef = useRef(null);
   
+  const getDisplayRank = (u) => {
+    if (!u) return '';
+    if (u.role === 'admin') return 'Admin';
+    if (u.role === 'staff') return 'Staff';
+    return u.rank || 'Seed';
+  };
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -17,6 +25,7 @@ export default function ProfileSettings() {
     password: '',
     avatar: '',
     ecoStatus: 'Eco Hero',
+    birthday: '',
   });
 
   useEffect(() => {
@@ -28,8 +37,9 @@ export default function ProfileSettings() {
         phone: currentUser.phone || '',
         address: currentUser.address || '',
         password: currentUser.password || '',
-        avatar: currentUser.avatar || '',
-        ecoStatus: currentUser.ecoStatus || 'Eco Hero',
+        avatar: currentUser.avatar || currentUser.picture || '',
+        ecoStatus: getDisplayRank(currentUser) || currentUser.ecoStatus || 'Eco Hero',
+        birthday: currentUser.birthday || '',
       }));
     }
   }, [currentUser]);
@@ -81,16 +91,34 @@ export default function ProfileSettings() {
     setFormData(prev => ({ ...prev, avatar: '' }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, picture: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePic = () => {
+    setFormData(prev => ({ ...prev, picture: '' }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateUser({
-      name: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      address: formData.address,
-      password: formData.password,
-      avatar: formData.avatar
-    });
+    if (updateUser) {
+      updateUser({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        password: formData.password,
+        avatar: formData.avatar,
+        picture: formData.avatar
+      });
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -116,6 +144,7 @@ export default function ProfileSettings() {
 
             {/* Profile Pic Upload */}
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
+<<<<<<< HEAD
               <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md">
                 {formData.avatar ? (
                   <img 
@@ -127,6 +156,19 @@ export default function ProfileSettings() {
                   <div className="w-full h-full bg-[#EAE5DB] flex items-center justify-center text-3xl font-bold text-[#2D2D2A] uppercase">
                     {formData.fullName?.charAt(0) || 'U'}
                   </div>
+=======
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md bg-gray-100 flex items-center justify-center">
+                {formData.picture ? (
+                  <Image 
+                    src={formData.picture} 
+                    alt="Avatar big" 
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <User className="h-10 w-10 text-gray-400" />
+>>>>>>> e49ace33209bef87fec471aa29a4bef9b58b0842
                 )}
               </div>
               <div className="text-center sm:text-left space-y-2">
@@ -166,12 +208,13 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-earth-700 block">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="text"
                       value={formData.fullName}
                       onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      placeholder="e.g. John Doe"
                       required
                     />
                   </div>
@@ -181,12 +224,13 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-earth-700 block">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      placeholder="e.g. john@example.com"
                       required
                     />
                   </div>
@@ -221,13 +265,14 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-earth-700 block">Phone Number</label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-3 h-4.5 w-4.5 text-earth-400" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                     <input
                       type="tel"
                       value={formData.phone || ''}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="e.g. 0812345678"
                       className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all"
+                      required
                     />
                   </div>
                 </div>
@@ -263,39 +308,58 @@ export default function ProfileSettings() {
                   </>
                 )}
 
-                {/* Eco status info - Only for Customer */}
+                {/* Birthday (Read Only) - For Customer */}
                 {currentUser?.role === 'customer' && (
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-earth-700 block">Eco Status</label>
+                    <label className="text-xs font-semibold text-earth-700 block">Birthday</label>
                     <div className="relative">
-                      <Shield className="absolute left-3.5 top-3 h-4.5 w-4.5 text-sage-500" />
+                      <Gift className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-earth-400" />
                       <input
                         type="text"
-                        value={formData.ecoStatus}
+                        value={formData.birthday || ''}
                         disabled
-                        className="w-full bg-sage-50/50 border border-sage-100 rounded-xl py-2.5 pl-10 pr-4 text-sm text-sage-800 font-semibold cursor-not-allowed"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-gray-500 font-medium cursor-not-allowed transition-all"
+                        placeholder="Not provided"
                       />
                     </div>
+                    {!formData.birthday && (
+                      <p className="text-[10px] text-sage-600">
+                        * Add your birthday via the Rewards widget to earn a special gift!
+                      </p>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {/* Delivery Address - Only for Customer */}
-              {currentUser?.role === 'customer' && (
+                {/* Eco status info */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-earth-700 block">Delivery Address for Returns</label>
+                  <label className="text-xs font-semibold text-earth-700 block">Eco Membership Tier</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3.5 top-3.5 h-4.5 w-4.5 text-earth-400" />
-                    <textarea
-                      rows="3"
-                      value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all resize-none"
-                      required={currentUser?.role === 'customer'}
+                    <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-sage-500" />
+                    <input
+                      type="text"
+                      value={formData.ecoStatus}
+                      disabled
+                      className="w-full bg-sage-50/50 border border-sage-100 rounded-xl py-2.5 pl-10 pr-4 text-sm text-sage-800 font-semibold cursor-not-allowed"
                     />
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Delivery Address */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-earth-700 block">Shipping and Return Address</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3.5 top-4 w-5 h-5 text-earth-400" />
+                  <textarea
+                    rows="3"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    className="w-full bg-earth-50 border border-earth-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 focus:bg-white transition-all resize-none"
+                    placeholder="Enter your full shipping address (House No., Street, City, ZIP)..."
+                    required
+                  />
+                </div>
+              </div>
 
               {/* Save Button & Feedback */}
               <div className="flex items-center justify-between pt-4 border-t border-earth-100">

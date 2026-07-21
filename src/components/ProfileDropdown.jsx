@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu } from 'lucide-react';
+import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileDropdown({ isOpen, onClose }) {
@@ -55,7 +55,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
       case 'customer':
       default:
         return {
-          title: 'Seed Member',
+          title: `${currentUser.rank || 'Seed'} Member`,
           color: 'text-[#5F6B4E]',
           icon: Leaf,
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
@@ -82,10 +82,10 @@ export default function ProfileDropdown({ isOpen, onClose }) {
         onClick={() => { router.push('/profile'); onClose(); }}
         className="w-full flex items-center gap-4 pb-4 border-b border-[#F2E9DC] mb-4 text-left hover:bg-earth-50/50 p-2 -mx-2 rounded-xl transition-colors cursor-pointer"
       >
-        <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#F2E9DC] shadow-sm shrink-0">
-          {currentUser?.avatar ? (
+        <div className="relative w-14 h-14 rounded-full overflow-hidden border border-[#F2E9DC] shadow-sm shrink-0 bg-gray-100 flex items-center justify-center">
+          {currentUser?.avatar || currentUser?.picture ? (
             <img 
-              src={currentUser.avatar} 
+              src={currentUser.avatar || currentUser.picture} 
               alt={`${currentUser.name} avatar`} 
               className="w-full h-full object-cover"
             />
