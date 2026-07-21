@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
@@ -10,26 +10,26 @@ import { addAdminNotification } from '../../../utils/notifications';
 const mockProducts = [
   {
     id: 'RW-29402', name: 'Vintage Linen Overcoat', brand: 'Unknown', category: 'Outerwear',
-    price: 145, stock: 24, condition: 'Very Good', defects: 'No visible defects. Perfect condition.',
+    price: 145, condition: 'Very Good', defects: 'No visible defects. Perfect condition.',
     size: 'M', chest: '100 cm', length: '100 cm', status: 'In Stock', hidden: false,
     image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'RW-18239', name: 'Raw Silk Trousers', brand: 'Silk & Co.', category: 'Bottoms',
-    price: 89, stock: 4, condition: 'Good', defects: 'Minor pull thread on right inner seam.',
-    size: 'L', chest: '-', length: '102 cm', status: 'Low Stock', hidden: false,
+    price: 89, condition: 'Good', defects: 'Minor pull thread on right inner seam.',
+    size: 'L', chest: '-', length: '102 cm', status: 'Available', hidden: false,
     image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'RW-99201', name: 'Upcycled Denim Tote', brand: 'ReThread', category: 'Accessories',
-    price: 45, stock: 112, condition: 'Like New', defects: 'Brand new, upcycled from surplus fabric.',
+    price: 45, condition: 'Like New', defects: 'Brand new, upcycled from surplus fabric.',
     size: 'OS', chest: '-', length: '-', status: 'In Stock', hidden: false,
     image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=800'
   },
   {
     id: 'RW-00451', name: 'Recycled Cotton Sweater', brand: 'Patagonia', category: 'Tops',
-    price: 115, stock: 0, condition: 'Good', defects: 'Small pilling on left sleeve cuff.',
-    size: 'S', chest: '88 cm', length: '60 cm', status: 'Out of Stock', hidden: false,
+    price: 115, condition: 'Good', defects: 'Small pilling on left sleeve cuff.',
+    size: 'S', chest: '88 cm', length: '60 cm', status: 'Sold Out', hidden: false,
     image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800'
   },
 ];
@@ -42,40 +42,34 @@ const CONDITION_STYLE = {
 };
 
 const STOCK_STYLE = {
-  'In Stock':     'text-[#3A4A2D]',
-  'Low Stock':    'text-[#C57B57]',
-  'Out of Stock': 'text-red-500',
+  'Sold Out': 'text-red-500',
 };
 
 const STATUS_BADGE = {
   'Available':  { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
-  'In Stock':   { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
-  'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Out of Stock' },
-  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Out of Stock' },
+  'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
+  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
   'Reserved':   { dot: 'bg-[#9E7A2E]',  text: 'text-[#9E7A2E]',  bg: 'bg-[#FDF9F0]',  label: 'Reserved' },
   'Draft':      { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Draft' },
-  'Low Stock':  { dot: 'bg-[#C57B57]',  text: 'text-[#C57B57]',  bg: 'bg-[#FAF0EA]',  label: 'Low Stock' },
-  'Archived':   { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Archived' },
 };
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewProduct, setViewProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [productToDelete, setProductToDelete] = useState(null);
+  const [isAttributesModalOpen, setIsAttributesModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterCondition, setFilterCondition] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
   const { addToast } = useToast();
   const { currentUser } = useAuth();
   const [categories, setCategories] = useState(['Tops', 'Outerwear', 'Bottoms', 'Dresses', 'Accessories']);
   const [sizes, setSizes] = useState(['XS', 'S', 'M', 'L', 'XL', 'OS']);
-  const [isAttributesModalOpen, setIsAttributesModalOpen] = useState(false);
   const [newAttributeInput, setNewAttributeInput] = useState('');
   const [attributeTab, setAttributeTab] = useState('categories'); // 'categories' or 'sizes'
 
@@ -104,13 +98,12 @@ export default function AdminProducts() {
   const handleSaveProduct = async () => {
     let updatedProducts;
     
-    // Auto-correct status based on stock to prevent inconsistencies
-    const productToSave = { ...editingProduct };
-    if (productToSave.stock === 0 && productToSave.status === 'Available') {
-      productToSave.status = 'Out of Stock';
-    } else if (productToSave.stock > 0 && (productToSave.status === 'Out of Stock' || productToSave.status === 'Sold Out')) {
-      productToSave.status = 'Available';
+    if (!editingProduct.name?.trim() || editingProduct.price === undefined || editingProduct.price === '' || isNaN(editingProduct.price)) {
+      addToast('Please provide a valid product name and price', 'error');
+      return;
     }
+    
+    const productToSave = { ...editingProduct };
 
     try {
       if (productToSave.isNew) {
@@ -141,45 +134,6 @@ export default function AdminProducts() {
     }
   };
 
-  const handleToggleVisibility = async (id) => {
-    const product = products.find(p => p.id === id);
-    if (!product) return;
-    const newStatus = product.status === 'Draft' ? 'Available' : 'Draft';
-    
-    try {
-      await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-      const updatedProducts = products.map(p => p.id === id ? { ...p, status: newStatus } : p);
-      setProducts(updatedProducts);
-      addToast(newStatus === 'Draft' ? 'Product moved to draft' : 'Product published');
-    } catch (err) {
-      addToast('Failed to update product visibility');
-    }
-  };
-
-  const handleDeleteProduct = (id) => {
-    setProductToDelete(id);
-  };
-
-  const confirmDelete = async () => {
-    if (productToDelete) {
-      const deletedProduct = products.find(p => p.id === productToDelete);
-      
-      try {
-        await fetch(`/api/products/${productToDelete}`, { method: 'DELETE' });
-        const updatedProducts = products.filter(p => p.id !== productToDelete);
-        setProducts(updatedProducts);
-        addToast('Product deleted successfully');
-        if (deletedProduct) addAdminNotification(currentUser?.name, 'Deleted product', deletedProduct.name, 'product');
-        setProductToDelete(null);
-      } catch (err) {
-        addToast('Failed to delete product');
-      }
-    }
-  };
 
   const handleArchive = async (id) => {
     const product = products.find(p => p.id === id);
@@ -189,14 +143,14 @@ export default function AdminProducts() {
       await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Archived' })
+        body: JSON.stringify({ status: 'Draft' })
       });
-      const updatedProducts = products.map(p => p.id === id ? { ...p, status: 'Archived' } : p);
+      const updatedProducts = products.map(p => p.id === id ? { ...p, status: 'Draft' } : p);
       setProducts(updatedProducts);
-      addToast('Product archived');
-      addAdminNotification(currentUser?.name, 'Archived product', product.name, 'product');
+      addToast('Product moved to draft');
+      addAdminNotification(currentUser?.name, 'Moved product to draft', product.name, 'product');
     } catch (err) {
-      addToast('Failed to archive product');
+      addToast('Failed to move product to draft');
     }
   };
 
@@ -223,9 +177,9 @@ export default function AdminProducts() {
 
   const handleExport = () => {
     const csvContent = [
-      ['ID', 'Name', 'Brand', 'Category', 'Condition', 'Price', 'Stock'].join(','),
+      ['ID', 'Name', 'Brand', 'Category', 'Condition', 'Price'].join(','),
       ...filteredProducts.map(p => 
-        [p.id, `"${p.name || p.title || ''}"`, `"${p.brand || p.brandCategory || ''}"`, p.category, p.condition, p.price, p.stock].join(',')
+        [p.id, `"${p.name || p.title || ''}"`, `"${p.brand || p.brandCategory || ''}"`, p.category, p.condition, p.price].join(',')
       )
     ].join('\n');
     
@@ -238,8 +192,6 @@ export default function AdminProducts() {
     document.body.removeChild(link);
     addToast('Inventory exported successfully');
   };
-
-  const getStock = (p) => p.stock !== undefined ? p.stock : (p.status === 'Available' || p.status === 'In Stock' ? 1 : 0);
 
   const filteredProducts = products.filter(product => {
     const searchLower = (searchQuery || '').toLowerCase();
@@ -255,64 +207,55 @@ export default function AdminProducts() {
     const matchesCondition = filterCondition === 'All' || product.condition === filterCondition;
     
     let matchesStatus = true;
-    const stockCount = getStock(product);
-    if (filterStatus === 'Low Stock') matchesStatus = stockCount > 0 && stockCount <= 5;
-    else if (filterStatus === 'Out of Stock') matchesStatus = stockCount === 0 || product.status === 'Out of Stock' || product.status === 'Sold Out';
+    if (filterStatus === 'Sold Out') matchesStatus = product.status === 'Sold Out' || product.status === 'Out of Stock';
     else if (filterStatus !== 'All') matchesStatus = product.status === filterStatus || (filterStatus === 'Available' && product.status === 'In Stock');
 
     return matchesSearch && matchesCategory && matchesCondition && matchesStatus;
   });
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    const aValue = a[sortConfig.key] || 0;
+    const bValue = b[sortConfig.key] || 0;
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
-  // Global store stats — always from ALL products (store health overview)
-  const outOfStock = products.filter(p => getStock(p) === 0 || p.status === 'Out of Stock' || p.status === 'Sold Out').length;
-  const stockValue = products.reduce((a, p) => a + ((p.price || 0) * getStock(p)), 0);
-  const archivedItems = products.filter(p => p.status === 'Archived').length;
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
+  const paginatedProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Global store stats — aligned with standard e-commerce metrics (like Shopify)
+  const availableItems = products.filter(p => p.status === 'Available' || p.status === 'In Stock').length;
+  const reservedItems = products.filter(p => p.status === 'Reserved').length;
+  const outOfStock = products.filter(p => p.status === 'Sold Out' || p.status === 'Out of Stock').length;
+  const draftItems = products.filter(p => p.status === 'Draft').length;
+
+  const statusCounts = {
+    'All': products.length,
+    'Available': availableItems,
+    'Reserved': reservedItems,
+    'Sold Out': outOfStock,
+    'Draft': draftItems
+  };
 
   // When search or filter changes, reset to page 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, filterCondition, filterStatus]);
+  }, [searchQuery, filterCategory, filterCondition, filterStatus, sortConfig]);
 
 
   return (
     <>
       <div className="space-y-6 animate-fade-in">
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Showing Items', value: filteredProducts.length.toLocaleString(), tab: null },
-          { label: 'Out of Stock', value: outOfStock, color: 'rust', tab: 'Out of Stock' },
-          { label: 'Archived', value: archivedItems, color: 'ochre', tab: 'Archived' },
-          { label: 'Stock Value', value: `THB ${stockValue.toLocaleString()}`, tab: null },
-        ].map(({ label, value, color, tab }) => {
-          let styleClass = 'bg-white border-earth-200/60 text-earth-900';
-          if (color === 'rust') styleClass = 'bg-[#FCF5F3] border-[#E8D1CE] text-[#A84C43]';
-          else if (color === 'ochre') styleClass = 'bg-[#FDF9F0] border-[#E8D8BA] text-[#9E7A2E]';
-          
-          return (
-            <div
-              key={label}
-              onClick={() => tab && setFilterStatus(tab)}
-              className={`rounded-2xl p-5 border ${styleClass} ${tab ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-            >
-              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${color ? 'opacity-80' : 'text-earth-400'}`}>{label}</p>
-              <p className="text-3xl font-bold">{value}</p>
-              {tab && <p className="text-[10px] mt-2 opacity-60 font-medium">Click</p>}
-            </div>
-          );
-        })}
-      </div>
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl border border-earth-200/60 overflow-hidden">
         
         {/* Quick Status Tabs */}
         <div className="px-6 pt-4 flex gap-6 border-b border-earth-100 overflow-x-auto no-scrollbar">
-          {['All', 'Available', 'Low Stock', 'Out of Stock', 'Reserved', 'Draft', 'Archived'].map(status => (
+          {['All', 'Available', 'Reserved', 'Sold Out', 'Draft'].map(status => (
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
@@ -323,6 +266,9 @@ export default function AdminProducts() {
               }`}
             >
               {status}
+              <sup className={`ml-1 text-[10px] font-bold ${filterStatus === status ? 'text-[#3A4A2D]' : 'text-earth-400'}`}>
+                {statusCounts[status] || 0}
+              </sup>
             </button>
           ))}
         </div>
@@ -336,67 +282,36 @@ export default function AdminProducts() {
               placeholder="Search product name or SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800 placeholder-earth-400"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/40 focus:border-[#5F6B4E] text-sm bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 text-earth-800 placeholder-earth-400"
             />
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <div className="relative">
-              <button onClick={() => setIsFilterOpen(!isFilterOpen)} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
-                <Filter className="h-4 w-4" /> Filters
-                {(filterCategory !== 'All' || filterCondition !== 'All') && (
-                  <span className="w-2 h-2 rounded-full bg-[#C57B57]"></span>
-                )}
-              </button>
-              {isFilterOpen && (
-                <div className="absolute top-full mt-2 right-0 bg-white border border-earth-200 rounded-2xl shadow-xl w-56 z-20 overflow-hidden">
-                  <div className="p-4 border-b border-earth-100">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Category</p>
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#F9F7F4] border border-earth-200 rounded-lg text-sm text-earth-800 focus:outline-none"
-                    >
-                      <option value="All">All Categories</option>
-                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                  </div>
-                  <div className="p-4 bg-[#F9F7F4]">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Condition</p>
-                    <select
-                      value={filterCondition}
-                      onChange={(e) => setFilterCondition(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-earth-200 rounded-lg text-sm text-earth-800 focus:outline-none"
-                    >
-                      <option value="All">All Conditions</option>
-                      {['Like New', 'Very Good', 'Good', 'Acceptable'].map(cond => <option key={cond} value={cond}>{cond}</option>)}
-                    </select>
-                  </div>
-                  <div className="p-3 bg-white border-t border-earth-100 flex justify-between items-center">
-                    <button 
-                      onClick={() => { setFilterCategory('All'); setFilterCondition('All'); }}
-                      className="text-xs font-semibold text-earth-500 hover:text-earth-800 transition-colors"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      onClick={() => setIsFilterOpen(false)}
-                      className="px-4 py-1.5 bg-[#3A4A2D] text-white rounded-lg text-xs font-semibold hover:bg-[#4A5E3A] transition-colors"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-earth-200 rounded-xl text-sm text-earth-600 focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium cursor-pointer hover:bg-earth-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all"
+            >
+              <option value="All">All Categories</option>
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+            
+            <select
+              value={filterCondition}
+              onChange={(e) => setFilterCondition(e.target.value)}
+              className="px-4 py-2.5 bg-white border border-earth-200 rounded-xl text-sm text-earth-600 focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 font-medium cursor-pointer hover:bg-earth-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all"
+            >
+              <option value="All">All Conditions</option>
+              {['Like New', 'Very Good', 'Good', 'Acceptable'].map(cond => <option key={cond} value={cond}>{cond}</option>)}
+            </select>
+            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 bg-white rounded-xl text-sm text-earth-600 hover:text-earth-900 hover:bg-earth-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all font-medium">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
-            <button onClick={() => setIsAttributesModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">
+            <button onClick={() => setIsAttributesModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-earth-200 bg-white rounded-xl text-sm text-earth-600 hover:text-earth-900 hover:bg-earth-50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all font-medium">
               Manage Attributes
             </button>
             <button
-              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, stock: 1, status: 'Available', condition: 'Very Good', defects: '', category: 'Tops', size: 'M' })}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#3A4A2D] hover:bg-[#4A5E3A] text-white rounded-xl text-sm font-medium transition-colors"
+              onClick={() => setEditingProduct({ isNew: true, name: '', brand: '', price: 0, status: 'Available', condition: 'Very Good', defects: '', category: 'Tops', size: 'M' })}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#3A4A2D] hover:bg-[#2A3620] text-white rounded-xl text-sm font-medium shadow-[0_4px_12px_rgba(58,74,45,0.2)] hover:shadow-[0_6px_16px_rgba(58,74,45,0.3)] hover:-translate-y-0.5 transition-all duration-300"
             >
               <Plus className="h-4 w-4" /> Add New Listing
             </button>
@@ -406,35 +321,53 @@ export default function AdminProducts() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead>
-              <tr className="text-[10px] font-bold uppercase tracking-widest text-earth-400 border-b border-earth-100">
-                <th className="px-6 py-4">Name</th>
+            <thead className="bg-[#FAF8F5] border-y border-earth-100">
+              <tr className="text-[10px] font-bold uppercase tracking-widest text-earth-500">
+                <th className="px-6 py-4 rounded-tl-xl">Name</th>
                 <th className="px-6 py-4">Condition</th>
-                <th className="px-6 py-4">Price</th>
+                <th 
+                  className="px-6 py-4 cursor-pointer hover:text-[#3A4A2D] hover:bg-earth-100/50 transition-colors group select-none"
+                  onClick={() => {
+                    let direction = 'asc';
+                    if (sortConfig.key === 'price' && sortConfig.direction === 'asc') {
+                      direction = 'desc';
+                    }
+                    setSortConfig({ key: 'price', direction });
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    Price
+                    {sortConfig.key === 'price' ? (
+                      sortConfig.direction === 'asc' ? <ArrowDown className="w-3.5 h-3.5 text-[#3A4A2D]" /> : <ArrowUp className="w-3.5 h-3.5 text-[#3A4A2D]" />
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-0 group-hover:opacity-40 transition-opacity" />
+                    )}
+                  </div>
+                </th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 text-right rounded-tr-xl">Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedProducts.map((product) => (
-                <tr key={product.id} className="border-b border-earth-100 hover:bg-earth-50/50 transition-colors group">
+                <tr key={product.id} className="border-b border-earth-100/60 hover:bg-gradient-to-r hover:from-[#FDF9F0]/40 hover:to-transparent transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-earth-100 shrink-0 border border-earth-200">
-                        <Image src={product.image || 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100'} alt={product.name || product.title || 'Product'} fill sizes="44px" unoptimized className="object-cover" />
+                      <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-earth-100 shrink-0 border border-earth-200/50 shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                        <Image src={product.image || 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100'} alt={product.name || product.title || 'Product'} fill sizes="48px" unoptimized className="object-cover" />
                       </div>
                       <div>
-                        <p className="font-semibold text-earth-800">{product.name || product.title || 'Unknown Product'}</p>
-                        <p className="text-xs text-earth-400 mt-0.5">SKU: {product.id}</p>
+                        <p className="font-bold text-earth-800 text-sm group-hover:text-[#3A4A2D] transition-colors">{product.name || product.title || 'Unknown Product'}</p>
+                        <p className="text-xs text-earth-400 mt-0.5 font-medium tracking-wide">SKU: {product.id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${CONDITION_STYLE[product.condition] || 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm ${CONDITION_STYLE[product.condition] || 'bg-slate-100 text-slate-600 border border-slate-200/60'}`}>
                       {product.condition}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-earth-800">THB {product.price.toFixed(2)}</td>
+                  <td className="px-6 py-4 font-bold text-[#3A4A2D] text-[15px]">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td className="px-6 py-4">
                     {(() => {
                       const badge = STATUS_BADGE[product.status] || STATUS_BADGE['Draft'];
@@ -448,19 +381,16 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setViewProduct(product)} className="p-2 text-earth-400 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="View">
-                        <Eye className="h-4 w-4" />
-                      </button>
                       <button onClick={() => setEditingProduct(product)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
                         <Edit className="h-4 w-4" />
                       </button>
-                      {product.status === 'Archived' ? (
-                        <button onClick={() => handleRestoreProduct(product.id)} className="p-2 text-[#5F6B4E] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="Restore to Store">
-                          <ArchiveRestore className="h-4 w-4" />
+                      {product.status === 'Draft' ? (
+                        <button onClick={() => handleRestoreProduct(product.id)} className="p-2 text-earth-400 hover:text-[#3A4A2D] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="Publish (Make Visible)">
+                          <EyeOff className="h-4 w-4" />
                         </button>
                       ) : (
-                        <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-earth-400 hover:text-[#9E7A2E] hover:bg-[#FDF9F0] rounded-lg transition-colors" title="Archive">
-                          <Archive className="h-4 w-4" />
+                        <button onClick={() => handleArchive(product.id)} className="p-2 text-[#5F6B4E] hover:bg-[#EEF1EA] rounded-lg transition-colors" title="Move to Draft (Hide)">
+                          <Eye className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -468,7 +398,23 @@ export default function AdminProducts() {
                 </tr>
               ))}
               {filteredProducts.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-10 text-center text-earth-400">No products found.</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-6 py-24 text-center">
+                    <div className="flex flex-col items-center justify-center animate-fade-in">
+                      <div className="w-16 h-16 bg-earth-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                        <Package className="w-8 h-8 text-earth-400" />
+                      </div>
+                      <p className="text-lg font-bold text-earth-700">No products found</p>
+                      <p className="text-sm text-earth-500 mt-1 max-w-sm">Try adjusting your filters or search query to find what you're looking for.</p>
+                      <button 
+                        onClick={() => { setSearchQuery(''); setFilterCategory('All'); setFilterCondition('All'); setFilterStatus('All'); }}
+                        className="mt-6 px-4 py-2 text-sm font-semibold text-[#3A4A2D] bg-[#EEF1EA] hover:bg-[#E3E8DD] rounded-xl transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -508,103 +454,68 @@ export default function AdminProducts() {
       </div>
       </div>
 
-      {/* Product Detail Modal */}
-      {viewProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden max-h-[92vh] flex flex-col">
-            <div className="px-6 py-5 border-b border-earth-100 flex justify-between items-center bg-[#F9F7F4]">
-              <div>
-                <h2 className="text-lg font-semibold text-earth-800">{viewProduct.name}</h2>
-                <p className="text-xs text-earth-400 mt-0.5">SKU: {viewProduct.id} · {viewProduct.brand}</p>
-              </div>
-              <button onClick={() => setViewProduct(null)} className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-xl transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="relative aspect-square rounded-2xl overflow-hidden border border-earth-200 bg-earth-50 group cursor-zoom-in">
-                  <Image src={viewProduct.image || 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800'} alt={viewProduct.name || 'Product'} fill sizes="400px" unoptimized className="object-cover" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                    <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 drop-shadow-lg transition-opacity" />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${CONDITION_STYLE[viewProduct.condition]}`}>
-                      {viewProduct.condition}
-                    </span>
-                    <span className="text-xs px-3 py-1 rounded-full bg-earth-100 text-earth-600 font-medium border border-earth-200">
-                      {viewProduct.category}
-                    </span>
-                  </div>
-                  <div className="bg-[#F9F7F4] p-4 rounded-2xl border border-earth-100 space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400">Measurements</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[['Size', viewProduct.size], ['Chest', viewProduct.chest], ['Length', viewProduct.length]].map(([k, v]) => (
-                        <div key={k} className="bg-white p-3 rounded-xl border border-earth-100 text-center">
-                          <p className="text-base font-bold text-earth-800">{v}</p>
-                          <p className="text-[10px] text-earth-400 mt-0.5">{k}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 flex items-center gap-1.5 mb-2">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Known Defects
-                    </p>
-                    <p className="text-sm text-amber-900">{viewProduct.defects}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="bg-[#F9F7F4] p-3 rounded-xl border border-earth-100">
-                      <p className="text-[10px] text-earth-400">Price</p>
-                      <p className="font-bold text-earth-800 mt-0.5">THB {viewProduct.price.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-[#F9F7F4] p-3 rounded-xl border border-earth-100">
-                      <p className="text-[10px] text-earth-400">Stock</p>
-                      <p className="font-bold text-earth-800 mt-0.5">{viewProduct.stock} pcs</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-between">
-              {viewProduct.status === 'Archived' ? (
-                <button onClick={() => handleRestoreProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-[#3A4A2D] bg-[#EEF1EA] border border-[#C2CBB8] rounded-xl text-sm font-medium hover:bg-[#DDE5D8] transition-colors">
-                  <ArchiveRestore className="h-4 w-4" /> Restore to Store
-                </button>
-              ) : (
-                <button onClick={() => handleDeleteProduct(viewProduct.id)} className="flex items-center gap-2 px-4 py-2 text-[#9E7A2E] bg-[#FDF9F0] border border-[#E8D8BA] rounded-xl text-sm font-medium hover:bg-[#FAF0D8] transition-colors">
-                  <Archive className="h-4 w-4" /> Archive
-                </button>
-              )}
-              <div className="flex gap-2">
-                <button onClick={() => setViewProduct(null)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 transition-colors font-medium">Close</button>
-                <button onClick={() => { setEditingProduct(viewProduct); setViewProduct(null); }} className="flex items-center gap-2 px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">
-                  <Edit className="h-4 w-4" /> Edit Listing
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit/Add Product Modal */}
       {editingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="px-6 py-5 border-b border-earth-100 flex justify-between items-center bg-[#F9F7F4]">
               <h2 className="text-lg font-semibold text-earth-800">{editingProduct.isNew ? 'Add New Listing' : 'Edit Listing'}</h2>
               <button onClick={() => setEditingProduct(null)} className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-xl transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto space-y-8">
-              <div className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-earth-200 rounded-2xl bg-earth-50 hover:border-[#5F6B4E] hover:bg-[#EEF1EA]/50 transition-all cursor-pointer group">
-                <Plus className="w-7 h-7 text-earth-400 group-hover:text-[#4A5E3A] transition-colors mb-2" />
-                <p className="text-sm text-earth-500 group-hover:text-earth-700 font-medium">Click to upload images</p>
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+              {/* Left Column: Image Upload */}
+              <div className="w-full md:w-2/5 p-6 border-b md:border-b-0 md:border-r border-earth-100 bg-[#F9F7F4]/30 flex flex-col relative">
+                {editingProduct.image && (
+                  <button 
+                    onClick={() => setEditingProduct({ ...editingProduct, image: null })}
+                    className="absolute top-8 right-8 z-10 p-1.5 bg-white/90 hover:bg-white text-red-500 rounded-xl shadow-sm hover:shadow-md transition-all"
+                    title="Remove image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              <label className="flex flex-col items-center justify-center flex-1 min-h-[300px] border-2 border-dashed border-earth-200 rounded-2xl bg-earth-50 hover:border-[#5F6B4E] hover:bg-[#EEF1EA]/50 transition-all cursor-pointer group relative overflow-hidden">
+                {editingProduct.image ? (
+                  <>
+                    <Image src={editingProduct.image} alt="Upload" fill unoptimized className="object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white font-medium flex items-center gap-2"><Edit className="w-4 h-4"/> Change Image</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-7 h-7 text-earth-400 group-hover:text-[#4A5E3A] transition-colors mb-2" />
+                    <p className="text-sm text-earth-500 group-hover:text-earth-700 font-medium">Click to upload image</p>
+                  </>
+                )}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 2 * 1024 * 1024) {
+                        addToast('Image size must be less than 2MB', 'error');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setEditingProduct({ ...editingProduct, image: reader.result });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }} 
+                />
+              </label>
+              <p className="text-[10px] text-earth-400 text-center mt-4 uppercase tracking-widest font-semibold">Product Image</p>
               </div>
 
+              {/* Right Column: Form */}
+              <div className="w-full md:w-3/5 p-6 overflow-y-auto space-y-8">
               {/* 1. Basic Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">1. Basic Info</h3>
@@ -710,67 +621,40 @@ export default function AdminProducts() {
                     <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Price (THB)</label>
                     <input type="number" value={editingProduct.price || 0} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Stock Qty</label>
-                    <input type="number" value={editingProduct.stock || 0} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                  {/* SKU and Stock Qty removed for cleaner UX */}
+                  <div className="space-y-2 col-span-2 mt-2">
+                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider mb-1">Status</label>
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'Available', label: 'Available', colorClass: 'bg-[#EEF1EA] text-[#3A4A2D] border-[#C2CBB8]', dot: 'bg-[#5F6B4E]' },
+                        { value: 'Reserved', label: 'Reserved', colorClass: 'bg-[#FDF9F0] text-[#9E7A2E] border-[#E8D8BA]', dot: 'bg-[#9E7A2E]' },
+                        { value: 'Draft', label: 'Draft', colorClass: 'bg-earth-100 text-earth-600 border-earth-200', dot: 'bg-earth-400' },
+                        { value: 'Sold Out', label: 'Sold Out', colorClass: 'bg-[#FCF5F3] text-[#A84C43] border-[#E8D1CE]', dot: 'bg-[#A84C43]' }
+                      ].map(s => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setEditingProduct({ ...editingProduct, status: s.value })}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${editingProduct.status === s.value ? s.colorClass + ' ring-2 ring-offset-1 ring-current' : 'bg-white border-earth-200 text-earth-500 hover:bg-earth-50'}`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${editingProduct.status === s.value ? s.dot : 'bg-earth-300'}`} />
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">SKU</label>
-                    <input type="text" value={editingProduct.id || 'Generated on save'} disabled className="w-full px-4 py-2.5 border border-earth-200 rounded-xl text-sm bg-earth-100 text-earth-500 cursor-not-allowed" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Status</label>
-                    <select
-                      value={editingProduct.status || 'Available'}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, status: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800"
-                    >
-                      <option value="Available">🟢 Available — พร้อมขาย</option>
-                      <option value="Reserved">🟡 Reserved — ติดจอง</option>
-                      <option value="Draft">⚪ Draft — ฉบับร่าง</option>
-                      <option value="Out of Stock">🔴 Out of Stock — หมดแล้ว</option>
-                    </select>
-                  </div>
+                </div>
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end gap-3 shrink-0">
               <button onClick={() => setEditingProduct(null)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 font-medium transition-colors">Cancel</button>
               <button onClick={handleSaveProduct} className="px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Save Listing</button>
             </div>
           </div>
         </div>
       )}
-      {/* Archive Confirmation Modal */}
-      {productToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D2D2A]/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Archive className="w-8 h-8" />
-              </div>
-              <h2 className="text-xl font-bold text-earth-800 mb-2">Archive Product?</h2>
-              <p className="text-sm text-earth-500">
-                Are you sure you want to archive this product? It will be hidden from the store.
-              </p>
-            </div>
-            <div className="px-6 py-4 bg-[#F9F7F4] flex justify-end gap-3 border-t border-earth-100">
-              <button 
-                onClick={() => setProductToDelete(null)} 
-                className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmDelete} 
-                className="px-5 py-2 bg-amber-600 text-white rounded-xl text-sm font-medium hover:bg-amber-700 transition-colors shadow-sm"
-              >
-                Archive
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Attributes Management Modal */}
       {isAttributesModalOpen && (
@@ -798,12 +682,14 @@ export default function AdminProducts() {
                   className="flex-1 px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800"
                   onKeyDown={async (e) => {
                     if (e.key === 'Enter' && newAttributeInput.trim()) {
+                      const trimmedInput = newAttributeInput.trim();
                       const list = attributeTab === 'categories' ? categories : sizes;
                       const setList = attributeTab === 'categories' ? setCategories : setSizes;
                       const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
                       
-                      if (!list.includes(newAttributeInput.trim())) {
-                        const updated = [...list, newAttributeInput.trim()];
+                      const isDuplicate = list.some(item => item.toLowerCase() === trimmedInput.toLowerCase());
+                      if (!isDuplicate) {
+                        const updated = [...list, trimmedInput];
                         try {
                           await fetch('/api/metadata', {
                             method: 'PUT',
@@ -816,6 +702,8 @@ export default function AdminProducts() {
                         } catch (err) {
                           addToast('Failed to add attribute');
                         }
+                      } else {
+                        addToast(`This ${attributeTab === 'categories' ? 'category' : 'size'} already exists`, 'error');
                       }
                     }
                   }}
@@ -823,12 +711,14 @@ export default function AdminProducts() {
                 <button
                   onClick={async () => {
                     if (newAttributeInput.trim()) {
+                      const trimmedInput = newAttributeInput.trim();
                       const list = attributeTab === 'categories' ? categories : sizes;
                       const setList = attributeTab === 'categories' ? setCategories : setSizes;
                       const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
                       
-                      if (!list.includes(newAttributeInput.trim())) {
-                        const updated = [...list, newAttributeInput.trim()];
+                      const isDuplicate = list.some(item => item.toLowerCase() === trimmedInput.toLowerCase());
+                      if (!isDuplicate) {
+                        const updated = [...list, trimmedInput];
                         try {
                           await fetch('/api/metadata', {
                             method: 'PUT',
@@ -841,6 +731,8 @@ export default function AdminProducts() {
                         } catch (err) {
                           addToast('Failed to add attribute');
                         }
+                      } else {
+                        addToast(`This ${attributeTab === 'categories' ? 'category' : 'size'} already exists`, 'error');
                       }
                     }
                   }}
@@ -850,38 +742,44 @@ export default function AdminProducts() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {(attributeTab === 'categories' ? categories : sizes).map(item => (
-                  <span key={item} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-earth-100 text-earth-800 rounded-lg text-sm border border-earth-200">
-                    {item}
-                    <button 
-                      onClick={async () => {
-                        const list = attributeTab === 'categories' ? categories : sizes;
-                        const setList = attributeTab === 'categories' ? setCategories : setSizes;
-                        const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
-                        const updated = list.filter(i => i !== item);
-                        
-                        try {
-                          await fetch('/api/metadata', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ [attrType]: updated })
-                          });
-                          setList(updated);
-                        } catch (err) {
-                          addToast('Failed to delete attribute');
-                        }
-                      }}
-                      className="text-earth-400 hover:text-red-500 p-0.5 rounded-full hover:bg-earth-200/50 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
+              <div className="pt-2">
+                <p className="text-[10px] font-bold text-earth-400 uppercase tracking-widest mb-3">
+                  Existing {attributeTab === 'categories' ? 'Categories' : 'Sizes'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(attributeTab === 'categories' ? categories : sizes).map(item => (
+                    <span key={item} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-earth-100 text-earth-800 rounded-lg text-sm border border-earth-200">
+                      {item}
+                      <button 
+                        onClick={async () => {
+                          const list = attributeTab === 'categories' ? categories : sizes;
+                          const setList = attributeTab === 'categories' ? setCategories : setSizes;
+                          const attrType = attributeTab === 'categories' ? 'categories' : 'sizes';
+                          const updated = list.filter(i => i !== item);
+                          
+                          try {
+                            await fetch('/api/metadata', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ [attrType]: updated })
+                            });
+                            setList(updated);
+                            addToast(`Deleted ${attributeTab === 'categories' ? 'category' : 'size'}`);
+                          } catch (err) {
+                            addToast('Failed to delete attribute');
+                          }
+                        }}
+                        className="text-earth-400 hover:text-red-500 p-0.5 rounded-full hover:bg-earth-200/50 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end">
-              <button onClick={() => setIsAttributesModalOpen(false)} className="px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Done</button>
+              <button onClick={() => setIsAttributesModalOpen(false)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 font-medium transition-colors">Close</button>
             </div>
           </div>
         </div>
@@ -889,3 +787,4 @@ export default function AdminProducts() {
     </>
   );
 }
+

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Tag, Percent, X, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Tag, Percent, X, AlertTriangle, Copy } from 'lucide-react';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { addAdminNotification } from '../../../utils/notifications';
@@ -18,6 +18,7 @@ export default function AdminPromotions() {
   const [editingPromo, setEditingPromo] = useState(null);
   const [promoToDelete, setPromoToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const { addToast } = useToast();
   const { currentUser } = useAuth();
 
@@ -88,37 +89,99 @@ export default function AdminPromotions() {
     }
   };
 
-  const filteredPromotions = promotions.filter(promo => 
-    promo.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getEffectiveStatus = (promo) => {
+    if (promo.status !== 'Active') return promo.status;
+    
+    // Auto-expire if usage limit reached
+    if (promo.usageLimit > 0 && promo.used >= promo.usageLimit) {
+      return 'Expired';
+    }
+    
+    // Auto-expire if date has passed
+    if (promo.expiryDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiry = new Date(promo.expiryDate);
+      if (expiry < today) {
+        return 'Expired';
+      }
+    }
+    
+    return 'Active';
+  };
 
-  const activeCount = promotions.filter(p => p.status === 'Active').length;
+  const computedPromotions = promotions.map(promo => ({
+    ...promo,
+    status: getEffectiveStatus(promo)
+  }));
+
+  const filteredPromotions = computedPromotions.filter(promo => {
+    const matchesSearch = promo.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || promo.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const activeCount = computedPromotions.filter(p => p.status === 'Active').length;
+  const topPromo = computedPromotions.length > 0 ? computedPromotions.reduce((max, p) => p.used > max.used ? p : max, computedPromotions[0]) : null;
+  // Rough estimate of discount given for business metrics
+  const totalDiscount = computedPromotions.reduce((acc, p) => {
+    if (p.type === 'fixed') return acc + (p.value * p.used);
+    if (p.type === 'percentage') return acc + (100 * p.used); // Assume ~100 THB off for percentage
+    if (p.type === 'shipping') return acc + (50 * p.used); // Assume 50 THB shipping cost
+    return acc;
+  }, 0);
 
   return (
     <>
       <div className="space-y-6 animate-fade-in">
       {/* Header & Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-2xl p-5 border bg-white border-earth-200/60">
+      <div className="grid grid-cols-4 gap-4">
+        <div className="rounded-2xl p-5 border bg-white border-earth-200/60 shadow-sm hover:shadow-md transition-shadow">
           <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Total Codes</p>
-          <p className="text-3xl font-bold text-earth-900">{promotions.length}</p>
+          <p className="text-3xl font-bold text-earth-900">{computedPromotions.length}</p>
         </div>
-        <div className="rounded-2xl p-5 border bg-[#EEF1EA] border-[#C2CBB8]">
+        <div className="rounded-2xl p-5 border bg-white border-earth-200/60 shadow-sm hover:shadow-md transition-shadow">
           <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Active Codes</p>
           <p className="text-3xl font-bold text-[#3A4A2D]">{activeCount}</p>
         </div>
-        <div className="rounded-2xl p-5 border bg-white border-earth-200/60">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Total Usage</p>
-          <p className="text-3xl font-bold text-earth-900">{promotions.reduce((acc, p) => acc + p.used, 0)}</p>
+        <div className="rounded-2xl p-5 border bg-gradient-to-br from-[#EEF1EA] to-[#E3E8DB] border-[#C2CBB8] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-10">
+            <Tag className="w-24 h-24 text-[#3A4A2D]" />
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#3A4A2D] mb-1">Top Performing Code</p>
+          <div className="flex items-end gap-2 mt-1">
+            <p className="text-2xl font-black text-[#3A4A2D] truncate font-mono tracking-wider">{topPromo ? topPromo.code : '-'}</p>
+          </div>
+          <p className="text-xs font-semibold text-[#5F6B4E] mt-1">{topPromo ? `${topPromo.used} redemptions` : '0 redemptions'}</p>
+        </div>
+        <div className="rounded-2xl p-5 border bg-white border-earth-200/60 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-earth-400 mb-2">Est. Discount Given</p>
+          <p className="text-3xl font-bold text-earth-900">฿{totalDiscount.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Table Card */}
       <div className="bg-white rounded-2xl border border-earth-200/60 overflow-hidden">
-        <div className="px-6 py-4 border-b border-earth-100 flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-earth-400" />
-            <input
+        <div className="px-6 py-4 border-b border-earth-100 flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            {['All', 'Active', 'Expired', 'Draft'].map(status => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-all ${
+                  statusFilter === status 
+                    ? 'bg-[#3A4A2D] text-white shadow-sm' 
+                    : 'bg-[#F9F7F4] text-earth-600 hover:bg-earth-100 border border-transparent hover:border-earth-200'
+                }`}
+              >
+                {status === 'All' ? 'All Codes' : status}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-earth-400" />
+              <input
               type="text"
               placeholder="Search discount code..."
               value={searchQuery}
@@ -135,54 +198,95 @@ export default function AdminPromotions() {
             </button>
           </div>
         </div>
+      </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-[10px] font-bold uppercase tracking-widest text-earth-400 border-b border-earth-100">
-                <th className="px-6 py-4">Code</th>
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-[#FAF8F5] border-y border-earth-100">
+              <tr className="text-[10px] font-bold uppercase tracking-widest text-earth-500">
+                <th className="px-6 py-4 rounded-tl-xl">Code</th>
                 <th className="px-6 py-4">Discount</th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Usage</th>
+                <th className="px-6 py-4 w-full whitespace-normal">Usage</th>
                 <th className="px-6 py-4">Expiry Date</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 text-right rounded-tr-xl">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPromotions.map((promo) => (
-                <tr key={promo.id} className="border-b border-earth-100 hover:bg-earth-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-earth-800 font-mono tracking-wider">{promo.code}</p>
-                    <p className="text-xs text-earth-400 mt-0.5">ID: {promo.id}</p>
-                  </td>
-                  <td className="px-6 py-4 font-medium text-earth-800">
-                    {promo.type === 'percentage' && `${promo.value}% Off`}
-                    {promo.type === 'fixed' && `THB ${promo.value} Off`}
-                    {promo.type === 'shipping' && `Free Shipping`}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${promo.status === 'Active' ? 'bg-[#EEF1EA] text-[#3A4A2D] border border-[#C2CBB8]' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                      {promo.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-earth-600">
-                    {promo.used} / {promo.usageLimit}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-earth-600">
-                    {promo.expiryDate || 'No expiry'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 transition-opacity">
-                      <button onClick={() => setEditingPromo(promo)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-lg transition-colors" title="Edit">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleDeletePromo(promo.id)} className="p-2 text-earth-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredPromotions.map((promo) => {
+                const usagePercent = promo.usageLimit > 0 ? (promo.used / promo.usageLimit) * 100 : 0;
+                const isNearLimit = usagePercent >= 90 && promo.usageLimit > 0;
+                
+                return (
+                  <tr key={promo.id} className="border-b border-earth-100/60 hover:bg-gradient-to-r hover:from-[#FDF9F0]/40 hover:to-transparent transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative group/copy">
+                          <p className="font-bold text-earth-800 font-mono tracking-wider text-base bg-earth-50 px-2 py-1 rounded-md border border-earth-200 cursor-pointer group-hover/copy:bg-earth-100 transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText(promo.code);
+                              addToast('Code copied to clipboard!');
+                            }}
+                            title="Click to copy"
+                          >
+                            {promo.code}
+                          </p>
+                          <div className="absolute -top-2 -right-2 bg-[#3A4A2D] text-white p-1.5 rounded-full opacity-0 group-hover/copy:opacity-100 transition-opacity shadow-sm pointer-events-none">
+                            <Copy className="w-3 h-3" />
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-earth-400 mt-1.5 ml-1">ID: {promo.id}</p>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-[#3A4A2D] text-[15px]">
+                      {promo.type === 'percentage' && `${promo.value}% Off`}
+                      {promo.type === 'fixed' && `THB ${promo.value} Off`}
+                      {promo.type === 'shipping' && `Free Shipping`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${
+                        promo.status === 'Active' ? 'bg-[#3A4A2D] text-white' : 
+                        promo.status === 'Expired' ? 'bg-red-500 text-white' : 
+                        'bg-[#C57B57] text-white'
+                      }`}>
+                        {promo.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1.5 max-w-[150px]">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-medium text-earth-700">{promo.used} used</span>
+                          <span className="text-earth-400">/ {promo.usageLimit}</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-earth-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${isNearLimit ? 'bg-red-500' : 'bg-[#3A4A2D]'}`}
+                            style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                          />
+                        </div>
+                        {isNearLimit && promo.status === 'Active' && (
+                          <p className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-0.5">
+                            <AlertTriangle className="w-3 h-3" /> Running out
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-earth-500">
+                      {promo.expiryDate || 'No expiry'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setEditingPromo(promo)} className="p-2 text-earth-400 hover:text-[#C57B57] hover:bg-[#FAF0EA] rounded-xl transition-colors" title="Edit">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleDeletePromo(promo.id)} className="p-2 text-earth-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredPromotions.length === 0 && (
                 <tr><td colSpan={6} className="px-6 py-10 text-center text-earth-400">No promotions found.</td></tr>
               )}

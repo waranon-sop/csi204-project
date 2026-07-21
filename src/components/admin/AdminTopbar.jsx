@@ -7,7 +7,7 @@ import { LogOut, Bell, Search, ShoppingBag, AlertTriangle, MessageSquare, Packag
 
 const PAGE_TITLES = {
   '/admin': { title: 'Performance Overview', sub: "Tracking the lifecycle of Re-Wear's curated textile collection" },
-  '/admin/inventory': { title: 'Inventory Management', sub: 'Manage your store listings and stock levels' },
+  '/admin/inventory': { title: 'Inventory Management', sub: 'Add, edit, and organize your product listings' },
   '/admin/orders': { title: 'Customer Orders', sub: 'View and process incoming customer orders' },
   '/admin/promotions': { title: 'Promotions Management', sub: 'Manage discount codes and promotional campaigns' },
   '/admin/users': { title: 'User Management', sub: 'Manage staff & admin accounts and access levels' },

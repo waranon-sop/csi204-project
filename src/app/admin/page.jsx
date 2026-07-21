@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, Leaf, Droplets, Wind, Trash2, Banknote, Shirt, Award, Truck } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Leaf, Droplets, Wind, Trash2, Banknote, Shirt, Award, Truck, Ticket } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
   const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342 });
+  const [promotions, setPromotions] = useState([]);
 
   // Show access denied toast if redirected from a protected page
   useEffect(() => {
@@ -31,14 +32,17 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [ordersRes, settingsRes] = await Promise.all([
+        const [ordersRes, settingsRes, promosRes] = await Promise.all([
           fetch('/api/orders'),
-          fetch('/api/settings')
+          fetch('/api/settings'),
+          fetch('/api/promotions')
         ]);
         const localOrders = await ordersRes.json();
         const storedSettings = await settingsRes.json();
+        const localPromos = await promosRes.json();
 
         setOrders(localOrders);
+        setPromotions(localPromos);
         const now = new Date();
         const thisMonth = now.getMonth();
         const thisYear = now.getFullYear();
@@ -131,9 +135,17 @@ export default function AdminDashboard() {
         }
       });
       if (Object.values(buckets).every(v => v === 0)) {
-        return [{ time: 'Mon', revenue: 450 }, { time: 'Wed', revenue: 620 }, { time: 'Fri', revenue: 880 }, { time: 'Sun', revenue: 1500 }];
+        return [
+          { time: 'Mon', revenue: 450 },
+          { time: 'Tue', revenue: 300 },
+          { time: 'Wed', revenue: 620 },
+          { time: 'Thu', revenue: 0 },
+          { time: 'Fri', revenue: 880 },
+          { time: 'Sat', revenue: 1100 },
+          { time: 'Sun', revenue: 1500 }
+        ];
       }
-      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] })).filter(d => d.revenue > 0);
+      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
     } else {
       const buckets = { 'Week 1': 0, 'Week 2': 0, 'Week 3': 0, 'Week 4': 0 };
       confirmedOrders.forEach(o => {
@@ -252,42 +264,36 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Impact */}
+        {/* Promotion Usage */}
         <div className="bg-white rounded-3xl p-7 border border-[#EAE5DB] flex flex-col">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-sm font-serif text-[#5C5C58]">Recent Impact</h2>
+            <h2 className="text-sm font-serif text-[#5C5C58]">Promotion Usage</h2>
           </div>
           <div className="flex-1 space-y-6">
-            <div className="flex gap-4 items-start">
-              <div className="w-10 h-10 rounded-xl bg-[#E3E7D3] flex items-center justify-center shrink-0">
-                <Leaf className="w-4 h-4 text-[#4A533D]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#2D2D2A]">CO2 Offset Milestone</p>
-                <p className="text-[10px] text-[#5C5C58] mt-1 leading-tight">Your community saved 42kg of CO2 today.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 items-start">
-              <div className="w-10 h-10 rounded-xl bg-[#FADCC7] flex items-center justify-center shrink-0">
-                <Award className="w-4 h-4 text-[#C57B57]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#2D2D2A]">Top Seller: Vintage Silk</p>
-                <p className="text-[10px] text-[#5C5C58] mt-1 leading-tight">The 'Heritage Collection' sold out in 4 hours.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 items-start">
-              <div className="w-10 h-10 rounded-xl bg-[#EAE5DB] flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4 text-[#5C5C58]" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#2D2D2A]">Sustainable Logistics</p>
-                <p className="text-[10px] text-[#5C5C58] mt-1 leading-tight">92% of orders used biodegradable packaging.</p>
-              </div>
-            </div>
+            {promotions.length > 0 ? (
+              [...promotions].sort((a, b) => b.used - a.used).slice(0, 3).map((promo, idx) => {
+                const isWarning = promo.status === 'Expired' || (promo.usageLimit && promo.used >= promo.usageLimit);
+                return (
+                  <div key={promo.id || idx} className="flex gap-4 items-start">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isWarning ? 'bg-[#FADCC7]' : 'bg-[#E3E7D3]'}`}>
+                      <Ticket className={`w-4 h-4 ${isWarning ? 'text-[#C57B57]' : 'text-[#4A533D]'}`} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-[#2D2D2A]">Code: {promo.code}</p>
+                      <p className="text-[10px] text-[#5C5C58] mt-1 leading-tight">
+                        Used {promo.used} times {promo.usageLimit ? `/ ${promo.usageLimit}` : ''}
+                        {promo.status === 'Expired' && ' (Expired)'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-xs text-[#8B8B88] text-center mt-10">No promotions data available.</div>
+            )}
           </div>
-          <button className="mt-8 text-[11px] font-semibold text-[#5F6B4E] underline underline-offset-4 text-left hover:text-[#4A533D] transition-colors">
-            View Detailed Report
+          <button onClick={() => router.push('/admin/promotions')} className="mt-8 text-[11px] font-semibold text-[#5F6B4E] underline underline-offset-4 text-left hover:text-[#4A533D] transition-colors">
+            Manage Promotions
           </button>
         </div>
       </div>
