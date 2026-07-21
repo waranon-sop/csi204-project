@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "id": "ADM-0001",
+      "id": "U-001",
       "name": "ยิ่งยศ ผู้ดูแลระบบ",
       "email": "admin@rewear.com",
       "password": "admin",
@@ -10,13 +10,23 @@
       "joinDate": "2024-01-01"
     },
     {
-      "id": "STF-0001",
+      "id": "U-002",
       "name": "สมหญิง พนักงาน",
       "email": "staff@rewear.com",
       "password": "staff",
       "role": "staff",
       "status": "active",
       "joinDate": "2024-01-02"
+    },
+    {
+      "id": "U-003",
+      "name": "Hum",
+      "email": "hum@rewear.com",
+      "password": "waranon777",
+      "role": "staff",
+      "joinDate": "21 Jul 2026",
+      "orders": 0,
+      "avatar": null
     }
   ],
   "storeSettings": {
@@ -29,7 +39,53 @@
     "shippingFlatRate": 5,
     "freeShippingThreshold": 50
   },
-  "notifications": [],
+  "notifications": [
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "Raw Silk Trousers",
+      "time": "Just now",
+      "type": "product",
+      "read": false,
+      "id": 1784579496404
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new team member",
+      "target": "Hum",
+      "time": "Just now",
+      "type": "user",
+      "read": false,
+      "id": 1784578753468
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "Raw Silk Trousers",
+      "time": "Just now",
+      "type": "product",
+      "read": false,
+      "id": 1784578609692
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "Raw Silk Trousers",
+      "time": "Just now",
+      "type": "product",
+      "read": false,
+      "id": 1784578600437
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "Vintage Linen Overcoat",
+      "time": "Just now",
+      "type": "product",
+      "read": false,
+      "id": 1784578581427
+    }
+  ],
   "orders": [
     {
       "id": "#RW-92031",
@@ -89,7 +145,7 @@
       "size": "M",
       "chest": "100 cm",
       "length": "100 cm",
-      "status": "In Stock",
+      "status": "Available",
       "hidden": false,
       "image": "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800"
     },

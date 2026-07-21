@@ -26,98 +26,125 @@ export function AuthProvider({ children }) {
     setIsAuthModalOpen(false);
   };
 
-  // Initialize from localStorage and sessionStorage
+  // Initialize from API with fallback to localStorage
   useEffect(() => {
-    let storedUsers = JSON.parse(localStorage.getItem("users")) || [];
+    const initializeAuth = async () => {
+      let storedUsers = [];
+      try {
+        const res = await fetch("/api/users");
+        if (res.ok) {
+          storedUsers = await res.json();
+          // Update localStorage to keep it in sync
+          localStorage.setItem("users", JSON.stringify(storedUsers));
+        } else {
+          throw new Error("Failed to fetch from API");
+        }
+      } catch (error) {
+        console.warn("Could not fetch users from API, falling back to localStorage", error);
+        storedUsers = JSON.parse(localStorage.getItem("users")) || [];
+      }
 
-    // Auto-clean up duplicate users (fix for the old seed bug)
-    const uniqueUsers = new Map();
-    storedUsers.forEach((u) => {
-      if (uniqueUsers.has(u.id)) {
-        // Prefer the customized one over the default seed
-        if (u.email !== "staff" && u.email !== "admin") {
+      // Auto-clean up duplicate users (fix for the old seed bug)
+      const uniqueUsers = new Map();
+      storedUsers.forEach((u) => {
+        if (uniqueUsers.has(u.id)) {
+          // Prefer the customized one over the default seed
+          if (u.email !== "staff" && u.email !== "admin") {
+            uniqueUsers.set(u.id, u);
+          }
+        } else {
           uniqueUsers.set(u.id, u);
         }
+      });
+      storedUsers = Array.from(uniqueUsers.values());
+      localStorage.setItem("users", JSON.stringify(storedUsers));
+
+      // Seed initial admin if not exists
+      if (
+        !storedUsers.find((u) => u.id === "U-001" || u.id === "ADM-0001" || u.id === "seed-admin-001")
+      ) {
+        const seedAdmin = {
+          id: "U-001",
+          name: "ยิ่งยศ ผู้ดูแลระบบ",
+          email: "admin@rewear.com",
+          password: "admin",
+          role: "admin",
+        };
+        storedUsers = [seedAdmin, ...storedUsers];
+        localStorage.setItem("users", JSON.stringify(storedUsers));
       } else {
-        uniqueUsers.set(u.id, u);
+        // Migrate old email 'admin' -> 'admin@rewear.com' and old IDs to 'U-001'
+        storedUsers = storedUsers.map((u) => {
+          if (u.id === "seed-admin-001" || u.id === "ADM-0001" || u.id === "U-001") {
+            return {
+              ...u,
+              id: "U-001",
+              email: u.email === "admin" ? "admin@rewear.com" : u.email,
+            };
+          }
+          return u;
+        });
+        localStorage.setItem("users", JSON.stringify(storedUsers));
       }
-    });
-    storedUsers = Array.from(uniqueUsers.values());
-    localStorage.setItem("users", JSON.stringify(storedUsers));
 
-    // Seed initial admin if not exists
-    if (
-      !storedUsers.find((u) => u.id === "ADM-0001" || u.id === "seed-admin-001")
-    ) {
-      const seedAdmin = {
-        id: "ADM-0001",
-        name: "ยิ่งยศ ผู้ดูแลระบบ",
-        email: "admin@rewear.com",
-        password: "admin",
-        role: "admin",
-      };
-      storedUsers = [seedAdmin, ...storedUsers];
-      localStorage.setItem("users", JSON.stringify(storedUsers));
-    } else {
-      // Migrate old email 'admin' -> 'admin@rewear.com' and old ID 'seed-admin-001' -> 'ADM-0001'
-      storedUsers = storedUsers.map((u) => {
-        if (u.id === "seed-admin-001" || u.id === "ADM-0001") {
-          return {
-            ...u,
-            id: "ADM-0001",
-            email: u.email === "admin" ? "admin@rewear.com" : u.email,
-          };
+      // Seed initial staff if not exists
+      if (
+        !storedUsers.find((u) => u.id === "U-002" || u.id === "STF-0001" || u.id === "seed-staff-001")
+      ) {
+        const seedStaff = {
+          id: "U-002",
+          name: "สมหญิง พนักงาน",
+          email: "staff@rewear.com",
+          password: "staff",
+          role: "staff",
+        };
+        storedUsers = [seedStaff, ...storedUsers];
+        localStorage.setItem("users", JSON.stringify(storedUsers));
+      } else {
+        // Migrate old email 'staff' -> 'staff@rewear.com' and old IDs to 'U-002'
+        storedUsers = storedUsers.map((u) => {
+          if (u.id === "seed-staff-001" || u.id === "STF-0001" || u.id === "U-002") {
+            return {
+              ...u,
+              id: "U-002",
+              email: u.email === "staff" ? "staff@rewear.com" : u.email,
+            };
+          }
+          return u;
+        });
+        localStorage.setItem("users", JSON.stringify(storedUsers));
+      }
+
+      let storedSession =
+        JSON.parse(sessionStorage.getItem("currentUser")) ||
+        JSON.parse(localStorage.getItem("currentUser")) ||
+        null;
+
+      // Migrate active session ID if needed
+      if (storedSession) {
+        if (storedSession.id === "seed-admin-001" || storedSession.id === "ADM-0001") storedSession.id = "U-001";
+        if (storedSession.id === "seed-staff-001" || storedSession.id === "STF-0001") storedSession.id = "U-002";
+        
+        // Ensure session user still exists and update data
+        const currentUserInDB = storedUsers.find(u => u.id === storedSession.id);
+        if (currentUserInDB) {
+          storedSession = currentUserInDB;
+          if (sessionStorage.getItem("currentUser"))
+            sessionStorage.setItem("currentUser", JSON.stringify(storedSession));
+          if (localStorage.getItem("currentUser"))
+            localStorage.setItem("currentUser", JSON.stringify(storedSession));
+        } else {
+          storedSession = null;
+          sessionStorage.removeItem("currentUser");
+          localStorage.removeItem("currentUser");
         }
-        return u;
-      });
-      localStorage.setItem("users", JSON.stringify(storedUsers));
-    }
+      }
 
-    // Seed initial staff if not exists
-    if (
-      !storedUsers.find((u) => u.id === "STF-0001" || u.id === "seed-staff-001")
-    ) {
-      const seedStaff = {
-        id: "STF-0001",
-        name: "สมหญิง พนักงาน",
-        email: "staff@rewear.com",
-        password: "staff",
-        role: "staff",
-      };
-      storedUsers = [seedStaff, ...storedUsers];
-      localStorage.setItem("users", JSON.stringify(storedUsers));
-    } else {
-      // Migrate old email 'staff' -> 'staff@rewear.com' and old ID 'seed-staff-001' -> 'STF-0001'
-      storedUsers = storedUsers.map((u) => {
-        if (u.id === "seed-staff-001" || u.id === "STF-0001") {
-          return {
-            ...u,
-            id: "STF-0001",
-            email: u.email === "staff" ? "staff@rewear.com" : u.email,
-          };
-        }
-        return u;
-      });
-      localStorage.setItem("users", JSON.stringify(storedUsers));
-    }
+      setUsers(storedUsers);
+      setCurrentUser(storedSession);
+    };
 
-    let storedSession =
-      JSON.parse(sessionStorage.getItem("currentUser")) ||
-      JSON.parse(localStorage.getItem("currentUser")) ||
-      null;
-
-    // Migrate active session ID if needed
-    if (storedSession) {
-      if (storedSession.id === "seed-admin-001") storedSession.id = "ADM-0001";
-      if (storedSession.id === "seed-staff-001") storedSession.id = "STF-0001";
-      if (sessionStorage.getItem("currentUser"))
-        sessionStorage.setItem("currentUser", JSON.stringify(storedSession));
-      if (localStorage.getItem("currentUser"))
-        localStorage.setItem("currentUser", JSON.stringify(storedSession));
-    }
-
-    setUsers(storedUsers);
-    setCurrentUser(storedSession);
+    initializeAuth();
   }, []);
 
   const login = (email, password, keepSignedIn = false) => {
@@ -157,8 +184,17 @@ export function AuthProvider({ children }) {
       return { success: false, error: "Email already exists" };
     }
 
+    const maxUId = users.reduce((max, u) => {
+      if (u.id && u.id.startsWith("U-")) {
+        const num = parseInt(u.id.replace("U-", ""), 10);
+        return !isNaN(num) && num > max ? num : max;
+      }
+      return max;
+    }, 0);
+    const newId = `U-${String(maxUId + 1).padStart(3, "0")}`;
+
     const newUser = {
-      id: Date.now().toString(),
+      id: newId,
       name,
       email,
       password,
