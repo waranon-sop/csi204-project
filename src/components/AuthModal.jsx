@@ -95,8 +95,10 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     const result = login(loginEmail, loginPassword, loginKeepSignedIn);
     if (result.success) {
       onClose();
-      if (result.user?.role === 'admin' || result.user?.role === 'staff') {
+      if (result.user?.role === 'admin') {
         router.push('/admin');
+      } else if (result.user?.role === 'staff') {
+        router.push('/admin/orders');
       } else {
         router.push('/');
       }

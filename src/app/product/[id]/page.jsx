@@ -5,27 +5,34 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, RefreshCcw, ShieldCheck, Shirt, MapPin, Leaf, Info } from 'lucide-react';
-import { mockProducts } from '../../../data/products';
+import { getProducts } from '../../../utils/localStorageHelper';
 import AnimatedPage from '../../../components/AnimatedPage';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useFavorites } from '../../../context/FavoritesContext';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [curatedProducts, setCuratedProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
-  const [isLiked, setIsLiked] = useState(false);
   const { cartItems, addToCart } = useCart();
   const { currentUser, openAuthModal } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   useEffect(() => {
     // Scroll to top on mount/id change
     window.scrollTo(0, 0);
     // Find product or default to first
-    const found = mockProducts.find((p) => p.id === parseInt(id)) || mockProducts[0];
-    setProduct(found);
-    setActiveImage(found.hoverImage || found.image);
-    setIsLiked(false);
+    const fetchProduct = async () => {
+      const allProducts = await getProducts();
+      // Parse id assuming string or number (backend might use RW-XXXX, front end might use integer for mock, let's just do == string compare)
+      const found = allProducts.find((p) => String(p.id) === String(id)) || allProducts[0];
+      setProduct(found);
+      if (found) setActiveImage(found.hoverImage || found.image);
+      setCuratedProducts(allProducts.filter((p) => p.id !== found?.id).slice(0, 4));
+    };
+    fetchProduct();
   }, [id]);
 
   if (!product) return null;
@@ -33,12 +40,9 @@ export default function ProductDetail() {
   const isAdded = cartItems.some((item) => item.id === product.id);
 
   // Derive some dynamic specs (or use defaults if missing)
-  const categorySplit = product.brandCategory.split(' • ');
+  const categorySplit = (product.brandCategory || product.category || '').split(' • ');
   const categoryStr = categorySplit[0] || 'Archive';
   const subCategoryStr = categorySplit[1] || 'Outerwear';
-
-  // Get 4 random products for "Curated for You"
-  const curatedProducts = mockProducts.filter((p) => p.id !== product.id).slice(0, 4);
 
   return (
     <AnimatedPage className="bg-[#FAF8F5] min-h-screen font-sans text-[#2D2D2A] pb-24">
@@ -186,12 +190,12 @@ export default function ProductDetail() {
                 {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}
               </button>
               <button 
-                onClick={() => setIsLiked(!isLiked)}
+                onClick={() => toggleFavorite(product)}
                 className={`p-4 rounded-xl border transition-all ${
-                  isLiked ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
+                  isFavorite(product.id) ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
                 }`}
               >
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
+                <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
               </button>
             </div>
             

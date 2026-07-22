@@ -7,9 +7,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, ShieldAlert, Cpu, Heart, ShoppingBag, User } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
 import AuthModal from './AuthModal';
-import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
 
 export default function Navbar() {
   const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -24,6 +24,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { cartItems, toggleCart } = useCart();
+  const { favorites } = useFavorites();
 
   const isActive = (path) => pathname === path;
 
@@ -114,6 +115,7 @@ export default function Navbar() {
           ]
         }
       },
+      { name: 'SUPPORT', path: '/support' },
       ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
     ];
   };
@@ -232,9 +234,14 @@ export default function Navbar() {
             </form>
 
             {/* Wishlist Icon */}
-            <button className="p-1 text-[#2D2D2A] hover:text-[#C57B57] transition-colors focus:outline-none">
+            <Link href="/wardrobe" className="p-1 text-[#2D2D2A] hover:text-[#C57B57] transition-colors focus:outline-none relative">
               <Heart className="h-5 w-5" strokeWidth={1.5} />
-            </button>
+              {favorites.length > 0 && (
+                <span className="absolute top-0 right-0 bg-[#C57B57] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
+                  {favorites.length}
+                </span>
+              )}
+            </Link>
 
             {/* Shopping Cart Icon */}
             {currentUser?.role === 'customer' ? (
@@ -257,11 +264,11 @@ export default function Navbar() {
               <div className="relative">
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-7 h-7 rounded-full overflow-hidden border border-[#EAE5DB] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none relative"
+                  className="w-7 h-7 rounded-full overflow-hidden border border-[#EAE5DB] hover:ring-2 hover:ring-[#5F6B4E]/30 transition-all focus:outline-none relative bg-gray-100 flex items-center justify-center"
                 >
-                  {currentUser?.avatar ? (
+                  {currentUser?.avatar || currentUser?.picture ? (
                     <img 
-                      src={currentUser.avatar} 
+                      src={currentUser.avatar || currentUser.picture} 
                       alt="Avatar" 
                       className="w-full h-full object-cover" 
                     />
@@ -376,11 +383,12 @@ export default function Navbar() {
             <div className="flex justify-between items-center pt-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#8B8B88]">Account</span>
               {currentUser ? (
-                <button onClick={() => { setIsOpen(false); setIsDropdownOpen(true); }} className="w-8 h-8 rounded-full overflow-hidden border border-[#EAE5DB] relative">
-                  <Image 
-                    src={currentUser.role === 'admin' ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100' : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'} 
-                    alt="Avatar" fill className="object-cover" 
-                  />
+                <button onClick={() => { setIsOpen(false); setIsDropdownOpen(true); }} className="w-8 h-8 rounded-full overflow-hidden border border-[#EAE5DB] relative bg-gray-100 flex items-center justify-center">
+                  {currentUser.picture ? (
+                    <Image src={currentUser.picture} alt="Avatar" fill sizes="32px" className="object-cover" />
+                  ) : (
+                    <User className="h-4 w-4 text-gray-400" />
+                  )}
                 </button>
               ) : (
                 <button onClick={() => { setIsOpen(false); openAuthModal('login'); }} className="text-[13px] font-bold text-[#2D2D2A] flex items-center gap-2 border border-[#EAE5DB] px-4 py-2 rounded-full">

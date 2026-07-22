@@ -1,27 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  X,
-  Check,
-  ShoppingBag,
-  Heart,
-  Leaf,
-  ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCart } from "../../context/CartContext";
-import { useAuth } from "../../context/AuthContext";
+import React, { useState, useEffect } from 'react';
+import { X, Check, ShoppingBag, Heart, Leaf, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useFavorites } from '../../context/FavoritesContext';
 
 export default function QuickViewModal({
   selectedProduct,
   setSelectedProduct,
 }) {
-  const [isLiked, setIsLiked] = useState(false);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
   const getEcoImpact = (category) => {
@@ -58,6 +49,7 @@ export default function QuickViewModal({
     ? getEcoImpact(selectedProduct.category)
     : null;
   const { addToCart, cartItems } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
@@ -65,7 +57,6 @@ export default function QuickViewModal({
 
   // Reset state when a new product is opened
   useEffect(() => {
-    setIsLiked(false);
     setCurrentImageIdx(0);
   }, [selectedProduct]);
 
@@ -279,17 +270,15 @@ export default function QuickViewModal({
                     </>
                   )}
                 </button>
-                <button
-                  onClick={() => setIsLiked(!isLiked)}
+                <button 
+                  onClick={() => toggleFavorite(selectedProduct)}
                   className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
-                    isLiked
-                      ? "border-clay-400 bg-clay-50 text-clay-600"
-                      : "border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]"
+                    isFavorite(selectedProduct.id) 
+                      ? 'border-clay-400 bg-clay-50 text-clay-600' 
+                      : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
                   }`}
                 >
-                  <Heart
-                    className={`h-4 w-4 ${isLiked ? "fill-current text-clay-600" : ""}`}
-                  />
+                  <Heart className={`h-4 w-4 ${isFavorite(selectedProduct.id) ? 'fill-current text-clay-600' : ''}`} />
                 </button>
               </div>
 

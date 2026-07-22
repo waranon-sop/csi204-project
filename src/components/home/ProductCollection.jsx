@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
-import { Eye, Leaf, ArrowRight } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import QuickViewModal from "./QuickViewModal";
-import { useCart } from "../../context/CartContext";
-import { useAuth } from "../../context/AuthContext";
-import { getProducts } from "../../utils/localStorageHelper";
+import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
+import { Eye, Leaf, ArrowRight, Heart } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import QuickViewModal from './QuickViewModal';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useFavorites } from '../../context/FavoritesContext';
+import { getProducts, getLookbooks } from '../../utils/localStorageHelper';
 
 const FILTERS = ["All Pieces", "Vintage Denim", "Y2K Shirts", "Jackets"];
 
@@ -26,115 +27,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
-const LOOK_1_ITEMS = [
-  {
-    id: "l1_1",
-    name: "1992 Vintage Denim",
-    color: "Blue",
-    hex: "#2A5C91",
-    size: 'M (32")',
-    price: 1200,
-  },
-  {
-    id: "l1_2",
-    name: "Midnight Silk Circuit Shirt",
-    color: "Cream",
-    hex: "#F9F6F0",
-    size: "L",
-    price: 800,
-  },
-  {
-    id: "l1_3",
-    name: "Vintage Leather Satchel",
-    color: "Tan",
-    hex: "#C28E5F",
-    size: "OS",
-    price: 1500,
-  },
-  {
-    id: "l1_4",
-    name: "Classic Chelsea Boots",
-    color: "Brown",
-    hex: "#633B26",
-    size: "40",
-    price: 2100,
-  },
-  {
-    id: "l1_5",
-    name: "Gold Pendant Necklace",
-    color: "Gold",
-    hex: "#D4AF37",
-    size: "OS",
-    price: 450,
-  },
-  {
-    id: "l1_6",
-    name: "Classic Leather Watch",
-    color: "Brown/Gold",
-    hex: "#8B5A2B",
-    size: "OS",
-    price: 1800,
-  },
-];
 
-const LOOK_2_ITEMS = [
-  {
-    id: "l2_1",
-    name: "Reconstructed Chore Coat",
-    color: "Olive",
-    hex: "#556B2F",
-    size: "L",
-    price: 1500,
-  },
-  {
-    id: "l2_2",
-    name: "Vintage Corduroy Trousers",
-    color: "Brown",
-    hex: "#5C4033",
-    size: "34",
-    price: 950,
-  },
-  {
-    id: "l2_3",
-    name: "Vintage Suede Desert Boots",
-    color: "Brown",
-    hex: "#8B5A2B",
-    size: "42",
-    price: 1200,
-  },
-  {
-    id: "l2_4",
-    name: "Canvas Tote Bag",
-    color: "Cream",
-    hex: "#F5F5F0",
-    size: "OS",
-    price: 500,
-  },
-  {
-    id: "l2_5",
-    name: "Classic Leather Belt",
-    color: "Brown",
-    hex: "#5C3A21",
-    size: "34",
-    price: 600,
-  },
-  {
-    id: "l2_6",
-    name: "Vintage Field Watch",
-    color: "Brown/Gold",
-    hex: "#B8860B",
-    size: "OS",
-    price: 2200,
-  },
-  {
-    id: "l2_7",
-    name: "Canvas Utility Pouch",
-    color: "Olive",
-    hex: "#6B705C",
-    size: "OS",
-    price: 450,
-  },
-];
 
 export default function ProductCollection() {
   const [activeFilter, setActiveFilter] = useState("All Pieces");
@@ -150,96 +43,120 @@ export default function ProductCollection() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const { addToCart } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { currentUser, openAuthModal } = useAuth();
   const router = useRouter();
 
-  const [look1Selection, setLook1Selection] = useState(
-    LOOK_1_ITEMS.map((i) => i.id),
-  );
-  const [look2Selection, setLook2Selection] = useState(
-    LOOK_2_ITEMS.map((i) => i.id),
-  );
+  const [rawLookbooks, setRawLookbooks] = useState([]);
+  const [activeLookSelections, setActiveLookSelections] = useState({});
+  const [isLookSelecting, setIsLookSelecting] = useState({});
+  const [isLookAdding, setIsLookAdding] = useState({});
 
-  const [isLook1Selecting, setIsLook1Selecting] = useState(false);
-  const [isLook2Selecting, setIsLook2Selecting] = useState(false);
+  const toggleLookItem = (lookId, itemId) => {
+    setActiveLookSelections(prev => {
+      const current = prev[lookId] || [];
+      const updated = current.includes(itemId) 
+        ? current.filter(i => i !== itemId) 
+        : [...current, itemId];
+      return { ...prev, [lookId]: updated };
+    });
+  };
 
-  const [isLook1Adding, setIsLook1Adding] = useState(false);
-  const [isLook2Adding, setIsLook2Adding] = useState(false);
-
-  const toggleLook1 = (id) =>
-    setLook1Selection((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  const toggleLook2 = (id) =>
-    setLook2Selection((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-
-  const look1Total = LOOK_1_ITEMS.filter((i) =>
-    look1Selection.includes(i.id),
-  ).reduce((acc, curr) => acc + curr.price, 0);
-  const look2Total = LOOK_2_ITEMS.filter((i) =>
-    look2Selection.includes(i.id),
-  ).reduce((acc, curr) => acc + curr.price, 0);
-
-  const handleShopLookClick = (lookNum) => {
+  const handleShopLookClick = (lookId) => {
     if (!currentUser) {
       openAuthModal("login");
       return;
     }
-    if (currentUser.role !== "customer") return; // Admin/staff do nothing
-
-    if (lookNum === 1) setIsLook1Selecting(true);
-    if (lookNum === 2) setIsLook2Selecting(true);
+    if (currentUser.role !== "customer") return;
+    setIsLookSelecting(prev => ({ ...prev, [lookId]: true }));
   };
 
-  const handleAddLookToCart = async (lookItems, selectedIds, lookNum) => {
+  const lookbooks = useMemo(() => {
+    return rawLookbooks.map(lb => ({
+      ...lb,
+      items: lb.items.map(item => {
+        const fresh = products.find(p => p.id === item.id);
+        return fresh || item;
+      })
+    }));
+  }, [rawLookbooks, products]);
+
+  const handleAddLookToCart = async (lookbook) => {
     if (!currentUser) {
       openAuthModal("login");
       return;
     }
     if (currentUser.role !== "customer") return;
 
-    if (lookNum === 1) setIsLook1Adding(true);
-    if (lookNum === 2) setIsLook2Adding(true);
-
+    setIsLookAdding(prev => ({ ...prev, [lookbook.id]: true }));
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const itemsToAdd = lookItems.filter((item) =>
-      selectedIds.includes(item.id),
-    );
+    const selectedIds = activeLookSelections[lookbook.id] || [];
+    const itemsToAdd = lookbook.items.filter(item => {
+      const isSoldOut = item.status === 'Sold Out' || item.status === 'Out of Stock' || item.stock === 0 || item.status === 'Reserved';
+      return selectedIds.includes(item.id) && !isSoldOut;
+    });
+    
     itemsToAdd.forEach((item) => {
       addToCart({
         id: item.id,
-        title: item.name,
+        title: item.title || item.name,
         price: item.price,
-        image: item.id.startsWith("l1") ? "/styling_1.png" : "/styling_2.png",
+        image: lookbook.image,
         brandCategory: "Lookbook Item",
         category: "Lookbook",
         size: item.size,
       });
     });
 
-    if (lookNum === 1) {
-      setIsLook1Adding(false);
-      setIsLook1Selecting(false);
-    }
-    if (lookNum === 2) {
-      setIsLook2Adding(false);
-      setIsLook2Selecting(false);
-    }
+    setIsLookAdding(prev => ({ ...prev, [lookbook.id]: false }));
+    setIsLookSelecting(prev => ({ ...prev, [lookbook.id]: false }));
   };
 
   useEffect(() => {
-    setProducts(getProducts());
-    const handleUpdate = () => setProducts(getProducts());
+    const loaded = getLookbooks();
+    setRawLookbooks(loaded);
+    const initialSelections = {};
+    loaded.forEach(lb => {
+      initialSelections[lb.id] = lb.items.map(i => i.id);
+    });
+    setActiveLookSelections(initialSelections);
+    
+    const handleLookbookUpdate = () => {
+      const updated = getLookbooks();
+      setRawLookbooks(updated);
+      const newSelections = {};
+      updated.forEach(lb => {
+        newSelections[lb.id] = lb.items.map(i => i.id);
+      });
+      setActiveLookSelections(newSelections);
+    };
+    window.addEventListener('lookbooksUpdated', handleLookbookUpdate);
+    return () => window.removeEventListener('lookbooksUpdated', handleLookbookUpdate);
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (err) {
+        console.error('Failed to fetch products', err);
+      }
+    };
+    fetchProducts();
+
+    const handleUpdate = () => {
+      fetchProducts();
+    };
     window.addEventListener("productsUpdated", handleUpdate);
     return () => window.removeEventListener("productsUpdated", handleUpdate);
   }, []);
 
   const filteredProducts = useMemo(() => {
     const visibleProducts = products.filter(
-      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived",
+      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived" && p.status !== "Draft",
     );
     if (activeFilter === "All Pieces") return visibleProducts;
     return visibleProducts.filter((p) => p.category === activeFilter);
@@ -625,6 +542,18 @@ export default function ProductCollection() {
                   className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 ease-in-out mix-blend-multiply"
                 />
 
+                <div className="absolute top-4 right-4 z-20">
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleFavorite(product);
+                    }}
+                    className="p-2 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm transition-colors shadow-sm text-sage-600 hover:scale-110 active:scale-95"
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
+
                 <div className="absolute inset-0 bg-[#2D2D2A]/10 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 flex items-center justify-center pb-6">
                   <button
                     onClick={(e) => {
@@ -718,146 +647,121 @@ export default function ProductCollection() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-24 lg:gap-32">
-            {/* Look 01 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              <div className="relative aspect-[4/5] w-full overflow-hidden">
-                <Image
-                  src="/styling_1.png"
-                  alt="Look 01"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-
-              <div className="flex flex-col justify-center">
-                <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#8B8B88] mb-4">
-                  Daily Match
-                </span>
-                <h3 className="font-serif text-3xl md:text-4xl font-bold text-[#2D2D2A] mb-12">
-                  Look 01
-                </h3>
-
-                <div className="space-y-6 mb-12 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                  {LOOK_1_ITEMS.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      onClick={() => isLook1Selecting && toggleLook1(item.id)}
-                      className={`flex items-start gap-4 ${isLook1Selecting ? "cursor-pointer group" : ""} ${idx !== LOOK_1_ITEMS.length - 1 ? "border-b border-[#EAE5DB] pb-5" : ""}`}
-                    >
-                      {isLook1Selecting && (
-                        <div className="relative flex items-center justify-center mt-1 shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={look1Selection.includes(item.id)}
-                            readOnly
-                            className="peer appearance-none w-5 h-5 border-2 border-[#D1D1D1] rounded-sm checked:bg-[#2D2D2A] checked:border-[#2D2D2A] transition-colors cursor-pointer"
-                          />
-                          <svg
-                            className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h4
-                          className={`text-[14px] font-bold transition-colors ${!isLook1Selecting || look1Selection.includes(item.id) ? "text-[#2D2D2A]" : "text-[#A0A09F] line-through"}`}
-                        >
-                          {item.name}
-                        </h4>
-                        <div
-                          className={`text-[12px] font-medium tracking-wide mt-1.5 transition-colors flex flex-wrap items-center gap-2 ${!isLook1Selecting || look1Selection.includes(item.id) ? "text-[#5C5C5A]" : "text-[#A0A09F]"}`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            Color:{" "}
-                            <span
-                              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-sm"
-                              style={{ backgroundColor: item.hex }}
-                            />{" "}
-                            {item.color}
-                          </div>
-                          <span className="text-[#EAE5DB]">|</span>
-                          <span>Size: {item.size}</span>
-                          <span className="text-[#EAE5DB]">|</span>
-                          <span>THB {item.price.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {lookbooks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-[#8B8B88] font-medium">There are no lookbooks available right now.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-24 lg:gap-32">
+              {lookbooks.map((lookbook, lookIndex) => (
+              <div key={lookbook.id} className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div className={`relative aspect-[4/5] w-full overflow-hidden ${lookIndex % 2 === 1 ? 'lg:order-2' : ''}`}>
+                  <Image
+                    src={lookbook.image || "/styling_1.png"}
+                    alt={lookbook.title}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
 
-                {!isLook1Selecting ? (
-                  <button
-                    onClick={() => handleShopLookClick(1)}
-                    className="bg-[#2D2D2A] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#1A1A1A] transition-colors rounded-sm flex items-center justify-center gap-3 group"
-                  >
-                    SHOP THIS LOOK (THB{" "}
-                    {LOOK_1_ITEMS.reduce(
-                      (sum, item) => sum + item.price,
-                      0,
-                    ).toLocaleString()}
-                    )
-                    <svg
-                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  </button>
-                ) : (
-                  <button
-                    disabled={look1Selection.length === 0 || isLook1Adding}
-                    onClick={() =>
-                      handleAddLookToCart(LOOK_1_ITEMS, look1Selection, 1)
-                    }
-                    className="bg-[#5F6B4E] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#4A533D] transition-colors rounded-sm flex items-center justify-center gap-3 group disabled:bg-[#D1D1D1] disabled:text-[#8B8B88] disabled:cursor-not-allowed"
-                  >
-                    {isLook1Adding ? (
-                      <>
-                        <svg
-                          className="animate-spin h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
+                <div className={`flex flex-col justify-center ${lookIndex % 2 === 1 ? 'lg:order-1' : ''}`}>
+                  <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#8B8B88] mb-4">
+                    {lookbook.subtitle}
+                  </span>
+                  <h3 className="font-serif text-3xl md:text-4xl font-bold text-[#2D2D2A] mb-12">
+                    {lookbook.title}
+                  </h3>
+
+                  <div className="space-y-6 mb-12 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                    {lookbook.items?.map((item, idx) => {
+                      const isSoldOut = item.status === 'Sold Out' || item.status === 'Out of Stock' || item.stock === 0 || item.status === 'Reserved';
+                      const isSelecting = isLookSelecting[lookbook.id];
+                      const selectedIds = activeLookSelections[lookbook.id] || [];
+                      const isSelected = selectedIds.includes(item.id) && !isSoldOut;
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            if (isSelecting && !isSoldOut) {
+                              toggleLookItem(lookbook.id, item.id);
+                            }
+                          }}
+                          className={`flex items-start gap-4 ${isSelecting && !isSoldOut ? "cursor-pointer group" : ""} ${isSoldOut ? "opacity-60" : ""} ${idx !== lookbook.items.length - 1 ? "border-b border-[#EAE5DB] pb-5" : ""}`}
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        ADDING...
-                      </>
-                    ) : look1Selection.length > 0 ? (
-                      `ADD SELECTED TO CART (THB ${look1Total.toLocaleString()})`
-                    ) : (
-                      "SELECT ITEMS"
-                    )}
-                    {!isLook1Adding && look1Selection.length > 0 && (
+                          {isSelecting && (
+                            <div className="relative flex items-center justify-center mt-1 shrink-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isSoldOut}
+                                readOnly
+                                className="peer appearance-none w-5 h-5 border-2 border-[#D1D1D1] rounded-sm checked:bg-[#2D2D2A] checked:border-[#2D2D2A] disabled:bg-[#EAE5DB] disabled:border-[#D1D1D1] transition-colors cursor-pointer disabled:cursor-not-allowed"
+                              />
+                              <svg
+                                className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4
+                                className={`text-[14px] font-bold transition-colors ${!isSelecting || isSelected ? "text-[#2D2D2A]" : "text-[#A0A09F]"} ${isSoldOut ? "line-through text-[#A0A09F]" : ""}`}
+                              >
+                                {item.title || item.name}
+                              </h4>
+                              {isSoldOut && (
+                                <span className="text-[9px] uppercase tracking-wider font-bold bg-[#FEE2E2] text-[#D03C31] px-1.5 py-0.5 rounded-sm">
+                                  {item.status === 'Reserved' ? 'Reserved' : 'Sold Out'}
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`text-[12px] font-medium tracking-wide mt-1.5 transition-colors flex flex-wrap items-center gap-2 ${(!isSelecting || isSelected) && !isSoldOut ? "text-[#5C5C5A]" : "text-[#A0A09F]"} ${isSoldOut ? "line-through" : ""}`}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                Color:{" "}
+                                <span
+                                  className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-sm"
+                                  style={{ backgroundColor: item.color?.startsWith('#') ? item.color : (item.hex || item.color) }}
+                                />{" "}
+                                {item.color && !item.color.startsWith('#') && item.color}
+                              </div>
+                              <span className="text-[#EAE5DB]">|</span>
+                              <span>Size: {item.size}</span>
+                              <span className="text-[#EAE5DB]">|</span>
+                              <span>THB {item.price?.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {!isLookSelecting[lookbook.id] ? (
+                    <button
+                      onClick={() => handleShopLookClick(lookbook.id)}
+                      className="bg-[#2D2D2A] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#1A1A1A] transition-colors rounded-sm flex items-center justify-center gap-3 group"
+                    >
+                      SHOP THIS LOOK (THB{" "}
+                      {(lookbook.items || []).reduce(
+                        (sum, item) => {
+                          const isSoldOut = item.status === 'Sold Out' || item.status === 'Out of Stock' || item.stock === 0 || item.status === 'Reserved';
+                          return sum + (isSoldOut ? 0 : (item.price || 0));
+                        },
+                        0,
+                      ).toLocaleString()}
+                      )
                       <svg
                         className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                         fill="none"
@@ -868,173 +772,76 @@ export default function ProductCollection() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M12 4v16m8-8H4"
+                          d="M14 5l7 7m0 0l-7 7m7-7H3"
                         />
                       </svg>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Look 02 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              <div className="relative aspect-[4/5] w-full overflow-hidden lg:order-2">
-                <Image
-                  src="/styling_2.png"
-                  alt="Look 02"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-
-              <div className="flex flex-col justify-center lg:order-1">
-                <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-[#8B8B88] mb-4">
-                  Daily Match
-                </span>
-                <h3 className="font-serif text-3xl md:text-4xl font-bold text-[#2D2D2A] mb-12">
-                  Look 02
-                </h3>
-
-                <div className="space-y-6 mb-12 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                  {LOOK_2_ITEMS.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      onClick={() => isLook2Selecting && toggleLook2(item.id)}
-                      className={`flex items-start gap-4 ${isLook2Selecting ? "cursor-pointer group" : ""} ${idx !== LOOK_2_ITEMS.length - 1 ? "border-b border-[#EAE5DB] pb-5" : ""}`}
+                    </button>
+                  ) : (
+                    <button
+                      disabled={lookbook.items.filter(i => {
+                        const isSoldOut = i.status === 'Sold Out' || i.status === 'Out of Stock' || i.stock === 0 || i.status === 'Reserved';
+                        return (activeLookSelections[lookbook.id] || []).includes(i.id) && !isSoldOut;
+                      }).length === 0 || isLookAdding[lookbook.id]}
+                      onClick={() => handleAddLookToCart(lookbook)}
+                      className="bg-[#5F6B4E] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#4A533D] transition-colors rounded-sm flex items-center justify-center gap-3 group disabled:bg-[#D1D1D1] disabled:text-[#8B8B88] disabled:cursor-not-allowed"
                     >
-                      {isLook2Selecting && (
-                        <div className="relative flex items-center justify-center mt-1 shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={look2Selection.includes(item.id)}
-                            readOnly
-                            className="peer appearance-none w-5 h-5 border-2 border-[#D1D1D1] rounded-sm checked:bg-[#2D2D2A] checked:border-[#2D2D2A] transition-colors cursor-pointer"
-                          />
+                      {isLookAdding[lookbook.id] ? (
+                        <>
                           <svg
-                            className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
+                            className="animate-spin h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
-                            stroke="currentColor"
                           >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
                             <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                           </svg>
-                        </div>
+                          ADDING...
+                        </>
+                      ) : lookbook.items.filter(i => {
+                        const isSoldOut = i.status === 'Sold Out' || i.status === 'Out of Stock' || i.stock === 0 || i.status === 'Reserved';
+                        return (activeLookSelections[lookbook.id] || []).includes(i.id) && !isSoldOut;
+                      }).length > 0 ? (
+                        `ADD SELECTED TO CART (THB ${lookbook.items.filter(i => {
+                          const isSoldOut = i.status === 'Sold Out' || i.status === 'Out of Stock' || i.stock === 0 || i.status === 'Reserved';
+                          return (activeLookSelections[lookbook.id] || []).includes(i.id) && !isSoldOut;
+                        }).reduce((acc, curr) => acc + (curr.price || 0), 0).toLocaleString()})`
+                      ) : (
+                        "SELECT ITEMS"
                       )}
-                      <div className="flex-1">
-                        <h4
-                          className={`text-[14px] font-bold transition-colors ${!isLook2Selecting || look2Selection.includes(item.id) ? "text-[#2D2D2A]" : "text-[#A0A09F] line-through"}`}
-                        >
-                          {item.name}
-                        </h4>
-                        <div
-                          className={`text-[12px] font-medium tracking-wide mt-1.5 transition-colors flex flex-wrap items-center gap-2 ${!isLook2Selecting || look2Selection.includes(item.id) ? "text-[#5C5C5A]" : "text-[#A0A09F]"}`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            Color:{" "}
-                            <span
-                              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-sm"
-                              style={{ backgroundColor: item.hex }}
-                            />{" "}
-                            {item.color}
-                          </div>
-                          <span className="text-[#EAE5DB]">|</span>
-                          <span>Size: {item.size}</span>
-                          <span className="text-[#EAE5DB]">|</span>
-                          <span>THB {item.price.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {!isLook2Selecting ? (
-                  <button
-                    onClick={() => handleShopLookClick(2)}
-                    className="bg-[#2D2D2A] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#1A1A1A] transition-colors rounded-sm flex items-center justify-center gap-3 group"
-                  >
-                    SHOP THIS LOOK (THB{" "}
-                    {LOOK_2_ITEMS.reduce(
-                      (sum, item) => sum + item.price,
-                      0,
-                    ).toLocaleString()}
-                    )
-                    <svg
-                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  </button>
-                ) : (
-                  <button
-                    disabled={look2Selection.length === 0 || isLook2Adding}
-                    onClick={() =>
-                      handleAddLookToCart(LOOK_2_ITEMS, look2Selection, 2)
-                    }
-                    className="bg-[#5F6B4E] text-white text-[12px] font-bold tracking-[0.15em] uppercase py-5 px-8 w-full hover:bg-[#4A533D] transition-colors rounded-sm flex items-center justify-center gap-3 group disabled:bg-[#D1D1D1] disabled:text-[#8B8B88] disabled:cursor-not-allowed"
-                  >
-                    {isLook2Adding ? (
-                      <>
+                      {!isLookAdding[lookbook.id] && (activeLookSelections[lookbook.id] || []).length > 0 && (
                         <svg
-                          className="animate-spin h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                           fill="none"
                           viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
                           <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4v16m8-8H4"
+                          />
                         </svg>
-                        ADDING...
-                      </>
-                    ) : look2Selection.length > 0 ? (
-                      `ADD SELECTED TO CART (THB ${look2Total.toLocaleString()})`
-                    ) : (
-                      "SELECT ITEMS"
-                    )}
-                    {!isLook2Adding && look2Selection.length > 0 && (
-                      <svg
-                        className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                )}
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
+          )}
         </div>
       </section>
 

@@ -1,17 +1,19 @@
-export const addAdminNotification = (user, action, target, type) => {
+export const addAdminNotification = async (user, action, target, type) => {
   try {
-    const existing = JSON.parse(localStorage.getItem('adminNotifications')) || [];
     const newNotif = {
-      id: Date.now(),
       user: user || 'System',
       action: action,
       target: target,
-      time: 'Just now',
+      time: new Date().toISOString(),
       type: type || 'system',
       read: false
     };
-    const updated = [newNotif, ...existing];
-    localStorage.setItem('adminNotifications', JSON.stringify(updated));
+    
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNotif)
+    });
   } catch (e) {
     console.error('Failed to save notification', e);
   }

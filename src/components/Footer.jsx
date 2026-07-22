@@ -1,8 +1,20 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import { Leaf, Smartphone } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Footer() {
+  const { currentUser, openAuthModal } = useAuth();
+
+  const handleProtectedLink = (e) => {
+    if (!currentUser) {
+      e.preventDefault();
+      openAuthModal('login');
+    }
+  };
+
   return (
     <footer className="bg-[#2D2D2A] text-white pt-20 pb-10 border-t border-[#4A543C]">
       <div className="max-w-7xl mx-auto px-6 sm:px-8">
@@ -20,21 +32,10 @@ export default function Footer() {
               Curated second-hand clothing, repaired and restored for the conscious consumer. We believe in sustainable style that lasts decades.
             </p>
             
-            {/* App Benefit */}
-            <div className="pt-4 border-t border-[#4A543C] pr-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#5F6B4E]/20 flex items-center justify-center shrink-0">
-                  <Smartphone className="w-4 h-4 text-[#DFE4D9]" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-1">Get the Re-Wear App</h4>
-                  <p className="text-[11px] text-[#8B8B88] mb-2">Download our app for exclusive early access to drops and an extra 10% off your first order.</p>
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1.5 border border-[#8B8B88] rounded-lg text-[10px] font-bold hover:bg-white hover:text-[#2D2D2A] transition-colors">App Store</button>
-                    <button className="px-3 py-1.5 border border-[#8B8B88] rounded-lg text-[10px] font-bold hover:bg-white hover:text-[#2D2D2A] transition-colors">Google Play</button>
-                  </div>
-                </div>
-              </div>
+            <div className="pt-4 pr-4">
+              <Link href="/eco-impact" onClick={handleProtectedLink} className="text-[11px] font-bold text-[#DFE4D9] hover:text-white transition-colors flex items-center gap-2">
+                <Leaf className="w-3.5 h-3.5" /> {currentUser ? 'My Eco-Impact Rewards' : 'Join our Eco-Impact Program'}
+              </Link>
             </div>
           </div>
 
@@ -42,25 +43,24 @@ export default function Footer() {
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#DFE4D9] mb-6">Shop by Category</h3>
             <ul className="space-y-4">
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">New Arrivals</Link></li>
-              <li><Link href="/search?q=Vintage%20Denim" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Vintage Denim</Link></li>
-              <li><Link href="/search?q=Y2K%20Shirts" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Y2K Tops & Shirts</Link></li>
-              <li><Link href="/search?q=Jackets" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Outerwear & Jackets</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Archival Pieces</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Sale & Offers</Link></li>
+              <li><Link href="/search?q=Tops&cat=CLOTHING" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">T-shirts & Tops</Link></li>
+              <li><Link href="/search?q=Pants&cat=CLOTHING" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Pants & Jeans</Link></li>
+              <li><Link href="/search?q=Outerwear&cat=CLOTHING" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Outerwear</Link></li>
+              <li><Link href="/search?q=Dresses&cat=CLOTHING" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Dresses</Link></li>
+              <li><Link href="/search?q=Skirts&cat=CLOTHING" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Skirts</Link></li>
+              <li><Link href="/search?q=Handbags&cat=ACCESSORIES" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Handbags</Link></li>
             </ul>
           </div>
 
-          {/* Customer Service & Policies */}
+          {/* Help & Info */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#DFE4D9] mb-6">Help & Info</h3>
             <ul className="space-y-4">
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Track Your Order</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Shipping & Delivery</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Returns & Refunds</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care Guide</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">FAQ</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Contact Us</Link></li>
+              <li><Link href="/how-it-works" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">How It Works</Link></li>
+              <li><Link href="/garment-care" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care</Link></li>
+              <li><Link href="/payment-methods" onClick={handleProtectedLink} className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Payment Options</Link></li>
+              <li><Link href="/help" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Shipping & Returns</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Support & Contact Us</Link></li>
             </ul>
           </div>
 
@@ -73,7 +73,7 @@ export default function Footer() {
             <p className="text-[13px] text-[#8B8B88] mb-4 font-medium leading-relaxed">
               We've saved over 12,000 kg of CO₂ this year alone by circulating quality vintage garments instead of producing new ones.
             </p>
-            <Link href="/eco-impact" className="inline-block text-[11px] font-bold text-white border-b border-white pb-0.5 hover:text-[#DFE4D9] transition-colors">
+            <Link href="/impact-report" className="inline-block text-[11px] font-bold text-white border-b border-white pb-0.5 hover:text-[#DFE4D9] transition-colors">
               Read Our Impact Report &rarr;
             </Link>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -13,7 +13,19 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const user = currentUser || { name: 'Guest', role: 'customer' };
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'staff')) {
+      router.push('/admin');
+    }
+  }, [currentUser, router]);
+
+  const user = currentUser || { name: 'Guest', role: 'customer', rank: 'Seed' };
+
+  const getDisplayRank = (u) => {
+    if (u.role === 'admin') return 'Admin';
+    if (u.role === 'staff') return 'Staff';
+    return u.rank || 'Seed';
+  };
 
   const menuItems = [
     {
@@ -30,7 +42,7 @@ export default function Sidebar() {
     },
     {
       name: 'Payment Methods',
-      path: '/payment',
+      path: '/payment-methods',
       icon: CreditCard,
       description: 'Manage cards and bank accounts',
     },
@@ -53,16 +65,16 @@ export default function Sidebar() {
     : menuItems.filter(item => item.path === '/profile');
 
   const isActive = (path) => pathname === path;
-  // Removed avatarSrc variable
+
 
   return (
     <aside className="bg-white rounded-2xl border border-earth-200/60 p-5 shadow-sm space-y-6">
       {/* Quick Profile Summary — driven by currentUser prop */}
       <div className="flex items-center gap-4 pb-5 border-b border-earth-100">
         <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-sage-500/20 bg-earth-100 flex items-center justify-center shrink-0">
-          {user?.avatar ? (
+          {user?.avatar || user?.picture ? (
             <img 
-              src={user.avatar} 
+              src={user.avatar || user.picture} 
               alt={`${user.name} avatar`} 
               className="w-full h-full object-cover"
             />
@@ -74,12 +86,8 @@ export default function Sidebar() {
         </div>
         <div>
           <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
-          <p className="text-xs text-sage-600 font-medium">
-            {user.role === 'admin' 
-              ? 'System Administrator' 
-              : user.role === 'staff' 
-                ? 'Quality Inspector' 
-                : 'Eco Hero Member'}
+          <p className="text-xs text-sage-600 font-medium capitalize">
+            {user.role === 'customer' ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
           </p>
         </div>
       </div>

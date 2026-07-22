@@ -82,7 +82,7 @@
 ## 4. สถาปัตยกรรมระบบ (System Architecture)
 
 ระบบออกแบบตามแนวคิดที่เน้นการพัฒนาได้อย่างรวดเร็ว
-แบ่งออกเป็น Frontend (Next.js), Backend (Node.js) และฐานข้อมูลชั่วคราว (Local Storage)
+แบ่งออกเป็น Frontend (Next.js), Backend (Next.js API Routes) และฐานข้อมูลจำลอง (JSON File - `data/db.json`)
 
 ```mermaid
 graph TD
@@ -91,12 +91,12 @@ graph TD
  B[Staff / Admin Dashboard]
  end
 
- subgraph Backend["️ Backend (Node.js)"]
- C[Logic & Routing API]
+ subgraph Backend["️ Backend (Next.js Route Handlers)"]
+ C[Logic & API Routes]
  end
 
- subgraph Data[" Database (Mockup)"]
- D[(Local Storage)]
+ subgraph Data[" Database (JSON)"]
+ D[(data/db.json)]
  end
 
  A --> C
@@ -115,42 +115,53 @@ graph TD
  - *Scalability*: เตรียมความพร้อมใช้งาน CDN และ Caching ในการโหลดรูปภาพสินค้าที่มีจำนวนมาก
 
 ### 4.2 Backend Architecture (ส่วนประมวลผลหลักของระบบ)
-- **การจัดการ Business Logic**: การคำนวณยอดชำระ, อัปเดตสถานะการจองสต็อกสินค้า (เนื่องจากเสื้อผ้ามือสองมีเพียง 1 ชิ้นต่อชิ้น), ตรวจสอบสิทธิ์การทำงาน
-- **ฟังก์ชันหลัก**: จัดการบัญชีผู้ใช้ (Auth Service), จัดการรายการสินค้า (Product Service), จัดการการซื้อขาย (Order Service), และการตรวจสอบชำระเงิน (Payment Service)
-- **รูปแบบสถาปัตยกรรม**: Monolithic Architecture ในเฟสเริ่มต้น เพื่อความรวดเร็วในการพัฒนาต้นแบบและมีความคล่องตัวสูง
-- **เทคโนโลยีหลัก**: Node.js + Express
+- **การจัดการ Business Logic**: การจัดการข้อมูลผ่าน API Routes (Create, Read, Update, Delete) สำหรับ Users, Products, Orders, Promotions และ Settings
+- **ฟังก์ชันหลัก**: จัดการบัญชีผู้ใช้, จัดการรายการสินค้าและสต็อก, จัดการคำสั่งซื้อ และระบบแจ้งเตือน (Notifications)
+- **รูปแบบสถาปัตยกรรม**: Serverless Functions / Next.js API Routes (Route Handlers) เพื่อประมวลผลคำขอจาก Client อย่างรวดเร็ว
+- **เทคโนโลยีหลัก**: Next.js App Router API
 - **สิ่งที่พิจารณาเป็นพิเศษ**:
  - *API Architecture*: ออกแบบในรูปแบบ REST API เพื่อรับส่งข้อมูล JSON ระหว่างหน้าเว็บและเซิร์ฟเวอร์
  - *DevOps*: ใช้ GitHub Actions ทำระบบ CI/CD และควบคุมเวอร์ชันผ่าน Git / GitHub
 
 ### 4.3 Database Architecture (ระบบจัดเก็บข้อมูล)
-- **การจัดการข้อมูล**: เก็บข้อมูลผู้ใช้ (Users), สินค้าเสื้อผ้ามือสอง (Products), คำสั่งซื้อ (Orders), และประวัติการทำรายการ (Payments)
-- **รูปแบบสถาปัตยกรรม**: จำลองรูปแบบฐานข้อมูลด้วย Local Storage โดยเซฟในรูปแบบ JSON Object เพื่อให้รองรับการพัฒนารวดเร็ว (Rapid Prototyping)
-- **เทคโนโลยีหลัก**: Local Storage (และเตรียมย้ายไปใช้ Relational Database เช่น MySQL/PostgreSQL ในการผลิตจริง)
+- **การจัดการข้อมูล**: เก็บข้อมูลผู้ใช้, สินค้าและสต็อก, คำสั่งซื้อ, โปรโมชัน, ตั้งค่าระบบ และระบบแจ้งเตือน ไว้ในที่เดียว
+- **รูปแบบสถาปัตยกรรม**: จำลองรูปแบบฐานข้อมูลด้วย JSON File (`data/db.json`) รองรับการเข้าถึงและแก้ไขผ่านโมดูล `fs` (File System) ของ Node.js เพื่อให้ทำงานเหมือนฐานข้อมูลจริง
+- **เทคโนโลยีหลัก**: JSON File (เตรียมย้ายไปใช้ Relational Database หรือ NoSQL ในอนาคต)
 - **สิ่งที่พิจารณาเป็นพิเศษ**:
- - *Database Design*: ทำ Normalization เพื่อลดความซ้ำซ้อนของข้อมูล และออกแบบ Backup & Recovery เผื่อกรณีข้อมูลในเครื่องผู้ใช้สูญหาย
+ - *Database Design*: โครงสร้างรวมอยู่ในไฟล์เดียวเพื่อง่ายต่อการ Prototype แต่ออกแบบ API ให้พร้อมเชื่อมต่อกับฐานข้อมูลแยกได้ทันที
 
 ---
 
 ## 5. โครงสร้างฐานข้อมูล (Database Design)
 
-### 5.1 Data Schema (LocalStorage JSON)
+### 5.1 Data Schema (JSON Database: `data/db.json`)
 
-ระบบจัดเก็บข้อมูลใน LocalStorage เพื่อใช้เป็นตัวอย่างสาธิต โดยมีโครงสร้างดังนี้:
+ระบบจัดเก็บข้อมูลทั้งหมดในไฟล์ `data/db.json` ทำงานเป็นเสมือนฐานข้อมูลหลัก โดยมีโครงสร้างดังนี้:
 
 ```json
 {
- "users": [
- { "id": "USR-1024", "role": "customer", "name": "ฟ้าใส", "email": "fah@email.com", "ecoStatus": "Eco Hero" },
- { "id": "STF-0001", "role": "staff", "name": "ก้องเกียรติ", "email": "staff@rewear.com", "joinDate": "01 Jan 2024" },
- { "id": "ADM-0001", "role": "admin", "name": "ยิ่งยศ", "email": "admin@rewear.com", "joinDate": "01 Jan 2024" }
- ],
- "products": [
- { "id": "RW-29402", "name": "Vintage Linen Overcoat", "price": 145, "stock": 1, "condition": "Very Good" }
- ],
- "orders": [
- { "id": "#RW-92031", "customerId": "USR-1024", "status": "Pending", "totalAmount": 450 }
- ]
+  "users": [
+    { "id": "USR-1024", "role": "customer", "name": "ฟ้าใส", "email": "fah@email.com" },
+    { "id": "STF-0001", "role": "staff", "name": "สมหญิง", "email": "staff@rewear.com" },
+    { "id": "ADM-0001", "role": "admin", "name": "ยิ่งยศ", "email": "admin@rewear.com" }
+  ],
+  "products": [
+    { "id": "RW-29402", "name": "Vintage Linen Overcoat", "price": 145, "stock": 24, "condition": "Very Good", "status": "Available" }
+  ],
+  "orders": [
+    { "id": "#RW-92031", "customer": "Sarah Jenkins", "total": 185, "status": "Pending", "trackingNumber": "" }
+  ],
+  "promotions": [
+    { "id": "PROMO-001", "code": "WELCOME10", "type": "percentage", "value": 10, "status": "Active" }
+  ],
+  "storeSettings": {
+    "storeName": "Re-Wear Store",
+    "ecoWater": 2700,
+    "ecoCO2": 6.5
+  },
+  "notifications": [
+    { "id": 1698765432109, "user": "ยิ่งยศ", "action": "Added a new product", "type": "product" }
+  ]
 }
 ```
 
@@ -242,8 +253,8 @@ erDiagram
 
 ### ข้อจำกัดและแนวทางพัฒนาต่อในอนาคต
 
-- **ระบบยืนยันตัวตน (Authentication):** ปัจจุบันจำลองการ Login และเก็บสิทธิ์ผ่าน `localStorage` (Mock Auth) แนวทางต่อไปคือนำ JWT / NextAuth.js มาใช้งานจริง
-- **ฐานข้อมูล:** ข้อมูลสินค้าและออเดอร์จัดเก็บผ่าน Mock Data และ `localStorage` แนวทางต่อไปคือเชื่อมต่อกับ Backend API และ Database จริง เช่น PostgreSQL
+- **ระบบยืนยันตัวตน (Authentication):** ปัจจุบันจำลองการ Login และเก็บ Session ผ่าน `localStorage` / `sessionStorage` (Mock Auth) แนวทางต่อไปคือนำ JWT / NextAuth.js มาใช้งานจริง
+- **ฐานข้อมูล:** ปัจจุบันใช้งานผ่านไฟล์ JSON (`db.json`) และอัปเดตผ่าน Next.js API Routes แล้ว แนวทางต่อไปคือเสียบต่อกับฐานข้อมูลจริง เช่น PostgreSQL หรือ MongoDB ได้ทันที
 - **ระบบชำระเงิน:** ปัจจุบันเป็นแบบ Mockup แนวทางต่อไปคือผนวกกับ Payment Gateway เช่น Stripe หรือ Omise
 
 > **Note:** เอกสารนี้แสดงการวิเคราะห์และออกแบบระบบเบื้องต้น ซึ่งจะถูกนำไปใช้เป็นแนวทางในการพัฒนาระบบจริงในขั้นตอนถัดไป สร้างด้วย ️ โดย **กลุ่ม Re-wear** สำหรับวิชา CSI204
