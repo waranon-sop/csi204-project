@@ -62,7 +62,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
       case 'customer':
       default:
         return {
-          title: `${currentUser.rank || 'None'} Member`,
+          title: `${currentUser.tier || currentUser.rank || 'None'} Member`,
           color: 'text-[#5F6B4E]',
           icon: Leaf,
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',

@@ -31,6 +31,9 @@ export function AuthProvider({ children }) {
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState("login");
+  
+  // Rewards Onboarding State
+  const [isRewardsOnboardingOpen, setIsRewardsOnboardingOpen] = useState(false);
 
   // Pending Google Data
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
@@ -42,6 +45,14 @@ export function AuthProvider({ children }) {
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const openRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(true);
+  };
+
+  const closeRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(false);
   };
 
   // Initialize from API with fallback to localStorage
@@ -254,7 +265,11 @@ export function AuthProvider({ children }) {
       phone,
       role: "customer", // Default role
       referredBy: referredBy || null,
-      rank: null
+      rank: null,
+      isRewardsMember: true,
+      tier: 'Seed',
+      points: 0,
+      couponsRedeemed: 0
     };
 
     const updatedUsers = [...users, newUser];
@@ -301,6 +316,33 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem("currentUser");
 
     return { success: true };
+  };
+
+  const updateProfile = (updates) => {
+    updateUser(updates);
+  };
+
+  const joinRewardsProgram = () => {
+    updateProfile({ isRewardsMember: true, tier: 'Seed', points: 0, couponsRedeemed: 0 });
+  };
+
+  const addPoints = (amount) => {
+    if (!currentUser) return;
+    const newPoints = (currentUser.points || 0) + amount;
+    // Calculate new tier
+    let newTier = currentUser.tier || 'Seed';
+    if (newPoints >= 2000) newTier = 'Harvest';
+    else if (newPoints >= 1000) newTier = 'Fruit';
+    else if (newPoints >= 500) newTier = 'Bloom';
+    else if (newPoints >= 200) newTier = 'Sprout';
+    
+    updateProfile({ points: newPoints, tier: newTier });
+  };
+
+  const deductPoints = (amount) => {
+    if (!currentUser || (currentUser.points || 0) < amount) return false;
+    updateProfile({ points: (currentUser.points || 0) - amount });
+    return true;
   };
 
   const logout = () => {
@@ -362,7 +404,7 @@ export function AuthProvider({ children }) {
     
     if (isDiscount) {
       const yearCount = redeemedDiscountsThisYear[currentYear] || 0;
-      const limit = currentUser.rank === 'Harvest' ? 2 : 5;
+      const limit = 5;
       if (yearCount >= limit) {
         return { success: false, error: `Yearly limit reached (${limit}/${limit})` };
       }
@@ -459,6 +501,13 @@ export function AuthProvider({ children }) {
     authModalView,
     openAuthModal,
     closeAuthModal,
+    isRewardsOnboardingOpen,
+    openRewardsOnboarding,
+    closeRewardsOnboarding,
+    updateProfile,
+    joinRewardsProgram,
+    addPoints,
+    deductPoints
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

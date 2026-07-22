@@ -4,14 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, processOrderInventory, updateProductStatus, updateUserById } from '../../utils/localStorageHelper';
+import { createOrder, processOrderInventory } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import MinimalDropdown from '../../components/ui/MinimalDropdown';
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart, toggleCart } = useCart();
-  const { currentUser, addSpending, updateUser } = useAuth();
+  const { currentUser, updateProfile } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment
@@ -131,14 +131,13 @@ export default function CheckoutPage() {
   const [promoSuccess, setPromoSuccess] = useState('');
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [myCouponsList, setMyCouponsList] = useState([]);
-  const [promoMethod, setPromoMethod] = useState('code');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (showCouponModal) {
-      const stored = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
-      setMyCouponsList(stored.filter(c => c.status === 'active' || (!c.used && c.status !== 'Used')));
+      const stored = JSON.parse(localStorage.getItem('my_coupons')) || [];
+      setMyCouponsList(stored.filter(c => !c.used && c.status !== 'Used'));
     }
-  }, [showCouponModal, currentUser]);
+  }, [showCouponModal]);
 
   const handleApplyPromo = (overrideCode) => {
     const codeToApply = typeof overrideCode === 'string' ? overrideCode.trim() : promoCode.trim();
@@ -152,7 +151,7 @@ export default function CheckoutPage() {
     }
 
     const promos = JSON.parse(localStorage.getItem('promotions')) || [];
-    const myCoupons = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
+    const myCoupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
     
     let promo = promos.find(p => p.code === codeToApply.toUpperCase());
     if (!promo) {
@@ -160,10 +159,10 @@ export default function CheckoutPage() {
       if (myPromo) {
         promo = {
           ...myPromo,
-          status: myPromo.status === 'active' ? 'Active' : 'Used',
+          status: myPromo.used ? 'Used' : 'Active',
           usageLimit: 1,
-          type: myPromo.type === 'discount' ? 'percent' : 'free_shipping',
-          value: myPromo.type === 'discount' ? parseInt((myPromo.title.match(/(\d+)%/) || [0, 5])[1]) : 0
+          type: myPromo.discountType,
+          value: myPromo.discountValue
         };
       }
     }
@@ -195,9 +194,6 @@ export default function CheckoutPage() {
     setPromoSuccess('');
     setPromoError('');
   };
-
-  // Eco Options State
-  const [noPackaging, setNoPackaging] = useState(false);
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
@@ -238,46 +234,27 @@ export default function CheckoutPage() {
       taxInfo: requestTaxInvoice ? taxForm : null
     };
 
-    await createOrder(orderData);
-    await processOrderInventory(cartItems);
+    createOrder(orderData);
+    processOrderInventory(cartItems);
     
     // Increment promo usage if applied
     if (appliedPromo) {
-      try {
-        await fetch(`/api/promotions/${appliedPromo.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ used: (appliedPromo.used || 0) + 1 })
-        });
-      } catch (err) {
-        console.error("Failed to update promo usage", err);
-      }
+      const promos = JSON.parse(localStorage.getItem('promotions')) || [];
+      const updatedPromos = promos.map(p => 
+        p.id === appliedPromo.id ? { ...p, used: p.used + 1 } : p
+      );
+      localStorage.setItem('promotions', JSON.stringify(updatedPromos));
 
-      // Mark user coupon as used if they used a personal one
-      if (currentUser && currentUser.coupons) {
-        const updatedCoupons = currentUser.coupons.map(p => 
-          p.code === appliedPromo.code ? { ...p, status: 'used' } : p
-        );
-        if (updateUser) updateUser({ coupons: updatedCoupons });
-      }
+      // Also check my_coupons
+      const myCoupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
+      const updatedMyCoupons = myCoupons.map(p => 
+        p.code === appliedPromo.code ? { ...p, used: true } : p
+      );
+      localStorage.setItem('my_coupons', JSON.stringify(updatedMyCoupons));
     }
     
     clearCart();
 
-    if (currentUser) {
-      if (addSpending) addSpending(cartTotal);
-      if (updateUser) {
-        const updates = { hasEcoShipping: true };
-        if (noPackaging) updates.hasNoPackaging = true;
-        updateUser(updates);
-      }
-
-      if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
-        await updateUserById(currentUser.referredBy, { hasInvited: true });
-        if (updateUser) updateUser({ hasMadeFirstPurchase: true, hasInvited: true });
-      }
-    }
-    
     setIsProcessing(false);
     setOrderComplete(true);
 
@@ -372,18 +349,6 @@ export default function CheckoutPage() {
                       <span className="text-sm font-medium text-[#2D2D2A]">{currentUser?.tier === 'Harvest' || (appliedPromo && appliedPromo.type === 'shipping' && appliedPromo.value === 'express') ? 'THB 0.00' : 'THB 50.00'}</span>
                     </label>
                   </div>
-                </div>
-
-                {/* Eco Packaging Option */}
-                <div>
-                  <h2 className="text-sm font-bold text-[#2D2D2A] mb-4">แพ็กเกจจิ้ง (Packaging)</h2>
-                  <label className={`flex items-start gap-3 p-4 border rounded cursor-pointer transition-colors ${noPackaging ? 'border-[#4A543C] bg-[#F4F6F0]' : 'border-[#EAE5DB] bg-white'}`}>
-                    <input type="checkbox" checked={noPackaging} onChange={(e) => setNoPackaging(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#4A543C]" />
-                    <div>
-                      <span className="text-sm font-bold text-[#2D2D2A]">Pack in one box / No plastic wrapping 📦</span>
-                      <p className="text-xs text-[#8B8B88] mt-1">ช่วยลดขยะพลาสติกและกล่องกระดาษ (Collect Eco Points)</p>
-                    </div>
-                  </label>
                 </div>
 
                 {/* Shipping Address Form */}
@@ -752,51 +717,23 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <div className="mt-3">
-                    <div className="flex gap-4 mb-3">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name="promoMethod" 
-                          checked={promoMethod === 'code'} 
-                          onChange={() => setPromoMethod('code')} 
-                          className="appearance-none w-3 h-3 rounded-full border border-[#D1D1D1] checked:border-[4px] checked:border-[#2D2D2A] cursor-pointer transition-all"
-                        />
-                        <span className={`text-[11px] font-bold ${promoMethod === 'code' ? 'text-[#2D2D2A]' : 'text-[#8B8B88] group-hover:text-[#5C5C5A]'}`}>กรอกโค้ดส่วนลด</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name="promoMethod" 
-                          checked={promoMethod === 'coupon'} 
-                          onChange={() => setPromoMethod('coupon')} 
-                          className="appearance-none w-3 h-3 rounded-full border border-[#D1D1D1] checked:border-[4px] checked:border-[#2D2D2A] cursor-pointer transition-all"
-                        />
-                        <span className={`text-[11px] font-bold ${promoMethod === 'coupon' ? 'text-[#2D2D2A]' : 'text-[#8B8B88] group-hover:text-[#5C5C5A]'}`}>เลือกคูปองของฉัน</span>
-                      </label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="โค้ดโปรโมชั่น" 
+                        className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none uppercase" 
+                        value={promoCode} 
+                        onChange={e => setPromoCode(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                      />
+                      <button onClick={handleApplyPromo} className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold hover:bg-[#4A4A4A]">ส่ง</button>
                     </div>
-
-                    {promoMethod === 'code' ? (
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          placeholder="โค้ดโปรโมชั่น" 
-                          className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none uppercase" 
-                          value={promoCode} 
-                          onChange={e => setPromoCode(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
-                        />
-                        <button onClick={handleApplyPromo} className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold hover:bg-[#4A4A4A]">ส่ง</button>
-                      </div>
-                    ) : (
-                      <div className="py-2">
-                        <button 
-                          onClick={() => setShowCouponModal(true)}
-                          className="text-[11px] text-[#C57B57] underline font-bold hover:text-[#A05E3D] transition-colors"
-                        >
-                          + เลือกคูปองส่วนลดของฉัน
-                        </button>
-                      </div>
-                    )}
+                    <button 
+                      onClick={() => setShowCouponModal(true)}
+                      className="mt-3 text-[11px] text-[#C57B57] underline font-bold hover:text-[#A05E3D] transition-colors"
+                    >
+                      + เลือกคูปองส่วนลดของฉัน
+                    </button>
                     {promoError && <p className="text-red-500 text-[10px] mt-1">{promoError}</p>}
                   </div>
                 )}

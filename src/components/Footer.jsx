@@ -56,9 +56,9 @@ export default function Footer() {
           <div>
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#DFE4D9] mb-6">Help & Info</h3>
             <ul className="space-y-4">
-              <li><Link href="/how-it-works" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">How It Works</Link></li>
-              <li><Link href="/garment-care" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care</Link></li>
-              <li><Link href="/reviews" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Customer Reviews</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">How It Works</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Customer Reviews</Link></li>
               <li><Link href="/support?tab=payment" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Payment Options</Link></li>
               <li><Link href="/support?tab=returns" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Shipping & Returns</Link></li>
               <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Support & Contact Us</Link></li>

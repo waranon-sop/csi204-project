@@ -86,13 +86,13 @@ export default function CartDrawer() {
                 cartItems.map((item) => (
                   <div key={item.id} className="flex gap-4">
                     <Link href={`/product/${item.id}`} onClick={closeCart} className="relative w-24 h-32 shrink-0 bg-[#EAE5DB]/40 rounded-xl overflow-hidden block">
-                      <Image src={item.image} alt={item.title} fill sizes="96px" className="object-cover mix-blend-multiply" />
+                      <Image src={item.image} alt={item.name || item.title || 'Product image'} fill sizes="96px" className="object-cover mix-blend-multiply" />
                     </Link>
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div>
                         <div className="flex justify-between items-start">
                           <Link href={`/product/${item.id}`} onClick={closeCart}>
-                            <h3 className="font-semibold text-sm text-[#2D2D2A] line-clamp-2 hover:text-[#5F6B4E] transition-colors">{item.title}</h3>
+                            <h3 className="font-semibold text-sm text-[#2D2D2A] line-clamp-2 hover:text-[#5F6B4E] transition-colors">{item.name || item.title}</h3>
                           </Link>
                           <button 
                             onClick={() => removeFromCart(item.id)}

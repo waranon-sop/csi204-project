@@ -92,7 +92,7 @@ export default function QuickViewModal({
           <div className="relative aspect-[4/5] bg-tertiary/40 group">
             <Image
               src={images[currentImageIdx]}
-              alt={selectedProduct.title}
+              alt={selectedProduct.name}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover transition-opacity duration-300"
@@ -150,7 +150,7 @@ export default function QuickViewModal({
                   }
                 </span>
                 <h2 className="font-serif text-2xl md:text-3xl font-semibold text-[#2D2D2A] mt-1">
-                  {selectedProduct.title}
+                  {selectedProduct.name}
                 </h2>
                 <div className="flex items-center justify-between mt-2">
                   <span className="block font-serif text-xl font-bold text-[#2D2D2A]">

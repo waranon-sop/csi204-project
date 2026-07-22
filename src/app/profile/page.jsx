@@ -14,7 +14,7 @@ export default function ProfileSettings() {
     if (!u) return '';
     if (u.role === 'admin') return 'Admin';
     if (u.role === 'staff') return 'Staff';
-    return u.rank || 'None';
+    return u.tier || u.rank || 'None';
   };
 
   const [formData, setFormData] = useState({

@@ -4,14 +4,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, processOrderInventory, updateProductStatus, updateUserById } from '../../utils/localStorageHelper';
+import { createOrder, processOrderInventory } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import MinimalDropdown from '../../components/ui/MinimalDropdown';
 
 export default function CheckoutPage() {
-  const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart, toggleCart } = useCart();
-  const { currentUser, addSpending, updateUser } = useAuth();
+  const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart } = useCart();
+  const { currentUser, updateProfile } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment
@@ -19,9 +19,7 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [showCartItems, setShowCartItems] = useState(false);
   const [slipImage, setSlipImage] = useState(null);
-  const [paymentType, setPaymentType] = useState('qr');
   const [saveAddress, setSaveAddress] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
   const [requestTaxInvoice, setRequestTaxInvoice] = useState(false);
   const [taxForm, setTaxForm] = useState({
     type: 'individual',
@@ -129,41 +127,25 @@ export default function CheckoutPage() {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
   const [promoSuccess, setPromoSuccess] = useState('');
-  const [showCouponModal, setShowCouponModal] = useState(false);
-  const [myCouponsList, setMyCouponsList] = useState([]);
-  const [promoMethod, setPromoMethod] = useState('code');
 
-  React.useEffect(() => {
-    if (showCouponModal) {
-      const stored = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
-      setMyCouponsList(stored.filter(c => c.status === 'active' || (!c.used && c.status !== 'Used')));
-    }
-  }, [showCouponModal, currentUser]);
-
-  const handleApplyPromo = (overrideCode) => {
-    const codeToApply = typeof overrideCode === 'string' ? overrideCode.trim() : promoCode.trim();
+  const handleApplyPromo = () => {
     setPromoError('');
     setPromoSuccess('');
-    if (!codeToApply) return;
-    
-    if (typeof overrideCode === 'string') {
-      setPromoCode(codeToApply);
-      setShowCouponModal(false);
-    }
+    if (!promoCode.trim()) return;
 
     const promos = JSON.parse(localStorage.getItem('promotions')) || [];
-    const myCoupons = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
+    const myCoupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
     
-    let promo = promos.find(p => p.code === codeToApply.toUpperCase());
+    let promo = promos.find(p => p.code === promoCode.toUpperCase());
     if (!promo) {
-      const myPromo = myCoupons.find(p => p.code === codeToApply.toUpperCase());
+      const myPromo = myCoupons.find(p => p.code === promoCode.toUpperCase());
       if (myPromo) {
         promo = {
           ...myPromo,
-          status: myPromo.status === 'active' ? 'Active' : 'Used',
+          status: myPromo.used ? 'Used' : 'Active',
           usageLimit: 1,
-          type: myPromo.type === 'discount' ? 'percent' : 'free_shipping',
-          value: myPromo.type === 'discount' ? parseInt((myPromo.title.match(/(\d+)%/) || [0, 5])[1]) : 0
+          type: myPromo.discountType,
+          value: myPromo.discountValue
         };
       }
     }
@@ -195,9 +177,6 @@ export default function CheckoutPage() {
     setPromoSuccess('');
     setPromoError('');
   };
-
-  // Eco Options State
-  const [noPackaging, setNoPackaging] = useState(false);
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true);
@@ -233,60 +212,38 @@ export default function CheckoutPage() {
       })),
       trackingNumber: '',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100', // Default avatar
-      slipImage: paymentType === 'qr' ? slipImage : null,
-      paymentMethod: paymentType,
+      slipImage: slipImage,
       taxInfo: requestTaxInvoice ? taxForm : null
     };
 
-    await createOrder(orderData);
-    await processOrderInventory(cartItems);
+    createOrder(orderData);
+    processOrderInventory(cartItems);
     
     // Increment promo usage if applied
     if (appliedPromo) {
-      try {
-        await fetch(`/api/promotions/${appliedPromo.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ used: (appliedPromo.used || 0) + 1 })
-        });
-      } catch (err) {
-        console.error("Failed to update promo usage", err);
-      }
+      const promos = JSON.parse(localStorage.getItem('promotions')) || [];
+      const updatedPromos = promos.map(p => 
+        p.id === appliedPromo.id ? { ...p, used: p.used + 1 } : p
+      );
+      localStorage.setItem('promotions', JSON.stringify(updatedPromos));
 
-      // Mark user coupon as used if they used a personal one
-      if (currentUser && currentUser.coupons) {
-        const updatedCoupons = currentUser.coupons.map(p => 
-          p.code === appliedPromo.code ? { ...p, status: 'used' } : p
-        );
-        if (updateUser) updateUser({ coupons: updatedCoupons });
-      }
+      // Also check my_coupons
+      const myCoupons = JSON.parse(localStorage.getItem('my_coupons')) || [];
+      const updatedMyCoupons = myCoupons.map(p => 
+        p.code === appliedPromo.code ? { ...p, used: true } : p
+      );
+      localStorage.setItem('my_coupons', JSON.stringify(updatedMyCoupons));
     }
     
     clearCart();
 
-    if (currentUser) {
-      if (addSpending) addSpending(cartTotal);
-      if (updateUser) {
-        const updates = { hasEcoShipping: true };
-        if (noPackaging) updates.hasNoPackaging = true;
-        updateUser(updates);
-      }
-
-      if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
-        await updateUserById(currentUser.referredBy, { hasInvited: true });
-        if (updateUser) updateUser({ hasMadeFirstPurchase: true, hasInvited: true });
-      }
-    }
-    
-    setIsProcessing(false);
-    setOrderComplete(true);
-
     setTimeout(() => {
+      setIsProcessing(false);
       router.push('/orders');
-    }, 2500);
+    }, 1500);
   };
 
-  if (cartItems.length === 0 && !isProcessing && !orderComplete) {
+  if (cartItems.length === 0 && !isProcessing) {
     return (
       <div className="py-20 flex flex-col items-center justify-center min-h-[50vh]">
         <p className="text-[#8B8B88] mb-4">ไม่มีสินค้าในตะกร้า</p>
@@ -321,22 +278,19 @@ export default function CheckoutPage() {
         
         {/* Stepper Navigation */}
         <div className="flex items-center justify-between border-b border-[#EAE5DB] pb-6 mb-8 text-sm">
-          <div className="flex items-center gap-2 text-[#2D2D2A] font-medium cursor-pointer hover:underline transition-colors" onClick={toggleCart}>
-            <span className="w-6 h-6 rounded-full border border-[#2D2D2A] text-[#2D2D2A] flex items-center justify-center text-xs">1</span>
+          <div className="flex items-center gap-2 text-[#8B8B88] cursor-pointer" onClick={() => router.push('/')}>
+            <span className="w-6 h-6 rounded-full border border-[#8B8B88] flex items-center justify-center text-xs">1</span>
             <span>กระเป๋า</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[#EAE5DB]" />
-          <div 
-            className={`flex items-center gap-2 transition-colors ${step === 2 ? 'text-[#2D2D2A] font-bold' : 'text-[#2D2D2A] font-medium cursor-pointer hover:underline'}`} 
-            onClick={() => step > 2 && setStep(2)}
-          >
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${step === 2 ? 'bg-[#2D2D2A] text-white' : 'border border-[#2D2D2A] text-[#2D2D2A]'}`}>2</span>
+          <div className={`flex items-center gap-2 ${step >= 2 ? 'text-[#2D2D2A] font-bold' : 'text-[#8B8B88]'}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-[#2D2D2A] text-white' : 'border border-[#8B8B88]'}`}>2</span>
             <span>การจัดส่ง</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[#EAE5DB]" />
-          <div className={`flex items-center gap-2 transition-colors ${step === 3 ? 'text-[#2D2D2A] font-bold' : 'text-[#8B8B88] font-medium'}`}>
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${step === 3 ? 'bg-[#2D2D2A] text-white' : 'border border-[#8B8B88]'}`}>3</span>
-            <span>การชำระเงิน</span>
+          <div className={`flex items-center gap-2 ${step === 3 ? 'text-[#2D2D2A] font-bold' : 'text-[#8B8B88]'}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === 3 ? 'bg-[#2D2D2A] text-white' : 'border border-[#8B8B88]'}`}>3</span>
+            <span>การชำระเงินและชำระยอด</span>
           </div>
         </div>
 
@@ -372,18 +326,6 @@ export default function CheckoutPage() {
                       <span className="text-sm font-medium text-[#2D2D2A]">{currentUser?.tier === 'Harvest' || (appliedPromo && appliedPromo.type === 'shipping' && appliedPromo.value === 'express') ? 'THB 0.00' : 'THB 50.00'}</span>
                     </label>
                   </div>
-                </div>
-
-                {/* Eco Packaging Option */}
-                <div>
-                  <h2 className="text-sm font-bold text-[#2D2D2A] mb-4">แพ็กเกจจิ้ง (Packaging)</h2>
-                  <label className={`flex items-start gap-3 p-4 border rounded cursor-pointer transition-colors ${noPackaging ? 'border-[#4A543C] bg-[#F4F6F0]' : 'border-[#EAE5DB] bg-white'}`}>
-                    <input type="checkbox" checked={noPackaging} onChange={(e) => setNoPackaging(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#4A543C]" />
-                    <div>
-                      <span className="text-sm font-bold text-[#2D2D2A]">Pack in one box / No plastic wrapping 📦</span>
-                      <p className="text-xs text-[#8B8B88] mt-1">ช่วยลดขยะพลาสติกและกล่องกระดาษ (Collect Eco Points)</p>
-                    </div>
-                  </label>
                 </div>
 
                 {/* Shipping Address Form */}
@@ -610,76 +552,55 @@ export default function CheckoutPage() {
 
                 {/* Payment Methods */}
                 <div className="border-t border-[#EAE5DB] pt-6">
-                  <h2 className="text-sm font-bold text-[#2D2D2A] mb-4">วิธีการชำระเงิน</h2>
+                  <h2 className="text-sm font-bold text-[#2D2D2A] mb-4">วิธีการชำระเงิน (สแกน QR Code)</h2>
                   
-                  <div className="flex gap-4 mb-6">
-                    <label className={`flex-1 border rounded p-4 cursor-pointer transition-all flex items-center gap-3 ${paymentType === 'qr' ? 'border-[#2D2D2A] bg-[#FAF6F0]' : 'border-[#EAE5DB] hover:border-[#2D2D2A]'}`}>
-                      <input type="radio" name="paymentType" className="w-4 h-4 accent-[#2D2D2A]" checked={paymentType === 'qr'} onChange={() => setPaymentType('qr')} />
-                      <span className="text-sm font-bold text-[#2D2D2A]">โอนเงิน (QR Code)</span>
-                    </label>
-                    <label className={`flex-1 border rounded p-4 cursor-pointer transition-all flex items-center gap-3 ${paymentType === 'cod' ? 'border-[#2D2D2A] bg-[#FAF6F0]' : 'border-[#EAE5DB] hover:border-[#2D2D2A]'}`}>
-                      <input type="radio" name="paymentType" className="w-4 h-4 accent-[#2D2D2A]" checked={paymentType === 'cod'} onChange={() => setPaymentType('cod')} />
-                      <span className="text-sm font-bold text-[#2D2D2A]">เก็บเงินปลายทาง</span>
-                    </label>
-                  </div>
-
-                  {paymentType === 'qr' ? (
-                    <div className="flex flex-col md:flex-row gap-6 p-6 border border-[#EAE5DB] rounded bg-white animate-in fade-in duration-300">
-                      {/* QR Code and Bank Details */}
-                      <div className="flex-1 flex flex-col items-center justify-center space-y-4 border-b md:border-b-0 md:border-r border-[#EAE5DB] pb-6 md:pb-0 md:pr-6">
-                        <div className="w-48 h-48 relative bg-[#F9F8F6] border border-[#EAE5DB] rounded flex items-center justify-center overflow-hidden">
-                          <Image src="/qr-code.jpg" alt="QR Code" fill className="object-contain p-2" />
-                        </div>
-                        <div className="text-center space-y-1">
-                          <p className="text-xs font-bold text-[#2D2D2A]">ธนาคารไทยพาณิชย์ (SCB)</p>
-                          <p className="text-xs text-[#8B8B88]">ชื่อบัญชี: บริษัท รีแวร์ จำกัด</p>
-                          <p className="text-xs text-[#8B8B88] font-mono">เลขที่บัญชี: x-xxxx-xxxx631-6</p>
-                        </div>
+                  <div className="flex flex-col md:flex-row gap-6 p-6 border border-[#EAE5DB] rounded bg-white">
+                    {/* QR Code and Bank Details */}
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-4 border-b md:border-b-0 md:border-r border-[#EAE5DB] pb-6 md:pb-0 md:pr-6">
+                      <div className="w-48 h-48 relative bg-[#F9F8F6] border border-[#EAE5DB] rounded flex items-center justify-center overflow-hidden">
+                        <Image src="/qr-code.jpg" alt="QR Code" fill className="object-contain p-2" />
                       </div>
+                      <div className="text-center space-y-1">
+                        <p className="text-xs font-bold text-[#2D2D2A]">ธนาคารไทยพาณิชย์ (SCB)</p>
+                        <p className="text-xs text-[#8B8B88]">ชื่อบัญชี: บริษัท รีแวร์ จำกัด</p>
+                        <p className="text-xs text-[#8B8B88] font-mono">เลขที่บัญชี: x-xxxx-xxxx631-6</p>
+                      </div>
+                    </div>
 
-                      {/* Upload Slip */}
-                      <div className="flex-1 flex flex-col justify-center">
-                        <h3 className="text-xs font-bold text-[#2D2D2A] mb-3">อัปโหลดสลิปการโอนเงิน *</h3>
-                        
-                        {slipImage ? (
-                          <div className="relative w-full max-w-[200px] aspect-[1/1.5] mx-auto">
-                            <Image src={slipImage} alt="Payment Slip" fill className="object-cover rounded border border-[#EAE5DB]" />
-                            <button 
-                              onClick={() => setSlipImage(null)}
-                              className="absolute -top-2 -right-2 bg-white text-[#2D2D2A] rounded-full p-1 shadow-md hover:text-[#C57B57]"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                    {/* Upload Slip */}
+                    <div className="flex-1 flex flex-col justify-center">
+                      <h3 className="text-xs font-bold text-[#2D2D2A] mb-3">อัปโหลดสลิปการโอนเงิน *</h3>
+                      
+                      {slipImage ? (
+                        <div className="relative w-full max-w-[200px] aspect-[1/1.5] mx-auto">
+                          <Image src={slipImage} alt="Payment Slip" fill className="object-cover rounded border border-[#EAE5DB]" />
+                          <button 
+                            onClick={() => setSlipImage(null)}
+                            className="absolute -top-2 -right-2 bg-white text-[#2D2D2A] rounded-full p-1 shadow-md hover:text-[#C57B57]"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#EAE5DB] rounded cursor-pointer hover:bg-[#F9F8F6] transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg className="w-6 h-6 mb-2 text-[#8B8B88]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p className="mb-1 text-xs text-[#8B8B88]"><span className="font-semibold text-[#2D2D2A]">คลิกเพื่ออัปโหลด</span></p>
+                            <p className="text-[10px] text-[#8B8B88]">PNG, JPG หรือ JPEG</p>
                           </div>
-                        ) : (
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#EAE5DB] rounded cursor-pointer hover:bg-[#F9F8F6] transition-colors">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                              <svg className="w-6 h-6 mb-2 text-[#8B8B88]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                              </svg>
-                              <p className="mb-1 text-xs text-[#8B8B88]"><span className="font-semibold text-[#2D2D2A]">คลิกเพื่ออัปโหลด</span></p>
-                              <p className="text-[10px] text-[#8B8B88]">PNG, JPG หรือ JPEG</p>
-                            </div>
-                            <input type="file" accept="image/*" className="hidden" onChange={handleSlipUpload} />
-                          </label>
-                        )}
-                      </div>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleSlipUpload} />
+                        </label>
+                      )}
                     </div>
-                  ) : (
-                    <div className="p-8 border border-[#EAE5DB] rounded bg-[#F9F8F6] flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
-                      <div className="w-12 h-12 bg-[#2D2D2A] rounded-full flex items-center justify-center mb-3">
-                        <CreditCard className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-sm font-bold text-[#2D2D2A] mb-1">ชำระเงินสดเมื่อได้รับสินค้า</h3>
-                      <p className="text-xs text-[#8B8B88] max-w-xs">พนักงานจัดส่งจะทำการเก็บเงินสดเมื่อส่งมอบสินค้าถึงหน้าบ้านคุณ โปรดเตรียมเงินสดให้พอดี</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-8">
                   <button 
                     onClick={handleConfirmOrder}
-                    disabled={isProcessing || (paymentType === 'qr' && !slipImage)}
+                    disabled={isProcessing || !slipImage}
                     className="bg-[#2D2D2A] hover:bg-black text-white shadow-sm hover:shadow-md font-bold px-8 py-3 rounded text-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? 'Processing...' : 'Place Order'}
@@ -752,51 +673,17 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <div className="mt-3">
-                    <div className="flex gap-4 mb-3">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name="promoMethod" 
-                          checked={promoMethod === 'code'} 
-                          onChange={() => setPromoMethod('code')} 
-                          className="appearance-none w-3 h-3 rounded-full border border-[#D1D1D1] checked:border-[4px] checked:border-[#2D2D2A] cursor-pointer transition-all"
-                        />
-                        <span className={`text-[11px] font-bold ${promoMethod === 'code' ? 'text-[#2D2D2A]' : 'text-[#8B8B88] group-hover:text-[#5C5C5A]'}`}>กรอกโค้ดส่วนลด</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name="promoMethod" 
-                          checked={promoMethod === 'coupon'} 
-                          onChange={() => setPromoMethod('coupon')} 
-                          className="appearance-none w-3 h-3 rounded-full border border-[#D1D1D1] checked:border-[4px] checked:border-[#2D2D2A] cursor-pointer transition-all"
-                        />
-                        <span className={`text-[11px] font-bold ${promoMethod === 'coupon' ? 'text-[#2D2D2A]' : 'text-[#8B8B88] group-hover:text-[#5C5C5A]'}`}>เลือกคูปองของฉัน</span>
-                      </label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="โค้ดโปรโมชั่น" 
+                        className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none uppercase" 
+                        value={promoCode} 
+                        onChange={e => setPromoCode(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                      />
+                      <button onClick={handleApplyPromo} className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold hover:bg-[#4A4A4A]">ส่ง</button>
                     </div>
-
-                    {promoMethod === 'code' ? (
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          placeholder="โค้ดโปรโมชั่น" 
-                          className="w-full p-2 bg-[#FAF6F0] border border-[#EAE5DB] rounded text-xs focus:outline-none uppercase" 
-                          value={promoCode} 
-                          onChange={e => setPromoCode(e.target.value)}
-                          onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
-                        />
-                        <button onClick={handleApplyPromo} className="bg-[#2D2D2A] text-white px-4 py-2 rounded text-xs font-bold hover:bg-[#4A4A4A]">ส่ง</button>
-                      </div>
-                    ) : (
-                      <div className="py-2">
-                        <button 
-                          onClick={() => setShowCouponModal(true)}
-                          className="text-[11px] text-[#C57B57] underline font-bold hover:text-[#A05E3D] transition-colors"
-                        >
-                          + เลือกคูปองส่วนลดของฉัน
-                        </button>
-                      </div>
-                    )}
                     {promoError && <p className="text-red-500 text-[10px] mt-1">{promoError}</p>}
                   </div>
                 )}
@@ -846,66 +733,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      {/* Order Success Overlay */}
-      {orderComplete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#FAF6F0]/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white p-10 rounded-2xl flex flex-col items-center max-w-sm w-full mx-4 shadow-xl border border-[#EAE5DB] animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-[#DEF7EC] rounded-full flex items-center justify-center mb-6">
-              <Check className="w-10 h-10 text-[#03543F]" />
-            </div>
-            <h2 className="text-2xl font-bold text-[#2D2D2A] mb-2 text-center">สั่งซื้อสำเร็จ!</h2>
-            <p className="text-[#8B8B88] text-center text-sm mb-8">ขอบคุณที่ช้อปกับ Re-wear คำสั่งซื้อของคุณได้รับการยืนยันแล้ว</p>
-            <div className="w-full h-1.5 bg-[#FAF6F0] rounded-full overflow-hidden">
-              <div className="h-full bg-[#2D2D2A] rounded-full animate-pulse transition-all duration-[2500ms] ease-linear" style={{ width: '100%' }}></div>
-            </div>
-            <p className="text-[10px] text-[#8B8B88] mt-4">กำลังพาคุณไปยังหน้าคำสั่งซื้อ...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Coupon Modal */}
-      {showCouponModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6 relative shadow-xl">
-            <button 
-              onClick={() => setShowCouponModal(false)}
-              className="absolute top-4 right-4 text-[#8B8B88] hover:text-[#2D2D2A]"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <h3 className="text-lg font-bold text-[#2D2D2A] mb-4">คูปองส่วนลดของฉัน</h3>
-            
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#EAE5DB]">
-              {myCouponsList.length > 0 ? (
-                myCouponsList.map((coupon, idx) => (
-                  <div key={idx} className="border border-[#EAE5DB] rounded-md p-4 flex justify-between items-center bg-[#F9F8F6]">
-                    <div>
-                      <div className="font-bold text-[#2D2D2A] text-sm">{coupon.code}</div>
-                      <div className="text-xs text-[#5C5C5A] mt-1 font-medium">
-                        {coupon.discountType === 'percentage' && `ลด ${coupon.discountValue}%`}
-                        {coupon.discountType === 'fixed' && `ส่วนลด THB ${coupon.discountValue}`}
-                        {coupon.discountType === 'shipping' && `ส่งฟรี (${coupon.discountValue === 'express' ? 'Express' : 'Standard'})`}
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => handleApplyPromo(coupon.code)}
-                      className="px-3 py-1.5 bg-[#2D2D2A] text-white text-[11px] font-bold rounded hover:bg-[#4A4A4A] transition-colors"
-                    >
-                      ใช้คูปอง
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-[#8B8B88] text-center py-8">คุณยังไม่มีคูปองส่วนลดในขณะนี้</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

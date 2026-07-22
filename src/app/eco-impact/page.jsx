@@ -11,25 +11,21 @@ import { useToast } from '../../components/ui/ToastProvider';
 const getRewardsByRank = (rank) => {
   if (rank === 'Harvest') {
     return [
-      { id: 1, title: '30% Discount or 500 THB Cash', pointsRequired: 300, description: 'Limit 2 coupons/year', isAuto: false, available: true },
-      { id: 2, title: 'Free Standard Delivery', pointsRequired: 0, description: 'Unlimited free standard delivery', isAuto: true, available: true },
+      { id: 1, title: '15% - 20% Discount Coupon', pointsRequired: 200, description: 'Limit 5 coupons/year', isAuto: false, available: true },
+      { id: 2, title: 'Free Standard Delivery', pointsRequired: 50, description: 'Unlimited redemptions', isAuto: false, available: true },
       { id: 3, title: 'Free Express Delivery', pointsRequired: 0, description: 'Unlimited free express delivery', isAuto: true, available: true },
-      { id: 4, title: 'Overnight Cart Lock (24h)', pointsRequired: 0, description: 'Lock items in your cart for 24 hours without using points', isAuto: true, available: true },
-      { id: 5, title: 'Personal Shopper', pointsRequired: 0, description: 'Request specific vintage styles/brands and get notified first', isAuto: false, available: true, link: '/personal-shopper' },
     ];
   } else if (rank === 'Bloom' || rank === 'Fruit') {
     return [
-      { id: 1, title: '15% - 20% Discount Coupon', pointsRequired: 400, description: 'Limit 5 coupons/year', isAuto: false, available: true },
-      { id: 2, title: 'Free Standard Delivery', pointsRequired: 200, description: 'Unlimited redemptions', isAuto: false, available: true },
-      { id: 3, title: 'Free Express Delivery', pointsRequired: 150, description: 'Unlimited redemptions', isAuto: false, available: true },
-      { id: 4, title: 'Early Access', pointsRequired: 0, description: 'Get access to "New Arrivals" 12 hours before regular members', isAuto: true, available: true },
+      { id: 1, title: '10% - 15% Discount Coupon', pointsRequired: 300, description: 'Limit 5 coupons/year', isAuto: false, available: true },
+      { id: 2, title: 'Free Standard Delivery', pointsRequired: 150, description: 'Unlimited redemptions', isAuto: false, available: true },
+      { id: 3, title: 'Free Express Delivery', pointsRequired: 100, description: 'Unlimited redemptions', isAuto: false, available: true },
     ];
   } else if (rank === 'Seed' || rank === 'Sprout') {
     return [
       { id: 1, title: '5% - 10% Discount Coupon', pointsRequired: 400, description: 'Limit 5 coupons/year', isAuto: false, available: true },
       { id: 2, title: 'Free Standard Delivery', pointsRequired: 250, description: 'Unlimited redemptions', isAuto: false, available: true },
       { id: 3, title: 'Free Express Delivery', pointsRequired: 200, description: 'Unlimited redemptions', isAuto: false, available: true },
-      { id: 4, title: 'Extended Cart Time (30 mins)', pointsRequired: 100, description: 'Extend cart reservation from 15 to 30 minutes', isAuto: false, available: true },
     ];
   }
 
@@ -72,7 +68,7 @@ export default function EcoImpact() {
   let nextRank = '';
   let spendingNeeded = 0;
   let progressPercent = 0;
-  let currentRank = currentUser?.rank || 'None';
+  let currentRank = currentUser?.tier || currentUser?.rank || 'None';
   const [showEcoInfo, setShowEcoInfo] = useState(false);
   const [activeMockModal, setActiveMockModal] = useState(null);
   const [deliveredItemsCount, setDeliveredItemsCount] = useState(0);
@@ -156,7 +152,9 @@ export default function EcoImpact() {
     progressPercent = 100;
   }
 
-  const ecoPoints = currentUser?.points !== undefined ? currentUser.points : (currentUser?.total_spending || 0);
+  const ecoPoints = currentRank !== 'None' 
+    ? (currentUser?.points !== undefined ? currentUser.points : (currentUser?.total_spending || 0))
+    : (currentUser?.points || 0);
   const rewards = getRewardsByRank(currentRank);
 
   return (
@@ -498,50 +496,57 @@ export default function EcoImpact() {
 
       {/* Invite Modal for displaying referral link */}
       {activeMockModal === 'invite' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D2D2A]/80 backdrop-blur-md">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] max-w-md w-full p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+            {/* Decorative background shape */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-sage-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-70 pointer-events-none"></div>
+            
             <button 
               onClick={() => setActiveMockModal(null)}
-              className="absolute top-4 right-4 p-2 text-earth-400 hover:text-earth-600 bg-earth-50 rounded-full hover:bg-earth-100 transition-colors"
+              className="absolute top-6 right-6 p-2 text-earth-400 hover:text-earth-800 bg-earth-50 hover:bg-earth-100 rounded-full transition-all z-10"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex flex-col items-center text-center mb-8">
-              <div className="w-16 h-16 bg-sage-50 text-sage-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-sage-100">
-                <Share2 className="w-8 h-8" />
+            <div className="flex flex-col items-center text-center mb-10 relative z-10 pt-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-sage-100 to-sage-50 text-sage-600 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-sage-100/50">
+                <Share2 className="w-10 h-10" />
               </div>
-              <h3 className="text-2xl font-black text-earth-900 mb-2">Invite a Friend</h3>
-              <p className="text-sm text-earth-500 max-w-[260px]">
-                Share this link with a friend. When they sign up and make their first purchase, <strong className="text-sage-600">you'll both earn points!</strong>
+              <h3 className="text-3xl font-black text-earth-900 mb-3 tracking-tight">Invite a Friend</h3>
+              <p className="text-sm text-earth-500 max-w-[280px] leading-relaxed">
+                Share this link with a friend. When they sign up and make their first purchase, <strong className="text-sage-700 bg-sage-50 px-1 py-0.5 rounded">you'll both earn 100 points!</strong>
               </p>
             </div>
 
-            <div className="mb-8">
-              <label className="block text-xs font-bold text-earth-600 uppercase tracking-wider mb-2">Your Referral Link</label>
-              <div className="flex items-center gap-2 bg-earth-50/50 p-2 rounded-2xl border border-earth-200">
-                <div className="flex-1 overflow-hidden px-3">
+            <div className="mb-8 relative z-10">
+              <label className="block text-[11px] font-bold text-earth-500 uppercase tracking-widest mb-3 ml-1">Your Referral Link</label>
+              <div className="flex items-center gap-3 bg-earth-50/80 p-2.5 rounded-2xl border border-earth-200/80 hover:border-sage-300 transition-colors group">
+                <div className="flex-1 overflow-hidden px-4">
                   <p className="text-sm font-mono text-earth-800 truncate select-all">
                     {typeof window !== 'undefined' ? `${window.location.origin}/?ref=${currentUser?.id}` : ''}
                   </p>
                 </div>
                 <button
                   onClick={handleCopyInvite}
-                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all ${
+                  className={`flex items-center justify-center px-5 py-3 rounded-xl transition-all font-bold text-sm shadow-sm ${
                     inviteCopied 
-                      ? 'bg-sage-600 text-white shadow-md' 
-                      : 'bg-white text-earth-600 border border-earth-200 hover:border-sage-300 hover:text-sage-600 hover:shadow-sm'
+                      ? 'bg-sage-600 text-white shadow-sage-600/20' 
+                      : 'bg-white text-earth-700 border border-earth-200 hover:border-sage-400 hover:text-sage-700'
                   }`}
                   title="Copy link"
                 >
-                  {inviteCopied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                  {inviteCopied ? (
+                    <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Copied</span>
+                  ) : (
+                    <span className="flex items-center gap-2"><Copy className="w-4 h-4" /> Copy</span>
+                  )}
                 </button>
               </div>
             </div>
 
             <button 
               onClick={() => setActiveMockModal(null)} 
-              className="w-full py-3.5 bg-earth-900 hover:bg-earth-800 text-white rounded-2xl font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+              className="w-full py-4 bg-earth-900 hover:bg-earth-800 text-white rounded-2xl font-bold transition-all shadow-xl shadow-earth-900/10 hover:shadow-2xl active:scale-[0.98] relative z-10"
             >
               Done
             </button>
