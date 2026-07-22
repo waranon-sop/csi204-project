@@ -1,3 +1,14 @@
 {
-  "promotions": []
+  "promotions": [
+    {
+      "code": "KM-Q74AU1",
+      "type": "percentage",
+      "value": 15,
+      "status": "Active",
+      "usageLimit": 50,
+      "used": 0,
+      "expiryDate": "2026-08-24",
+      "id": "PROMO-326"
+    }
+  ]
 }

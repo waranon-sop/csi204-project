@@ -8,7 +8,7 @@ import { useStaffGuard } from '../../../hooks/useRoleGuard';
 
 export default function AdminProfile() {
   const { isAllowed } = useStaffGuard();
-  const { currentUser } = useAuth();
+  const { currentUser, updateUser } = useAuth();
   const { addToast } = useToast();
   
   const fileInputRef = useRef(null);
@@ -62,28 +62,11 @@ export default function AdminProfile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/users/${currentUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (!res.ok) throw new Error('Failed to update profile');
-      
-      const updatedUser = await res.json();
-      
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      // API call and localStorage updates are handled by updateUser in AuthContext
+      updateUser(formData);
       
       setIsSuccess(true);
       addToast('Profile updated successfully!');
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-      
     } catch (error) {
       console.error(error);
       addToast('Error updating profile', 'error');

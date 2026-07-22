@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { updateProductStatus, releaseExpiredReservations, getProducts } from '../utils/localStorageHelper';
+import { useSettings } from './SettingsContext';
 
 const CART_KEY = 're_wear_cart';
 const CartContext = createContext();
@@ -9,6 +10,7 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { settings } = useSettings();
 
   // Load cart from localStorage on mount — cross-check each item is still Reserved
   useEffect(() => {
@@ -71,7 +73,8 @@ export function CartProvider({ children }) {
 
   const subTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
   const shipping = cartItems.length > 0 ? 55 : 0;
-  const shippingDiscount = subTotal >= 500 ? shipping : 0;
+  const freeThreshold = settings?.freeShippingThreshold ?? 500;
+  const shippingDiscount = subTotal >= freeThreshold ? shipping : 0;
   const cartTotal = subTotal + shipping - shippingDiscount;
   return (
     <CartContext.Provider

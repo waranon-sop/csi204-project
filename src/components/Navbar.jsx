@@ -10,6 +10,7 @@ import AuthModal from './AuthModal';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Navbar() {
   const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -19,12 +20,14 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState([]);
   const [activeMegaMenu, setActiveMegaMenu] = useState(null);
+  const [products, setProducts] = useState([]);
   const searchRef = useRef(null);
   const megaMenuRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
   const { cartItems, toggleCart } = useCart();
   const { favorites } = useFavorites();
+  const { settings } = useSettings();
 
   const isActive = (path) => pathname === path;
 
@@ -44,6 +47,21 @@ export default function Navbar() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
+    
+    // Fetch real products for search suggestions
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch products for Navbar search', err);
+      }
+    };
+    fetchProducts();
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -62,10 +80,11 @@ export default function Navbar() {
   };
 
   const searchResults = searchQuery.trim() 
-    ? mockProducts.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.brandCategory.toLowerCase().includes(searchQuery.toLowerCase())
+    ? products.filter(p => 
+        (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
+        (p.name && p.name.toLowerCase().includes(searchQuery.toLowerCase())) || 
+        (p.category && p.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.brandCategory && p.brandCategory.toLowerCase().includes(searchQuery.toLowerCase()))
       ).slice(0, 4)
     : [];
 
@@ -133,8 +152,12 @@ export default function Navbar() {
           {/* Left: Mobile Menu Toggle & Logo */}
           <div className="flex-1 flex items-center justify-start space-x-4">
             <Link href="/" className="md:hidden flex items-baseline hover:opacity-90 transition-opacity">
-              <span className="font-serif text-3xl font-bold text-[#2D2D2A] tracking-tight">Re-</span>
-              <span className="font-serif text-3xl font-bold text-[#5F6B4E] tracking-tight">wear</span>
+              <span className="font-serif text-3xl font-bold text-[#2D2D2A] tracking-tight">
+                {settings?.storeName ? settings.storeName.split('-')[0] + (settings.storeName.includes('-') ? '-' : '') : 'Re-'}
+              </span>
+              <span className="font-serif text-3xl font-bold text-[#5F6B4E] tracking-tight">
+                {settings?.storeName ? settings.storeName.substring(settings.storeName.indexOf('-') + 1) : 'wear'}
+              </span>
             </Link>
             <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-[#2D2D2A] focus:outline-none p-1">
               {isOpen ? <X className="h-6 w-6" strokeWidth={1.5} /> : <Menu className="h-6 w-6" strokeWidth={1.5} />}
@@ -144,8 +167,12 @@ export default function Navbar() {
           {/* Center: Logo (Desktop) */}
           <div className="hidden md:flex flex-1 justify-center items-center">
             <Link href="/" className="flex items-baseline hover:opacity-90 transition-opacity">
-              <span className="font-serif text-4xl font-bold text-[#2D2D2A] tracking-tight">Re-</span>
-              <span className="font-serif text-4xl font-bold text-[#5F6B4E] tracking-tight">wear</span>
+              <span className="font-serif text-4xl font-bold text-[#2D2D2A] tracking-tight">
+                {settings?.storeName ? settings.storeName.split('-')[0] + (settings.storeName.includes('-') ? '-' : '') : 'Re-'}
+              </span>
+              <span className="font-serif text-4xl font-bold text-[#5F6B4E] tracking-tight">
+                {settings?.storeName ? settings.storeName.substring(settings.storeName.indexOf('-') + 1) : 'wear'}
+              </span>
             </Link>
           </div>
 
@@ -183,10 +210,10 @@ export default function Navbar() {
                             className="flex items-center gap-3 p-2 hover:bg-[#F9F8F6] rounded-xl transition-colors group"
                           >
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-[#E8E8F2]">
-                              <Image src={p.image} alt={p.title} fill sizes="40px" className="object-cover mix-blend-multiply" />
+                              <Image src={p.image || '/placeholder.png'} alt={p.title || p.name || 'Product'} fill sizes="40px" className="object-cover mix-blend-multiply" />
                             </div>
                             <div>
-                              <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.title}</p>
+                              <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.title || p.name}</p>
                               <p className="text-[10px] text-[#C57B57] font-bold">THB {p.price}</p>
                             </div>
                           </Link>

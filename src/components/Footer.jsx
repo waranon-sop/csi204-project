@@ -4,9 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import { Leaf, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Footer() {
   const { currentUser, openAuthModal } = useAuth();
+  const { settings } = useSettings();
 
   const handleProtectedLink = (e) => {
     if (!currentUser) {
@@ -25,8 +27,12 @@ export default function Footer() {
           {/* Brand & App Benefits */}
           <div className="space-y-6">
             <Link href="/" className="flex items-baseline">
-              <span className="font-serif text-3xl font-bold tracking-tight text-white">Re-</span>
-              <span className="font-serif text-3xl font-bold tracking-tight text-[#5F6B4E]">wear</span>
+              <span className="font-serif text-3xl font-bold tracking-tight text-white">
+                {settings?.storeName ? settings.storeName.split('-')[0] + (settings.storeName.includes('-') ? '-' : '') : 'Re-'}
+              </span>
+              <span className="font-serif text-3xl font-bold tracking-tight text-[#5F6B4E]">
+                {settings?.storeName ? settings.storeName.substring(settings.storeName.indexOf('-') + 1) : 'wear'}
+              </span>
             </Link>
             <p className="text-[#8B8B88] text-[13px] leading-relaxed font-medium pr-4">
               Curated second-hand clothing, repaired and restored for the conscious consumer. We believe in sustainable style that lasts decades.
@@ -83,7 +89,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#4A543C] flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-[#8B8B88]">
-            &copy; {new Date().getFullYear()} Re-Wear Collective. All rights reserved.
+            &copy; {new Date().getFullYear()} {settings?.storeName || 'Re-Wear'} Collective. All rights reserved.
           </p>
           <div className="flex gap-4">
             <a href="#" className="w-8 h-8 rounded-full bg-[#4A543C]/30 flex items-center justify-center text-[#8B8B88] hover:text-white hover:bg-[#4A543C] transition-colors text-[10px] font-bold">

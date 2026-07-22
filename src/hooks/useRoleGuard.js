@@ -18,7 +18,7 @@ export function useRoleGuard(allowedRoles = ['admin'], redirectTo = '/admin?deni
     // Not logged in or role not allowed
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
       if (currentUser?.role === 'staff') {
-        router.replace('/admin/orders?denied=1');
+        router.replace('/admin/inventory?denied=1');
       } else {
         router.replace(redirectTo);
       }
@@ -41,4 +41,23 @@ export function useAdminGuard() {
  */
 export function useStaffGuard() {
   return useRoleGuard(['admin', 'staff']);
+}
+
+/**
+ * Convenience guard for customer-only pages.
+ * Redirects admin and staff to their respective dashboards.
+ */
+export function useCustomerGuard() {
+  const { currentUser } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (currentUser === null) return;
+    if (currentUser?.role === 'admin' || currentUser?.role === 'staff') {
+      router.replace(currentUser.role === 'admin' ? '/admin' : '/admin/inventory');
+    }
+  }, [currentUser, router]);
+
+  const isAllowed = currentUser && currentUser.role !== 'admin' && currentUser.role !== 'staff';
+  return { isAllowed, currentUser };
 }

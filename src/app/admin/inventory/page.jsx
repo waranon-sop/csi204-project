@@ -128,8 +128,8 @@ export default function AdminProducts() {
   const handleSaveProduct = async () => {
     let updatedProducts;
     
-    if (!editingProduct.name?.trim() || editingProduct.price === undefined || editingProduct.price === '' || isNaN(editingProduct.price)) {
-      addToast('Please provide a valid product name and price', 'error');
+    if (!editingProduct.name?.trim() || editingProduct.price === undefined || editingProduct.price === '' || isNaN(editingProduct.price) || Number(editingProduct.price) <= 0) {
+      addToast('Please provide a valid product name and a price greater than 0', 'error');
       return;
     }
     

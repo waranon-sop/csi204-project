@@ -9,7 +9,11 @@ export async function PUT(request, { params }) {
     const userIndex = db.users.findIndex(u => u.id === id);
     
     if (userIndex === -1) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+      // Upsert: Create user if not found in db but exists in frontend
+      const newUser = { ...updateData, id };
+      db.users.push(newUser);
+      await writeDB('users.json', db);
+      return Response.json(newUser);
     }
     
     // Update user data, but keep the original ID

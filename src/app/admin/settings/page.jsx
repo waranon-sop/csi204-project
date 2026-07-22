@@ -32,7 +32,6 @@ export default function SettingsPage() {
     if (!isLoadingSettings && globalSettings) {
       setSettings(globalSettings);
       setOriginalSettings(globalSettings);
-      setIsLoading(false);
     }
   }, [globalSettings, isLoadingSettings]);
 
@@ -40,8 +39,6 @@ export default function SettingsPage() {
     let error = null;
     if (name === 'storeName' && !String(value).trim()) {
       error = 'Store name cannot be empty';
-    } else if (name === 'contactEmail' && (!String(value).includes('@') || !String(value).includes('.'))) {
-      error = 'Valid email address required';
     } else if ((name === 'freeShippingThreshold' || name.startsWith('eco')) && Number(value) < 0) {
       error = 'Value cannot be negative';
     }
@@ -193,20 +190,6 @@ export default function SettingsPage() {
                           }`}
                         />
                         {errors.storeName && <p className="text-xs text-red-500 mt-1.5">{errors.storeName}</p>}
-                      </div>
-                      <div className="bg-[#FAF8F5] p-5 rounded-xl border border-[#D8D2C8]">
-                        <label className="block text-sm font-bold text-[#2D2D2A] mb-1.5">Contact Email</label>
-                        <p className="text-xs text-[#5C5C58] mb-3">Where customers can reach you for support.</p>
-                        <input 
-                          type="email" 
-                          name="contactEmail"
-                          value={settings.contactEmail}
-                          onChange={handleChange}
-                          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4A533D]/30 text-sm bg-white ${
-                            errors.contactEmail ? 'border-red-500 ring-1 ring-red-500/50' : 'border-[#D8D2C8]'
-                          }`}
-                        />
-                        {errors.contactEmail && <p className="text-xs text-red-500 mt-1.5">{errors.contactEmail}</p>}
                       </div>
                     </div>
                   </div>

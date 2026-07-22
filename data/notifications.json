@@ -2,102 +2,21 @@
   "notifications": [
     {
       "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Updated order #RW-40539",
-      "target": "#RW-40539",
-      "time": "2026-07-22T15:05:05.817Z",
-      "type": "order",
+      "action": "Created a new discount code",
+      "target": "KM-Q74AU1",
+      "time": "2026-07-22T18:45:46.256Z",
+      "type": "promotion",
       "read": false,
-      "id": 1784732706383
+      "id": 1784745946280
     },
     {
       "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "ีัรเ้ร้นี้่ยา",
-      "time": "2026-07-22T14:23:55.715Z",
-      "type": "product",
+      "action": "Added a new team member",
+      "target": "สมหมาย สกายฟ้า",
+      "time": "2026-07-22T18:44:16.713Z",
+      "type": "user",
       "read": false,
-      "id": 1784730235734
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "เหำำฟหเฟ",
-      "time": "2026-07-22T14:23:43.347Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730223369
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "พะัีรนยบลยนย",
-      "time": "2026-07-22T14:23:14.922Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730194945
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "้กพ้พหห",
-      "time": "2026-07-22T14:22:29.798Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730149817
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "ยกยไก",
-      "time": "2026-07-22T14:22:04.355Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730124370
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "เหลือง",
-      "time": "2026-07-22T14:20:55.433Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730055451
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "mewwing",
-      "time": "2026-07-22T14:20:18.132Z",
-      "type": "product",
-      "read": false,
-      "id": 1784730018149
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "รับงาน",
-      "time": "2026-07-22T14:19:39.111Z",
-      "type": "product",
-      "read": false,
-      "id": 1784729979153
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "รับงาน",
-      "time": "2026-07-22T14:19:02.367Z",
-      "type": "product",
-      "read": false,
-      "id": 1784729942386
-    },
-    {
-      "user": "ยิ่งยศ ผู้ดูแลระบบ",
-      "action": "Added a new product",
-      "target": "รับงาน",
-      "time": "2026-07-22T14:18:43.171Z",
-      "type": "product",
-      "read": false,
-      "id": 1784729923194
+      "id": 1784745856731
     }
   ]
 }

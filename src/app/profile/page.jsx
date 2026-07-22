@@ -5,8 +5,10 @@ import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
 import { User, Mail, Phone, MapPin, Shield, Check, Lock, ShieldCheck, Box, FileText, Activity, Gift } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCustomerGuard } from '../../hooks/useRoleGuard';
 
 export default function ProfileSettings() {
+  const { isAllowed } = useCustomerGuard();
   const { currentUser, updateUser } = useAuth();
   const fileInputRef = useRef(null);
   
@@ -121,6 +123,8 @@ export default function ProfileSettings() {
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
+
+  if (!isAllowed) return null;
 
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -8,6 +8,17 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+
+  // Helper to sync role to cookies for middleware
+  const setRoleCookie = (role) => {
+    if (typeof document !== 'undefined') {
+      if (role) {
+        document.cookie = `userRole=${role}; path=/; max-age=604800; SameSite=Lax`;
+      } else {
+        document.cookie = `userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      }
+    }
+  };
   const [users, setUsers] = useState([]);
 
   // Auth Modal State
@@ -95,6 +106,7 @@ export function AuthProvider({ children }) {
               ...u,
               id: "U-001",
               email: (u.email === "admin" || !u.email) ? "admin@rewear.com" : u.email,
+              role: "admin", // Ensure role is always admin
             };
           }
           return u;
@@ -151,11 +163,15 @@ export function AuthProvider({ children }) {
             sessionStorage.setItem("currentUser", JSON.stringify(storedSession));
           if (localStorage.getItem("currentUser"))
             localStorage.setItem("currentUser", JSON.stringify(storedSession));
+          setRoleCookie(storedSession.role);
         } else {
           storedSession = null;
           sessionStorage.removeItem("currentUser");
           localStorage.removeItem("currentUser");
+          setRoleCookie(null);
         }
+      } else {
+        setRoleCookie(null);
       }
 
       setUsers(storedUsers);
@@ -186,6 +202,7 @@ export function AuthProvider({ children }) {
         sessionStorage.setItem("currentUser", JSON.stringify(user));
         localStorage.removeItem("currentUser");
       }
+      setRoleCookie(user.role);
       // Sync users state with the fresh data
       setUsers(freshUsers);
       return { success: true, user };
@@ -245,6 +262,7 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem("currentUser", JSON.stringify(newUser));
       localStorage.removeItem("currentUser");
     }
+    setRoleCookie(newUser.role);
 
     setPendingGoogleUser(null); // Clear any pending data
     localStorage.removeItem('referredBy');
@@ -266,6 +284,7 @@ export function AuthProvider({ children }) {
     setCurrentUser(user);
     localStorage.setItem("currentUser", JSON.stringify(user));
     sessionStorage.removeItem("currentUser");
+    setRoleCookie(user.role);
 
     return { success: true };
   };
@@ -274,11 +293,13 @@ export function AuthProvider({ children }) {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
     sessionStorage.removeItem("currentUser");
+    setRoleCookie(null);
   };
 
   // For the SAD System Design demo widget
   const setDemoUser = (roleData) => {
     setCurrentUser(roleData);
+    setRoleCookie(roleData?.role || null);
   };
 
   const addSpending = (amount) => {

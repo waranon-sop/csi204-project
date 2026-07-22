@@ -6,7 +6,7 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const updateData = await request.json();
     const db = await readDB('products.json', []);
-    const productsList = Array.isArray(db) ? db : db.products || [];
+    const productsList = Array.isArray(db) ? db : (db && db.products ? db.products : []);
     
     const index = productsList.findIndex(p => p.id === id);
     if (index === -1) {
@@ -26,7 +26,7 @@ export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
     const db = await readDB('products.json', []);
-    let productsList = Array.isArray(db) ? db : db.products || [];
+    let productsList = Array.isArray(db) ? db : (db && db.products ? db.products : []);
     
     const initialLength = productsList.length;
     productsList = productsList.filter(p => p.id !== id);

@@ -107,15 +107,26 @@ export default function AdminPromotions() {
     }
   };
 
-  const handleToggleStatus = (id, currentStatus) => {
+  const handleToggleStatus = async (id, currentStatus) => {
     if (currentStatus === 'Expired') return;
     const promo = promotions.find(p => p.id === id);
     if (!promo) return;
     
     const newStatus = currentStatus === 'Active' ? 'Draft' : 'Active';
-    setPromotions(promotions.map(p => p.id === id ? { ...p, status: newStatus } : p));
-    addToast(newStatus === 'Active' ? `"${promo.code}" activated` : `"${promo.code}" moved to draft`);
-    addAdminNotification(currentUser?.name, newStatus === 'Active' ? 'Activated discount code' : 'Moved discount code to draft', promo.code, 'promotion');
+    const updatedPromo = { ...promo, status: newStatus };
+    
+    try {
+      await fetch(`/api/promotions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPromo)
+      });
+      setPromotions(promotions.map(p => p.id === id ? updatedPromo : p));
+      addToast(newStatus === 'Active' ? `"${promo.code}" activated` : `"${promo.code}" moved to draft`);
+      addAdminNotification(currentUser?.name, newStatus === 'Active' ? 'Activated discount code' : 'Moved discount code to draft', promo.code, 'promotion');
+    } catch (err) {
+      addToast('Failed to update status', 'error');
+    }
   };
 
   const getEffectiveStatus = (promo) => {
