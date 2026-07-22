@@ -65,19 +65,22 @@ export default function EcoImpact() {
   const [deliveredItemsCount, setDeliveredItemsCount] = useState(0);
 
   useEffect(() => {
-    if (currentUser?.id) {
-      const orders = getOrdersByUser(currentUser.id);
-      const deliveredOrders = orders.filter(o => o.status === 'Delivered');
-      let totalItems = 0;
-      deliveredOrders.forEach(order => {
-        if (order.items && Array.isArray(order.items)) {
-          totalItems += order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        }
-      });
-      setDeliveredItemsCount(totalItems);
-    } else {
-      setDeliveredItemsCount(0);
-    }
+    const fetchOrders = async () => {
+      if (currentUser?.id) {
+        const orders = await getOrdersByUser(currentUser.id);
+        const deliveredOrders = orders.filter(o => o.status === 'Delivered');
+        let totalItems = 0;
+        deliveredOrders.forEach(order => {
+          if (order.items && Array.isArray(order.items)) {
+            totalItems += order.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+          }
+        });
+        setDeliveredItemsCount(totalItems);
+      } else {
+        setDeliveredItemsCount(0);
+      }
+    };
+    fetchOrders();
   }, [currentUser?.id]);
 
   const checkCondition = (missionId) => {
@@ -99,12 +102,7 @@ export default function EcoImpact() {
     else if (missionId === 'daily-1' || missionId === 'daily-2') router.push('/'); // Shop to checkout
   };
 
-  const submitMockAction = (flagName) => {
-    if (updateUser) {
-      updateUser({ [flagName]: true });
-    }
-    setActiveMockModal(null);
-  };
+
 
   if (spending < 2000) {
     nextRank = 'Sprout';

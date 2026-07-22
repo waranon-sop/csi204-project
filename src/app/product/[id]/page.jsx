@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Heart, RefreshCcw, ShieldCheck, Shirt, MapPin, Leaf, Info } from 'lucide-react';
@@ -13,6 +13,7 @@ import { useFavorites } from '../../../context/FavoritesContext';
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const router = useRouter();
   const [product, setProduct] = useState(null);
   const [curatedProducts, setCuratedProducts] = useState([]);
   const [activeImage, setActiveImage] = useState('');
@@ -170,25 +171,34 @@ export default function ProductDetail() {
           {/* Actions */}
           <div className="space-y-4 pt-2">
             <div className="flex gap-4">
-              <button 
-                onClick={() => {
-                  if (!currentUser) {
-                    openAuthModal('login');
-                  } else if (currentUser.role === 'customer') {
-                    if (!isAdded) {
-                      addToCart(product);
+              {product.status === 'Sold Out' || product.status === 'Reserved' || product.status === 'Draft' ? (
+                <button 
+                  onClick={() => router.push('/#collection')}
+                  className="flex-1 py-4 px-6 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all shadow-md flex justify-center items-center gap-2 bg-[#FAF7F2] border border-[#EAE5DB] text-[#4A543C] hover:bg-[#F2E9DC]"
+                >
+                  ดูสินค้าที่คล้ายกัน
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    if (!currentUser) {
+                      openAuthModal('login');
+                    } else if (currentUser.role === 'customer') {
+                      if (!isAdded) {
+                        addToCart(product);
+                      }
                     }
-                  }
-                }}
-                disabled={(currentUser && currentUser.role !== 'customer') || isAdded}
-                className={`flex-1 py-4 px-6 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all shadow-md flex justify-center items-center gap-2 ${
-                  (currentUser && currentUser.role !== 'customer')
-                    ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
-                    : isAdded ? 'bg-sage-600 text-white' : 'bg-[#4A543C] hover:bg-[#3A432F] text-white'
-                }`}
-              >
-                {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}
-              </button>
+                  }}
+                  disabled={(currentUser && currentUser.role !== 'customer') || isAdded}
+                  className={`flex-1 py-4 px-6 rounded-xl text-xs font-semibold uppercase tracking-widest transition-all shadow-md flex justify-center items-center gap-2 ${
+                    (currentUser && currentUser.role !== 'customer')
+                      ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
+                      : isAdded ? 'bg-sage-600 text-white' : 'bg-[#4A543C] hover:bg-[#3A432F] text-white'
+                  }`}
+                >
+                  {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}
+                </button>
+              )}
               <button 
                 onClick={() => toggleFavorite(product)}
                 className={`p-4 rounded-xl border transition-all ${

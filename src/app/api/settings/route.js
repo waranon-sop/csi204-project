@@ -1,33 +1,17 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'settings.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { storeSettings: {} };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('settings.json', { storeSettings: {} });
   return Response.json(db.storeSettings || {});
 }
 
 export async function PUT(request) {
   try {
     const updateData = await request.json();
-    const db = readDB();
+    const db = await readDB('settings.json', { storeSettings: {} });
     
     db.storeSettings = { ...db.storeSettings, ...updateData };
-    writeDB(db);
+    await writeDB('settings.json', db);
     
     return Response.json(db.storeSettings);
   } catch (error) {

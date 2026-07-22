@@ -1,6 +1,51 @@
 {
   "notifications": [
     {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Restored product",
+      "target": "dwda",
+      "time": "2026-07-22T04:09:36.626Z",
+      "type": "product",
+      "read": false,
+      "id": 1784693376642
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Moved product to draft",
+      "target": "dwda",
+      "time": "2026-07-22T04:09:29.258Z",
+      "type": "product",
+      "read": false,
+      "id": 1784693369271
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Restored product",
+      "target": "dwda",
+      "time": "2026-07-22T04:09:22.186Z",
+      "type": "product",
+      "read": false,
+      "id": 1784693362198
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Moved product to draft",
+      "target": "dwda",
+      "time": "2026-07-22T04:09:20.181Z",
+      "type": "product",
+      "read": false,
+      "id": 1784693360200
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "dwda",
+      "time": "2026-07-22T04:09:17.310Z",
+      "type": "product",
+      "read": false,
+      "id": 1784693357330
+    },
+    {
       "user": "สมหญิง พนักงาน",
       "action": "Updated product",
       "target": "hehe",

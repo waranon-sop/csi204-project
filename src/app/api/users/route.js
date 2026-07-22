@@ -1,32 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'users.json');
-
-// Helper to read DB
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { users: [] };
-  }
-};
-
-// Helper to write DB
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('users.json', { users: [] });
   return Response.json(db.users);
 }
 
 export async function POST(request) {
   try {
     const newUser = await request.json();
-    const db = readDB();
+    const db = await readDB('users.json', { users: [] });
     
     // Auto-generate ID if not provided
     if (!newUser.id) {
@@ -34,7 +16,7 @@ export async function POST(request) {
     }
     
     db.users.push(newUser);
-    writeDB(db);
+    await writeDB('users.json', db);
     
     return Response.json(newUser, { status: 201 });
   } catch (error) {

@@ -19,16 +19,6 @@
       "joinDate": "2024-01-02"
     },
     {
-      "id": "U-003",
-      "name": "Hum",
-      "email": "hum@rewear.com",
-      "password": "waranon777",
-      "role": "staff",
-      "joinDate": "21 Jul 2026",
-      "orders": 0,
-      "avatar": null
-    },
-    {
       "id": "U-004",
       "name": "NATTHAPONG HANCHAIPA",
       "email": "natthapong.han@spumail.net",
@@ -53,18 +43,14 @@
       "rank": "Seed"
     },
     {
-      "id": "U-006",
-      "name": "Owojen",
-      "email": "lamnamazeda@gmail.com",
-      "password": "snQ72`HVXl",
+      "id": "U-007",
+      "name": "วรานนท์ โสปรก",
+      "email": "pipesomad@gmail.com",
+      "password": "Waranon_777",
       "phone": "",
       "role": "customer",
-      "referredBy": "U-004",
-      "rank": "Harvest",
-      "total_spending": 15411111256,
-      "points": 15411111256,
-      "hasEcoShipping": true,
-      "hasMadeFirstPurchase": true
+      "referredBy": null,
+      "rank": "Seed"
     }
   ]
 }

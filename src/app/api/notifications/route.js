@@ -1,30 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'notifications.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { notifications: [] };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('notifications.json', { notifications: [] });
   return Response.json(db.notifications || []);
 }
 
 export async function POST(request) {
   try {
     const newNotif = await request.json();
-    const db = readDB();
+    const db = await readDB('notifications.json', { notifications: [] });
     
     if (!db.notifications) db.notifications = [];
     
@@ -35,7 +19,7 @@ export async function POST(request) {
     
     // Notifications should be prepended (newest first)
     db.notifications.unshift(newNotif);
-    writeDB(db);
+    await writeDB('notifications.json', db);
     
     return Response.json(newNotif, { status: 201 });
   } catch (error) {

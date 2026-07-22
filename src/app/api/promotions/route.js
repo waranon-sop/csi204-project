@@ -1,30 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'promotions.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { promotions: [] };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('promotions.json', { promotions: [] });
   return Response.json(db.promotions || []);
 }
 
 export async function POST(request) {
   try {
     const newPromo = await request.json();
-    const db = readDB();
+    const db = await readDB('promotions.json', { promotions: [] });
     
     if (!db.promotions) db.promotions = [];
     
@@ -33,7 +17,7 @@ export async function POST(request) {
     }
     
     db.promotions.unshift(newPromo);
-    writeDB(db);
+    await writeDB('promotions.json', db);
     
     return Response.json(newPromo, { status: 201 });
   } catch (error) {

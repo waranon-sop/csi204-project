@@ -226,26 +226,6 @@ export default function AdminUsersManagement() {
     }
   };
 
-  const handleResetPassword = async (user) => {
-    const DEFAULT_PASSWORD = 'Rewear1234!';
-    const updatedUser = { ...user, password: DEFAULT_PASSWORD };
-    
-    try {
-      await fetch(`/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser)
-      });
-      
-      const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
-      setUsers(updatedUsers);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      addToast('Password has been reset to default');
-      logAndRefresh(currentUser?.name, 'Reset password', user.name, 'user');
-    } catch (err) {
-      addToast('Failed to reset password');
-    }
-  };
 
   const confirmSuspend = async () => {
     if (userToSuspend) {
@@ -389,13 +369,6 @@ export default function AdminUsersManagement() {
     return <span className="text-earth-500 ml-2 text-xs border-l-[1.5px] border-earth-300 pl-2 leading-none">{details}</span>;
   };
 
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
 
   const filteredUsers = users.filter(user => {
     const searchLower = searchQuery.toLowerCase();
@@ -443,7 +416,6 @@ export default function AdminUsersManagement() {
     return 0;
   });
 
-  const isFiltered = roleFilter !== 'All' || statusFilter !== 'All' || searchQuery !== '';
   const displayUsers = sortedUsers; // Show all users matching filter
 
   if (!isAllowed) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, Store, Leaf, Truck, CreditCard, Bell, Lock, Check } from 'lucide-react';
+import { Save, Store, Leaf, Truck, Check } from 'lucide-react';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAdminGuard } from '../../../hooks/useAdminGuard';
 import { useSettings } from '../../../context/SettingsContext';
@@ -12,7 +12,6 @@ export default function SettingsPage() {
   const { settings: globalSettings, isLoadingSettings, refreshSettings } = useSettings();
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState(null);
   const [errors, setErrors] = useState({});

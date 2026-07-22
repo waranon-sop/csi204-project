@@ -1,26 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'promotions.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { promotions: [] };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../../lib/db';
 
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const updateData = await request.json();
-    const db = readDB();
+    const db = await readDB('promotions.json', { promotions: [] });
     
     const index = db.promotions.findIndex(p => p.id === id);
     if (index === -1) {
@@ -28,7 +12,7 @@ export async function PUT(request, { params }) {
     }
     
     db.promotions[index] = { ...db.promotions[index], ...updateData, id };
-    writeDB(db);
+    await writeDB('promotions.json', db);
     
     return Response.json(db.promotions[index]);
   } catch (error) {
@@ -39,7 +23,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
-    const db = readDB();
+    const db = await readDB('promotions.json', { promotions: [] });
     
     const initialLength = db.promotions.length;
     db.promotions = db.promotions.filter(p => p.id !== id);
@@ -48,7 +32,7 @@ export async function DELETE(request, { params }) {
       return Response.json({ error: 'Promotion not found' }, { status: 404 });
     }
     
-    writeDB(db);
+    await writeDB('promotions.json', db);
     return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: 'Failed to delete promotion' }, { status: 500 });

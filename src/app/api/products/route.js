@@ -1,30 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'products.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { products: [] };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('products.json', { products: [] });
   return Response.json(db.products || []);
 }
 
 export async function POST(request) {
   try {
     const newProduct = await request.json();
-    const db = readDB();
+    const db = await readDB('products.json', { products: [] });
     
     if (!db.products) db.products = [];
     
@@ -33,7 +17,7 @@ export async function POST(request) {
     }
     
     db.products.unshift(newProduct);
-    writeDB(db);
+    await writeDB('products.json', db);
     
     return Response.json(newProduct, { status: 201 });
   } catch (error) {

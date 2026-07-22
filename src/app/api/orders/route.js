@@ -1,30 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'orders.json');
-
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { orders: [] };
-  }
-};
-
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-};
+import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB('orders.json', { orders: [] });
   return Response.json(db.orders || []);
 }
 
 export async function POST(request) {
   try {
     const newOrder = await request.json();
-    const db = readDB();
+    const db = await readDB('orders.json', { orders: [] });
     
     if (!db.orders) db.orders = [];
     
@@ -33,7 +17,7 @@ export async function POST(request) {
     }
     
     db.orders.unshift(newOrder);
-    writeDB(db);
+    await writeDB('orders.json', db);
     
     return Response.json(newOrder, { status: 201 });
   } catch (error) {
