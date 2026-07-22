@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search as SearchIcon } from 'lucide-react';
 import { getProducts } from '../../utils/localStorageHelper';
-import QuickViewModal from '../../components/home/QuickViewModal';
+
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const category = searchParams.get('cat');
+  const exactCategory = searchParams.get('exactCategory');
   const [selectedProduct, setSelectedProduct] = React.useState(null);
   const [openFilter, setOpenFilter] = React.useState(null);
   const [selectedSpecs, setSelectedSpecs] = React.useState([]);
@@ -39,6 +40,16 @@ function SearchContent() {
       p.status !== "Archived" && 
       p.status !== "Draft"
     );
+
+    if (exactCategory) {
+      results = results.filter(p => p.category === exactCategory);
+    } else if (category === 'ACCESSORIES') {
+      const accessoriesCats = ['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Handbags'];
+      results = results.filter(p => accessoriesCats.includes(p.category));
+    } else if (category === 'CLOTHING') {
+      const accessoriesCats = ['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Handbags'];
+      results = results.filter(p => !accessoriesCats.includes(p.category));
+    }
     
     if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();
@@ -62,7 +73,7 @@ function SearchContent() {
     }
 
     return results;
-  }, [query, selectedSpecs, products]);
+  }, [query, exactCategory, category, selectedSpecs, products]);
 
   const toggleSpec = (spec) => {
     setSelectedSpecs(prev => prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]);
@@ -121,13 +132,13 @@ function SearchContent() {
         <span className="mx-2">/</span>
         <span className="uppercase">{category || 'SEARCH'}</span>
         <span className="mx-2">/</span>
-        <span className="capitalize">{query || 'All Items'}</span>
+        <span className="capitalize">{exactCategory || query || 'All Items'}</span>
       </div>
 
       {/* Page Title & Results Count */}
       <div className="flex justify-between items-end mb-6">
         <h1 className="text-xl md:text-2xl text-[#2D2D2A] capitalize font-medium tracking-wide">
-          {query || category || 'All Items'}
+          {exactCategory || query || category || 'All Items'}
         </h1>
         <span className="text-[12px] text-[#5C5C5A] font-medium tracking-wide">
           {searchResults.length} ผลลัพธ์

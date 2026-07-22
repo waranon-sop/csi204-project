@@ -5,40 +5,204 @@
       "name": "NATTHAPONG HANCHAIPA",
       "email": "natthapong.han@spumail.net",
       "password": "snQ72`HVXl",
-      "phone": "",
+      "phone": "6234626",
       "role": "customer",
       "referredBy": null,
       "rank": null,
-      "hasInvited": true,
-      "completedMissions": [
-        "daily-5"
-      ],
+      "isRewardsMember": true,
+      "tier": "Sprout",
+      "points": 5000,
+      "couponsRedeemed": 0,
+      "completedMissions": [],
       "lastMissionResetDate": "2026-07-23",
-      "points": 100,
-      "total_spending": 2000
+      "firstName": "NATTHAPONG",
+      "lastName": "HANCHAIPA",
+      "address1": "กฟหกฟห",
+      "address2": "",
+      "province": "กาญจนบุรี",
+      "district": "ท่ามะกา",
+      "subDistrict": "ดอนชะเอม",
+      "postcode": "71130",
+      "address": "กฟหกฟห ดอนชะเอม, ท่ามะกา, กาญจนบุรี 71130",
+      "total_spending": 5000,
+      "hasEcoShipping": true,
+      "hasNoPackaging": true,
+      "birthMonth": "2",
+      "birthDay": "1"
     },
     {
       "id": "U-004",
       "name": "18ณัฐพงศ์ หาญชัยภา",
       "email": "47044@mws.ac.th",
-      "password": "smQ82`HVXl",
-      "phone": "",
+      "password": "snQ72`HVXl",
+      "phone": "0830116623",
       "role": "customer",
-      "referredBy": "U-003",
+      "referredBy": null,
       "rank": null,
-      "total_spending": 1000,
-      "points": 120,
+      "isRewardsMember": true,
+      "tier": "Harvest",
+      "points": 103681,
+      "couponsRedeemed": 0,
+      "birthMonth": "4",
+      "birthDay": "3",
+      "completedMissions": [
+        "daily-1",
+        "daily-2",
+        "onetime-1",
+        "daily-5",
+        "daily-3",
+        "daily-4"
+      ],
+      "lastMissionResetDate": "2026-07-23",
+      "firstName": "18ณัฐพงศ์",
+      "lastName": "หาญชัยภา",
+      "address1": "1312 เฟหเฟหเ",
+      "address2": "",
+      "province": "กาญจนบุรี",
+      "district": "ทองผาภูมิ",
+      "subDistrict": "ท่าขนุน",
+      "postcode": "71180",
+      "address": "1312 เฟหเฟหเ ท่าขนุน, ทองผาภูมิ, กาญจนบุรี 71180",
+      "total_spending": 106636,
       "hasEcoShipping": true,
+      "hasNoPackaging": true,
+      "hasInvited": true,
+      "hasReviewed": true,
+      "hasPhotoReviewed": true,
+      "redeemedDiscountsThisYear": {
+        "2026": {
+          "Legacy Discount": 5,
+          "30% Discount or 500 THB Cash Coupon": 2
+        }
+      },
+      "coupons": [
+        {
+          "id": "CPN-1784763479141-623",
+          "code": "RW-30-26TI",
+          "title": "30% Discount or 500 THB Cash Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T23:37:59.141Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784760542973-608",
+          "code": "RW-30-I8F5",
+          "title": "30% Discount or 500 THB Cash Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:49:02.973Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784760282240-859",
+          "code": "RW-15-8Z2L",
+          "title": "15% - 20% Discount Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:44:42.240Z",
+          "status": "used"
+        },
+        {
+          "id": "CPN-1784760281630-905",
+          "code": "RW-15-67PY",
+          "title": "15% - 20% Discount Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:44:41.630Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784760280838-624",
+          "code": "RW-15-Q5ZN",
+          "title": "15% - 20% Discount Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:44:40.838Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784758946455-717",
+          "code": "RW-FREE-ML9N",
+          "title": "Free Express Delivery",
+          "type": "free_express",
+          "dateRedeemed": "2026-07-22T22:22:26.455Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784758945857-15",
+          "code": "RW-FREE-VC2P",
+          "title": "Free Standard Delivery",
+          "type": "free_standard",
+          "dateRedeemed": "2026-07-22T22:22:25.857Z",
+          "status": "active"
+        },
+        {
+          "id": "CPN-1784757948648-877",
+          "code": "RW-5--SPO3",
+          "title": "5% - 10% Discount Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:05:48.648Z",
+          "status": "used"
+        },
+        {
+          "id": "CPN-1784757681779-473",
+          "code": "RW-15-7AJM",
+          "title": "15% - 20% Discount Coupon",
+          "type": "discount",
+          "dateRedeemed": "2026-07-22T22:01:21.779Z",
+          "status": "used"
+        },
+        {
+          "id": "CPN-1784757668667-886",
+          "code": "RW-FREE-FGWU",
+          "title": "Free Standard Delivery",
+          "type": "free_standard",
+          "dateRedeemed": "2026-07-22T22:01:08.668Z",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "id": "U-005",
+      "name": "caelvm00",
+      "email": "ballkungzaza123@gmail.com",
+      "password": "snQ72`HVXl",
+      "phone": "083112345",
+      "role": "customer",
+      "referredBy": "U-004",
+      "rank": null,
+      "isRewardsMember": true,
+      "tier": "Seed",
+      "points": 0,
+      "couponsRedeemed": 0,
+      "firstName": "caelvm00",
+      "lastName": "a",
+      "address1": "dasda",
+      "address2": "",
+      "province": "กรุงเทพมหานคร",
+      "district": "คลองเตย",
+      "subDistrict": "คลองเตย",
+      "postcode": "10110",
+      "address": "dasda คลองเตย, คลองเตย, กรุงเทพมหานคร 10110",
+      "total_spending": 500,
+      "hasEcoShipping": true,
+      "hasNoPackaging": true,
       "hasMadeFirstPurchase": true,
       "hasInvited": true,
       "completedMissions": [
-        "daily-5",
-        "daily-1"
-      ]
-    }
-  ]
-} "daily-1"
-      ]
+        "onetime-1"
+      ],
+      "lastMissionResetDate": "2026-07-23"
+    },
+    {
+      "id": "U-006",
+      "name": "Owojen",
+      "email": "lamnamazeda@gmail.com",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": null,
+      "isRewardsMember": false,
+      "tier": null,
+      "points": 0,
+      "couponsRedeemed": 0
     }
   ]
 }

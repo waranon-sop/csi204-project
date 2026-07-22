@@ -33,6 +33,17 @@ export function CartProvider({ children }) {
     localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
   }, [cartItems]);
 
+  // Clear cart and release items on logout
+  useEffect(() => {
+    const handleLogout = () => {
+      cartItems.forEach(item => updateProductStatus(item.id, 'Available'));
+      setCartItems([]);
+      localStorage.removeItem(CART_KEY);
+    };
+    window.addEventListener("userLoggedOut", handleLogout);
+    return () => window.removeEventListener("userLoggedOut", handleLogout);
+  }, [cartItems]);
+
   // Soft lock release check
   useEffect(() => {
     const interval = setInterval(async () => {

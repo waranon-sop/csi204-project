@@ -114,7 +114,7 @@ function SupportContent() {
         </div>
 
         {/* Contact Info Section */}
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-[#EAE5DB] relative overflow-hidden text-center">
+        <div id="contact-us" className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-[#EAE5DB] relative overflow-hidden text-center">
           {/* Decorative background element */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#EEF1EA] rounded-full blur-3xl -mr-32 -mt-32 opacity-50 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#FAF8F5] rounded-full blur-3xl -ml-32 -mb-32 opacity-50 pointer-events-none"></div>

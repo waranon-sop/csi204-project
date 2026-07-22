@@ -56,7 +56,7 @@ export default function CheckoutPage() {
     district: '',
     subDistrict: '',
     postcode: '',
-    phone: '09234567890'
+    phone: ''
   });
 
   React.useEffect(() => {
@@ -71,7 +71,7 @@ export default function CheckoutPage() {
         district: currentUser.district || '',
         subDistrict: currentUser.subDistrict || '',
         postcode: currentUser.postcode || '',
-        phone: currentUser.phone || '09234567890'
+        phone: currentUser.phone || ''
       }));
     }
   }, [currentUser]);
@@ -136,11 +136,14 @@ export default function CheckoutPage() {
   React.useEffect(() => {
     if (showCouponModal) {
       const stored = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
-      setMyCouponsList(stored.filter(c => c.status === 'active' || (!c.used && c.status !== 'Used')));
+      setMyCouponsList(stored.filter(c => {
+        const statusStr = (c.status || '').toLowerCase();
+        return statusStr === 'active' || (!c.used && statusStr !== 'used' && statusStr !== 'expired');
+      }));
     }
   }, [showCouponModal, currentUser]);
 
-  const handleApplyPromo = (overrideCode) => {
+  const handleApplyPromo = async (overrideCode) => {
     const codeToApply = typeof overrideCode === 'string' ? overrideCode.trim() : promoCode.trim();
     setPromoError('');
     setPromoSuccess('');
@@ -151,7 +154,13 @@ export default function CheckoutPage() {
       setShowCouponModal(false);
     }
 
-    const promos = JSON.parse(localStorage.getItem('promotions')) || [];
+    let promos = [];
+    try {
+      const res = await fetch('/api/promotions');
+      if (res.ok) promos = await res.json();
+    } catch (err) {
+      console.error('Failed to fetch promotions', err);
+    }
     const myCoupons = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
     
     let promo = promos.find(p => p.code === codeToApply.toUpperCase());
@@ -162,8 +171,8 @@ export default function CheckoutPage() {
           ...myPromo,
           status: myPromo.status === 'active' ? 'Active' : 'Used',
           usageLimit: 1,
-          type: myPromo.type === 'discount' ? 'percent' : 'free_shipping',
-          value: myPromo.type === 'discount' ? parseInt((myPromo.title.match(/(\d+)%/) || [0, 5])[1]) : 0
+          type: myPromo.type === 'discount' ? 'percentage' : 'shipping',
+          value: myPromo.type === 'discount' ? parseInt((myPromo.title.match(/(\d+)%/) || [0, 5])[1]) : (myPromo.type === 'free_express' ? 'express' : 'standard')
         };
       }
     }
@@ -267,9 +276,13 @@ export default function CheckoutPage() {
     if (currentUser) {
       if (addSpending) addSpending(cartTotal);
       if (updateUser) {
-        const updates = { hasEcoShipping: true };
+        const updates = {};
+        if (shippingMethod !== 'express') updates.hasEcoShipping = true;
         if (noPackaging) updates.hasNoPackaging = true;
-        updateUser(updates);
+        
+        if (Object.keys(updates).length > 0) {
+          updateUser(updates);
+        }
       }
 
       if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
@@ -453,7 +466,7 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label className="block text-xs text-[#8B8B88] mb-1">เบอร์โทรศัพท์ *</label>
-                      <input type="text" className="w-full p-3 bg-white border border-[#EAE5DB] rounded text-sm focus:outline-none focus:border-[#C57B57]" value={deliveryForm.phone} onChange={e => setDeliveryForm({...deliveryForm, phone: e.target.value})} placeholder="ตัวอย่าง: 09234567890" />
+                      <input type="text" className="w-full p-3 bg-white border border-[#EAE5DB] rounded text-sm focus:outline-none focus:border-[#C57B57]" value={deliveryForm.phone} onChange={e => setDeliveryForm({...deliveryForm, phone: e.target.value})} placeholder="ตัวอย่าง: 0812345678" />
                     </div>
                   </div>
                 </div>
@@ -477,8 +490,8 @@ export default function CheckoutPage() {
                 <div className="flex justify-end pt-4">
                   <button 
                     onClick={() => {
-                      if (saveAddress && updateProfile) {
-                        updateProfile({
+                      if (saveAddress && updateUser) {
+                        updateUser({
                           firstName: deliveryForm.firstName,
                           lastName: deliveryForm.lastName,
                           address1: deliveryForm.address1,
@@ -882,21 +895,36 @@ export default function CheckoutPage() {
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#EAE5DB]">
               {myCouponsList.length > 0 ? (
                 myCouponsList.map((coupon, idx) => (
-                  <div key={idx} className="border border-[#EAE5DB] rounded-md p-4 flex justify-between items-center bg-[#F9F8F6]">
-                    <div>
-                      <div className="font-bold text-[#2D2D2A] text-sm">{coupon.code}</div>
-                      <div className="text-xs text-[#5C5C5A] mt-1 font-medium">
-                        {coupon.discountType === 'percentage' && `ลด ${coupon.discountValue}%`}
-                        {coupon.discountType === 'fixed' && `ส่วนลด THB ${coupon.discountValue}`}
-                        {coupon.discountType === 'shipping' && `ส่งฟรี (${coupon.discountValue === 'express' ? 'Express' : 'Standard'})`}
-                      </div>
+                  <div key={idx} className="relative bg-white border border-[#EAE5DB] rounded-xl overflow-hidden flex shadow-sm hover:border-[#5F6B4E] transition-colors group">
+                    <div className="w-4 bg-[#5F6B4E] flex flex-col justify-between py-2 border-r border-[#EAE5DB]">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="w-2 h-2 rounded-full bg-white -ml-1"></div>
+                      ))}
                     </div>
-                    <button 
-                      onClick={() => handleApplyPromo(coupon.code)}
-                      className="px-3 py-1.5 bg-[#2D2D2A] text-white text-[11px] font-bold rounded hover:bg-[#4A4A4A] transition-colors"
-                    >
-                      ใช้คูปอง
-                    </button>
+                    
+                    <div className="flex-1 p-4 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="inline-flex px-2 py-1 bg-[#F9F8F6] text-[#5F6B4E] text-[10px] font-bold rounded-md uppercase tracking-wider">
+                            {(coupon.type || 'coupon').replace('_', ' ')}
+                          </span>
+                          {coupon.dateRedeemed && (
+                            <span className="text-[9px] text-[#8B8B88] font-medium">
+                              {new Date(coupon.dateRedeemed).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-[#2D2D2A] text-[13px] mb-3 leading-tight pr-2">
+                          {coupon.title}
+                        </h4>
+                      </div>
+                      <button 
+                        onClick={() => handleApplyPromo(coupon.code)}
+                        className="w-full py-2 bg-[#2D2D2A] text-white text-[11px] font-bold rounded-lg hover:bg-[#4A4A4A] transition-colors"
+                      >
+                        ใช้คูปอง
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (

@@ -5,7 +5,6 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from './CartDrawer';
 import RewardsWidget from './RewardsWidget';
-import PersonalShopperWidget from './PersonalShopperWidget';
 
 export default function PageLayout({ children }) {
   const pathname = usePathname();
@@ -23,7 +22,6 @@ export default function PageLayout({ children }) {
       {children}
       {showNavbarFooter && (
         <>
-          <PersonalShopperWidget />
           <RewardsWidget />
           <Footer />
         </>

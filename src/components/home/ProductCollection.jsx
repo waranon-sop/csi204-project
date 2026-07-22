@@ -6,7 +6,7 @@ import { Eye, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import QuickViewModal from './QuickViewModal';
+
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useFavorites } from '../../context/FavoritesContext';
@@ -31,7 +31,7 @@ export default function ProductCollection() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState("ทั้งหมด");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const [products, setProducts] = useState([]);
   
   const { addToCart } = useCart();
@@ -147,7 +147,7 @@ export default function ProductCollection() {
           variants={containerVariants}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true, amount: 0.1 }}
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12"
         >
           {filteredProducts.map((product) => (
@@ -180,18 +180,7 @@ export default function ProductCollection() {
                   </button>
                 </div>
 
-                <div className="absolute inset-0 bg-[#2D2D2A]/10 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 flex items-center justify-center pb-6">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedProduct(product);
-                    }}
-                    className="bg-[#FCFBF7] text-[#2D2D2A] text-xs font-semibold px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg hover:bg-primary hover:text-white transition-colors transform translate-y-4 group-hover:translate-y-0 duration-500"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Quick View
-                  </button>
-                </div>
+
 
                 {product.isEarlyAccess && (
                   <div className="absolute top-2 left-2 bg-[#2D2D2A] text-white text-[9px] font-bold px-2 py-1 uppercase rounded-sm z-20 shadow-sm flex items-center gap-1">
@@ -295,10 +284,7 @@ export default function ProductCollection() {
         <LookbookSection products={products} />
       </section>
 
-      <QuickViewModal
-        selectedProduct={selectedProduct}
-        setSelectedProduct={setSelectedProduct}
-      />
+
     </>
   );
 }

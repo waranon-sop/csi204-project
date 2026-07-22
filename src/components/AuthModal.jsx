@@ -131,7 +131,6 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     const result = register(`${firstName.trim()} ${lastName.trim()}`.trim(), regEmail, regPassword, phone, keepSignedIn);
     if (result.success) {
       onClose();
-      openRewardsOnboarding();
     } else {
       setError(result.error);
     }

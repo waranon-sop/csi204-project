@@ -5,12 +5,22 @@ import { X, CheckCircle2, Star, Award, Cake, Leaf, Clock, Tag, Truck, ChevronDow
 import { useAuth } from "../context/AuthContext";
 
 export default function RewardsOnboardingModal({ isOpen, onClose }) {
+  const { currentUser, updateProfile } = useAuth();
   const [step, setStep] = useState(0);
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
   const [showTerms, setShowTerms] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
-  const { currentUser, updateProfile } = useAuth();
+
+  // If user already has birthday, mark as locked
+  const hasBirthdaySaved = !!(currentUser?.birthMonth && currentUser?.birthDay);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.birthMonth) setBirthMonth(currentUser.birthMonth);
+      if (currentUser.birthDay) setBirthDay(currentUser.birthDay);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,7 +34,7 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
     if (step < 4) {
       setStep(step + 1);
     } else {
-      if (birthMonth && birthDay && updateProfile) {
+      if (birthMonth && birthDay && updateProfile && !hasBirthdaySaved) {
         updateProfile({ birthMonth, birthDay });
       }
       onClose();
@@ -194,8 +204,9 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
                 <div className="relative z-[125]">
                   <button 
                     type="button"
+                    disabled={hasBirthdaySaved}
                     onClick={() => setOpenDropdown(openDropdown === 'day' ? null : 'day')}
-                    className="w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm flex justify-between items-center"
+                    className={`w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm flex justify-between items-center ${hasBirthdaySaved ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     <span className={birthDay ? "text-[#2D2D2A]" : "text-[#8B8B88]"}>{birthDay ? birthDay : "Day*"}</span>
                     <ChevronDown className={`w-4 h-4 text-[#8B8B88] transition-transform ${openDropdown === 'day' ? 'rotate-180' : ''}`} />
@@ -224,8 +235,9 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
                 <div className="relative z-[125]">
                   <button 
                     type="button"
+                    disabled={hasBirthdaySaved}
                     onClick={() => setOpenDropdown(openDropdown === 'month' ? null : 'month')}
-                    className="w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm flex justify-between items-center"
+                    className={`w-full p-4 bg-[#F9F8F6] text-[#2D2D2A] focus:ring-1 focus:ring-[#2D2D2A] transition-all text-sm flex justify-between items-center ${hasBirthdaySaved ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
                     <span className={birthMonth ? "text-[#2D2D2A]" : "text-[#8B8B88]"}>
                       {birthMonth ? new Date(0, birthMonth - 1).toLocaleString('default', { month: 'long' }) : "Month*"}
@@ -281,7 +293,7 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
             {step === 1 && "NEXT: MEMBER PERKS"}
             {step === 2 && "NEXT: TRACK YOUR PROGRESS"}
             {step === 3 && "EARN 100 POINTS NOW"}
-            {step === 4 && "SAVE MY BIRTHDAY"}
+            {step === 4 && (hasBirthdaySaved ? "CLOSE" : "SAVE MY BIRTHDAY")}
           </button>
           
           <div className="text-center mt-4">

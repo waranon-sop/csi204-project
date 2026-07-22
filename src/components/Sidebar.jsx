@@ -24,7 +24,8 @@ export default function Sidebar() {
   const getDisplayRank = (u) => {
     if (u.role === 'admin') return 'Admin';
     if (u.role === 'staff') return 'Staff';
-    return u.rank || 'None';
+    if (u.role === 'customer' && !u.isRewardsMember) return 'Non-Member';
+    return u.tier || u.rank || 'Member';
   };
 
   const menuItems = [
@@ -87,7 +88,7 @@ export default function Sidebar() {
         <div>
           <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
           <p className="text-xs text-sage-600 font-medium capitalize">
-            {user.role === 'customer' ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
+            {user.role === 'customer' && user.isRewardsMember ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
           </p>
         </div>
       </div>

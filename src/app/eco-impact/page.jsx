@@ -11,19 +11,20 @@ import { useToast } from '../../components/ui/ToastProvider';
 const getRewardsByRank = (rank) => {
   if (rank === 'Harvest') {
     return [
-      { id: 1, title: '15% - 20% Discount Coupon', pointsRequired: 200, description: 'Limit 5 coupons/year', isAuto: false, available: true },
-      { id: 2, title: 'Free Standard Delivery', pointsRequired: 50, description: 'Unlimited redemptions', isAuto: false, available: true },
+      { id: 1, title: '30% Discount or 500 THB Cash Coupon', pointsRequired: 300, description: 'Limit 2 coupons/year', limit: 2, isAuto: false, available: true },
+      { id: 2, title: 'Free Standard Delivery', pointsRequired: 0, description: 'Unlimited free standard delivery', isAuto: true, available: true },
       { id: 3, title: 'Free Express Delivery', pointsRequired: 0, description: 'Unlimited free express delivery', isAuto: true, available: true },
+      { id: 4, title: 'Personal Shopper', pointsRequired: 0, description: 'Request specific vintage items', isAuto: true, available: true, link: '/personal-shopper' },
     ];
   } else if (rank === 'Bloom' || rank === 'Fruit') {
     return [
-      { id: 1, title: '10% - 15% Discount Coupon', pointsRequired: 300, description: 'Limit 5 coupons/year', isAuto: false, available: true },
-      { id: 2, title: 'Free Standard Delivery', pointsRequired: 150, description: 'Unlimited redemptions', isAuto: false, available: true },
-      { id: 3, title: 'Free Express Delivery', pointsRequired: 100, description: 'Unlimited redemptions', isAuto: false, available: true },
+      { id: 1, title: '15% - 20% Discount Coupon', pointsRequired: 400, description: 'Limit 5 coupons/year', limit: 5, isAuto: false, available: true },
+      { id: 2, title: 'Free Standard Delivery', pointsRequired: 200, description: 'Unlimited redemptions', isAuto: false, available: true },
+      { id: 3, title: 'Free Express Delivery', pointsRequired: 150, description: 'Unlimited redemptions', isAuto: false, available: true },
     ];
   } else if (rank === 'Seed' || rank === 'Sprout') {
     return [
-      { id: 1, title: '5% - 10% Discount Coupon', pointsRequired: 400, description: 'Limit 5 coupons/year', isAuto: false, available: true },
+      { id: 1, title: '5% - 10% Discount Coupon', pointsRequired: 400, description: 'Limit 5 coupons/year', limit: 5, isAuto: false, available: true },
       { id: 2, title: 'Free Standard Delivery', pointsRequired: 250, description: 'Unlimited redemptions', isAuto: false, available: true },
       { id: 3, title: 'Free Express Delivery', pointsRequired: 200, description: 'Unlimited redemptions', isAuto: false, available: true },
     ];
@@ -31,7 +32,7 @@ const getRewardsByRank = (rank) => {
 
   // Default for No Rank (None)
   return [
-    { id: 1, title: '5% Discount Coupon', pointsRequired: 500, description: 'Limit 5 coupons/year', isAuto: false, available: true },
+    { id: 1, title: '5% Discount Coupon', pointsRequired: 500, description: 'Limit 5 coupons/year', limit: 5, isAuto: false, available: true },
     { id: 2, title: 'Free Standard Delivery', pointsRequired: 400, description: 'Unlimited redemptions', isAuto: false, available: true },
     { id: 3, title: 'Free Express Delivery', pointsRequired: 350, description: 'Unlimited redemptions', isAuto: false, available: true },
   ];
@@ -46,7 +47,7 @@ const dailyMissions = [
 ];
 
 const oneTimeMissions = [
-  { id: 1, title: 'Complete Your Profile', desc: 'Update Address, Birthday, and Size for special promotions', points: 50 },
+  { id: 1, title: 'Complete Your Profile', desc: 'Update Address, Birthday, and Size for special promotions', points: 100 },
 ];
 
 export default function EcoImpact() {

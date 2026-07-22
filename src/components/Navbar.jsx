@@ -82,11 +82,11 @@ export default function Navbar() {
         megaMenuData: {
           items: [
             { name: 'All Clothing', path: '/search?cat=CLOTHING' },
-            { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
-            { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
-            { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
-            { name: 'Pants & Jeans', path: '/search?q=Pants&cat=CLOTHING' },
-            { name: 'Outerwear', path: '/search?q=Outerwear&cat=CLOTHING' },
+            { name: 'Skirts', path: '/search?exactCategory=Skirts&cat=CLOTHING' },
+            { name: 'Dresses', path: '/search?exactCategory=Dresses&cat=CLOTHING' },
+            { name: 'T-shirts & Tops', path: '/search?exactCategory=T-shirts%20%26%20Tops&cat=CLOTHING' },
+            { name: 'Pants & Jeans', path: '/search?exactCategory=Pants%20%26%20Jeans&cat=CLOTHING' },
+            { name: 'Outerwear', path: '/search?exactCategory=Outerwear&cat=CLOTHING' },
           ]
         }
       },
@@ -97,11 +97,11 @@ export default function Navbar() {
         megaMenuData: {
           items: [
             { name: 'All Accessories', path: '/search?cat=ACCESSORIES' },
-            { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
-            { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
-            { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
-            { name: 'Rings', path: '/search?q=Rings&cat=ACCESSORIES' },
-            { name: 'Handbags', path: '/search?q=Handbags&cat=ACCESSORIES' },
+            { name: 'Necklaces', path: '/search?exactCategory=Necklaces&cat=ACCESSORIES' },
+            { name: 'Earrings', path: '/search?exactCategory=Earrings&cat=ACCESSORIES' },
+            { name: 'Bracelets', path: '/search?exactCategory=Bracelets&cat=ACCESSORIES' },
+            { name: 'Rings', path: '/search?exactCategory=Rings&cat=ACCESSORIES' },
+            { name: 'Handbags', path: '/search?exactCategory=Handbags&cat=ACCESSORIES' },
           ]
         }
       },

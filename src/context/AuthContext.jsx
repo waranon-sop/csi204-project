@@ -266,8 +266,8 @@ export function AuthProvider({ children }) {
       role: "customer", // Default role
       referredBy: referredBy || null,
       rank: null,
-      isRewardsMember: true,
-      tier: 'Seed',
+      isRewardsMember: false,
+      tier: null,
       points: 0,
       couponsRedeemed: 0
     };
@@ -329,14 +329,8 @@ export function AuthProvider({ children }) {
   const addPoints = (amount) => {
     if (!currentUser) return;
     const newPoints = (currentUser.points || 0) + amount;
-    // Calculate new tier
-    let newTier = currentUser.tier || 'Seed';
-    if (newPoints >= 2000) newTier = 'Harvest';
-    else if (newPoints >= 1000) newTier = 'Fruit';
-    else if (newPoints >= 500) newTier = 'Bloom';
-    else if (newPoints >= 200) newTier = 'Sprout';
     
-    updateProfile({ points: newPoints, tier: newTier });
+    updateProfile({ points: newPoints });
   };
 
   const deductPoints = (amount) => {
@@ -349,6 +343,7 @@ export function AuthProvider({ children }) {
     setCurrentUser(null);
     localStorage.removeItem("currentUser");
     sessionStorage.removeItem("currentUser");
+    window.dispatchEvent(new Event("userLoggedOut"));
   };
 
   // For the SAD System Design demo widget
@@ -361,19 +356,20 @@ export function AuthProvider({ children }) {
 
     const newSpending = (currentUser.total_spending || 0) + amount;
 
-    let newRank = currentUser.rank;
-    if (currentUser.rank && currentUser.rank !== 'None') {
-      newRank = 'Seed';
-      if (newSpending >= 25000) newRank = 'Harvest';
-      else if (newSpending >= 12000) newRank = 'Fruit';
-      else if (newSpending >= 6000) newRank = 'Bloom';
-      else if (newSpending >= 2000) newRank = 'Sprout';
+    if (currentUser.isRewardsMember) {
+      const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
+      const newPoints = currentPoints + amount;
+      
+      let newTier = 'Seed';
+      if (newSpending >= 25000) newTier = 'Harvest';
+      else if (newSpending >= 12000) newTier = 'Fruit';
+      else if (newSpending >= 6000) newTier = 'Bloom';
+      else if (newSpending >= 2000) newTier = 'Sprout';
+
+      updateUser({ total_spending: newSpending, tier: newTier, points: newPoints });
+    } else {
+      updateUser({ total_spending: newSpending });
     }
-
-    const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
-    const newPoints = (currentUser.rank && currentUser.rank !== 'None') ? currentPoints + amount : currentPoints;
-
-    updateUser({ total_spending: newSpending, rank: newRank, points: newPoints });
   };
 
   const claimMission = (missionId, points) => {
@@ -403,14 +399,27 @@ export function AuthProvider({ children }) {
     let redeemedDiscountsThisYear = currentUser.redeemedDiscountsThisYear || {};
     
     if (isDiscount) {
-      const yearCount = redeemedDiscountsThisYear[currentYear] || 0;
-      const limit = 5;
-      if (yearCount >= limit) {
+      let yearData = redeemedDiscountsThisYear[currentYear];
+      if (typeof yearData === 'number') {
+        // Migrate old format
+        yearData = { 'Legacy Discount': yearData };
+      } else if (!yearData) {
+        yearData = {};
+      }
+      
+      const countForThisReward = yearData[reward.title] || 0;
+      const limit = reward.limit || 5;
+      
+      if (countForThisReward >= limit) {
         return { success: false, error: `Yearly limit reached (${limit}/${limit})` };
       }
+      
       redeemedDiscountsThisYear = {
         ...redeemedDiscountsThisYear,
-        [currentYear]: yearCount + 1
+        [currentYear]: {
+          ...yearData,
+          [reward.title]: countForThisReward + 1
+        }
       };
     }
 

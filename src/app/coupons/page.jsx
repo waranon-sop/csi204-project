@@ -108,24 +108,7 @@ export default function MyCoupons() {
                               {coupon.title}
                             </h4>
                             
-                            <div className="flex items-center gap-2 mt-auto">
-                              <div className="flex-1 bg-earth-50 border border-earth-200 rounded-lg px-3 py-2 flex items-center justify-between">
-                                <span className="font-mono text-sm font-bold text-earth-800 tracking-wider">
-                                  {coupon.code}
-                                </span>
-                                <button
-                                  onClick={() => handleCopyCode(coupon.code)}
-                                  className="text-earth-400 hover:text-sage-600 transition-colors p-1"
-                                  title="Copy code"
-                                >
-                                  {copiedCode === coupon.code ? (
-                                    <CheckCircle className="h-4 w-4 text-sage-500" />
-                                  ) : (
-                                    <Copy className="h-4 w-4" />
-                                  )}
-                                </button>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       ))}
@@ -155,13 +138,7 @@ export default function MyCoupons() {
                             <h4 className="font-bold text-earth-600 text-base mb-4 line-through">
                               {coupon.title}
                             </h4>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-earth-100 border border-earth-200 rounded-lg px-3 py-2">
-                                <span className="font-mono text-sm text-earth-500">
-                                  {coupon.code}
-                                </span>
-                              </div>
-                            </div>
+
                           </div>
                         </div>
                       ))}

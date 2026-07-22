@@ -2,6 +2,141 @@
   "notifications": [
     {
       "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "100",
+      "time": "2026-07-22T22:45:20.898Z",
+      "type": "product",
+      "read": false,
+      "id": 1784760321533
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "100",
+      "time": "2026-07-22T22:40:44.696Z",
+      "type": "product",
+      "read": false,
+      "id": 1784760045228
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated order #RW-77350",
+      "target": "#RW-77350",
+      "time": "2026-07-22T22:36:29.739Z",
+      "type": "order",
+      "read": false,
+      "id": 1784759789772
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "fasfasf",
+      "time": "2026-07-22T22:36:22.625Z",
+      "type": "product",
+      "read": false,
+      "id": 1784759783049
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated order #RW-10462",
+      "target": "#RW-10462",
+      "time": "2026-07-22T21:54:20.671Z",
+      "type": "order",
+      "read": false,
+      "id": 1784757260695
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated order #RW-10462",
+      "target": "#RW-10462",
+      "time": "2026-07-22T21:54:16.363Z",
+      "type": "order",
+      "read": false,
+      "id": 1784757256400
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "4",
+      "time": "2026-07-22T21:54:01.468Z",
+      "type": "product",
+      "read": false,
+      "id": 1784757241492
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "3",
+      "time": "2026-07-22T21:53:46.872Z",
+      "type": "product",
+      "read": false,
+      "id": 1784757226895
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "a",
+      "time": "2026-07-22T21:53:37.349Z",
+      "type": "product",
+      "read": false,
+      "id": 1784757217951
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Created a new discount code",
+      "target": "KUY1",
+      "time": "2026-07-22T21:35:14.198Z",
+      "type": "promotion",
+      "read": false,
+      "id": 1784756114229
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "2",
+      "time": "2026-07-22T21:34:16.842Z",
+      "type": "product",
+      "read": false,
+      "id": 1784756056881
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "aaaaaaa",
+      "time": "2026-07-22T21:33:47.984Z",
+      "type": "product",
+      "read": false,
+      "id": 1784756028010
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "jrhre",
+      "time": "2026-07-22T21:33:37.015Z",
+      "type": "product",
+      "read": false,
+      "id": 1784756017042
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "fasdfwr",
+      "time": "2026-07-22T21:33:17.812Z",
+      "type": "product",
+      "read": false,
+      "id": 1784755997840
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Added a new product",
+      "target": "fasfasf",
+      "time": "2026-07-22T21:32:56.681Z",
+      "type": "product",
+      "read": false,
+      "id": 1784755977397
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
       "action": "Updated order #RW-21147",
       "target": "#RW-21147",
       "time": "2026-07-22T20:07:27.778Z",
