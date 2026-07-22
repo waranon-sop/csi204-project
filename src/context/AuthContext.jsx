@@ -228,6 +228,13 @@ export function AuthProvider({ children }) {
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
+    
+    // Sync to backend DB
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser)
+    }).catch(err => console.error('Failed to sync new user to DB', err));
 
     // Auto-login after register
     setCurrentUser(newUser);
@@ -341,6 +348,13 @@ export function AuthProvider({ children }) {
       if (sessionStorage.getItem('currentUser')) {
         sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
       }
+      
+      // Sync to backend DB
+      fetch(`/api/users/${updatedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUser)
+      }).catch(err => console.error('Failed to sync updated user to DB', err));
 
       return updatedUser;
     });

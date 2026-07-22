@@ -140,4 +140,48 @@ export const updateUserById = (userId, updates) => {
   const users = JSON.parse(storedUsers);
   const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
   localStorage.setItem('users', JSON.stringify(updatedUsers));
+  
+  // Sync to backend DB
+  const updatedUser = updatedUsers.find(u => u.id === userId);
+  if (updatedUser) {
+    fetch(`/api/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedUser)
+    }).catch(err => console.error('Failed to sync updated user by admin', err));
+  }
+};
+
+const LOOKBOOKS_KEY = 'lookbooks';
+
+export const getLookbooks = () => {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(LOOKBOOKS_KEY);
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  return [];
+};
+
+export const saveLookbook = (lookbook) => {
+  if (typeof window === 'undefined') return;
+  const lookbooks = getLookbooks();
+  
+  if (lookbook.id && lookbooks.some(l => l.id === lookbook.id)) {
+    const updated = lookbooks.map(l => l.id === lookbook.id ? lookbook : l);
+    localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(updated));
+  } else {
+    lookbook.id = `look-${Date.now()}`;
+    lookbooks.push(lookbook);
+    localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(lookbooks));
+  }
+  window.dispatchEvent(new Event('lookbooksUpdated'));
+};
+
+export const deleteLookbook = (id) => {
+  if (typeof window === 'undefined') return;
+  const lookbooks = getLookbooks();
+  const updated = lookbooks.filter(l => l.id !== id);
+  localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new Event('lookbooksUpdated'));
 };

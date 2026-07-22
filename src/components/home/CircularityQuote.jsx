@@ -3,7 +3,7 @@ import { Leaf } from 'lucide-react';
 
 export default function CircularityQuote() {
   return (
-    <section id="ethics" className="py-24 px-6 sm:px-8 bg-[#FAF8F5]">
+    <section id="ethics" className="py-24 px-6 sm:px-8 bg-[#FAF8F5] border-t border-[#EAE5DB]">
       <div className="max-w-4xl mx-auto text-center space-y-8">
         <div className="flex justify-center">
           <Leaf className="h-6 w-6 text-[#2D2D2A]" />

@@ -25,8 +25,8 @@ export default function AdminLayout({ children }) {
       router.push('/'); // Redirect to home (AuthModal will open)
     } else if (userToCheck.role !== 'admin' && userToCheck.role !== 'staff') {
       router.push('/'); // Redirect customers to home
-    } else if (userToCheck.role === 'staff' && !pathname.startsWith('/admin/inventory') && !pathname.startsWith('/admin/orders') && !pathname.startsWith('/admin/promotions')) {
-      router.push('/admin/inventory'); // Staff can only access Inventory, Orders, and Promotions
+    } else if (userToCheck.role === 'staff' && !pathname.startsWith('/admin/inventory') && !pathname.startsWith('/admin/orders') && !pathname.startsWith('/admin/promotions') && !pathname.startsWith('/admin/lookbooks')) {
+      router.push('/admin/inventory'); // Staff can only access Inventory, Orders, Promotions, and Lookbooks
     } else {
       setIsAuthorized(true);
     }

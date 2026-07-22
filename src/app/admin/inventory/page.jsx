@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore, ArrowUpDown, ArrowUp, ArrowDown, Pipette, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
@@ -53,6 +53,60 @@ const STATUS_BADGE = {
   'Draft':      { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Draft' },
 };
 
+const CustomDropdown = ({ value, onChange, options, placeholder, disabledOptions = [] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800 flex items-center justify-between transition-all"
+      >
+        <span className={value ? "text-earth-800" : "text-earth-500"}>
+          {value || placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-earth-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-earth-200 rounded-xl shadow-lg py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+          {options.map((option) => {
+            const isDisabled = disabledOptions.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  if (!isDisabled) {
+                    onChange(option);
+                    setIsOpen(false);
+                  }
+                }}
+                disabled={isDisabled}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${isDisabled ? 'text-earth-400 cursor-not-allowed' : value === option ? 'bg-earth-100 font-semibold text-earth-900' : 'text-earth-700 hover:bg-earth-50 hover:text-earth-900'}`}
+              >
+                {option}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +122,7 @@ export default function AdminProducts() {
   const itemsPerPage = 10;
   const { addToast } = useToast();
   const { currentUser } = useAuth();
-  const [categories, setCategories] = useState(['Tops', 'Outerwear', 'Bottoms', 'Dresses', 'Accessories']);
+  const [categories, setCategories] = useState(['Skirts', 'Dresses', 'T-shirts & Tops', 'Pants & Jeans', 'Outerwear', 'Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Handbags']);
   const [sizes, setSizes] = useState(['XS', 'S', 'M', 'L', 'XL', 'OS']);
   const [newAttributeInput, setNewAttributeInput] = useState('');
   const [attributeTab, setAttributeTab] = useState('categories'); // 'categories' or 'sizes'
@@ -105,6 +159,20 @@ export default function AdminProducts() {
     
     const productToSave = { ...editingProduct };
 
+    // Auto-generate measurements string for display
+    let measurementsArr = [];
+    if (!productToSave.category || !['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Handbags'].includes(productToSave.category)) {
+      if (productToSave.chest) measurementsArr.push(`Chest/Waist: ${productToSave.chest}`);
+      if (productToSave.length) measurementsArr.push(`Length: ${productToSave.length}`);
+    } else if (productToSave.category === 'Handbags') {
+      if (productToSave.dimensions) measurementsArr.push(`Dimensions: ${productToSave.dimensions}`);
+      if (productToSave.strapLength) measurementsArr.push(`Strap Length: ${productToSave.strapLength}`);
+    } else {
+      if (productToSave.jewelrySize) measurementsArr.push(`Size: ${productToSave.jewelrySize}`);
+      if (productToSave.material) measurementsArr.push(`Material: ${productToSave.material}`);
+    }
+    productToSave.measurements = measurementsArr.length > 0 ? measurementsArr.join(', ') : 'Details: Not specified';
+
     try {
       if (productToSave.isNew) {
         delete productToSave.isNew;
@@ -128,6 +196,7 @@ export default function AdminProducts() {
         addAdminNotification(currentUser?.name, 'Updated product', productToSave.name, 'product');
       }
       setProducts(updatedProducts);
+      window.dispatchEvent(new Event('productsUpdated'));
       setEditingProduct(null);
     } catch (err) {
       addToast('Failed to save product');
@@ -530,14 +599,47 @@ export default function AdminProducts() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Category</label>
-                    <select value={editingProduct.category || ''} onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800">
-                      <option value="" disabled>Select Category</option>
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <CustomDropdown 
+                      value={editingProduct.category} 
+                      onChange={(val) => setEditingProduct({ ...editingProduct, category: val })} 
+                      options={categories}
+                      placeholder="Select Category"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Color</label>
-                    <input type="text" placeholder="e.g. Navy Blue" value={editingProduct.color || ''} onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <div 
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-earth-200 shadow-sm" 
+                          style={{ backgroundColor: editingProduct.color || 'transparent' }}
+                        />
+                        <input type="text" placeholder="e.g. Navy Blue or #Hex" value={editingProduct.color || ''} onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })} className="w-full pl-9 pr-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.EyeDropper) {
+                            const input = document.createElement('input');
+                            input.type = 'color';
+                            input.oninput = (e) => setEditingProduct({ ...editingProduct, color: e.target.value });
+                            input.click();
+                            return;
+                          }
+                          try {
+                            const eyeDropper = new window.EyeDropper();
+                            const result = await eyeDropper.open();
+                            setEditingProduct({ ...editingProduct, color: result.sRGBHex });
+                          } catch (e) {
+                            console.log(e);
+                          }
+                        }}
+                        className="px-3 py-2.5 bg-earth-100 hover:bg-earth-200 border border-earth-200 rounded-xl transition-colors flex items-center justify-center text-earth-600 shadow-sm"
+                        title="Pick color from screen"
+                      >
+                        <Pipette className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -546,7 +648,7 @@ export default function AdminProducts() {
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">2. Item Details</h3>
                 
-                {(!editingProduct.category || (editingProduct.category !== 'Accessories' && editingProduct.category !== 'Bags')) ? (
+                {(!editingProduct.category || !['Necklaces', 'Earrings', 'Bracelets', 'Rings', 'Handbags'].includes(editingProduct.category)) ? (
                   /* Clothing Details */
                   <div className="space-y-4 animate-fade-in">
                     <div className="space-y-2">
@@ -574,9 +676,9 @@ export default function AdminProducts() {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  /* Bags / Accessories Details */
-                  <div className="grid grid-cols-3 gap-4 animate-fade-in">
+                ) : editingProduct.category === 'Handbags' ? (
+                  /* Bags Details */
+                  <div className="grid grid-cols-2 gap-4 animate-fade-in">
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Dimensions (W x L x H)</label>
                       <input type="text" placeholder="e.g. 20 x 30 x 15 cm" value={editingProduct.dimensions || ''} onChange={(e) => setEditingProduct({ ...editingProduct, dimensions: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
@@ -585,9 +687,22 @@ export default function AdminProducts() {
                       <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Strap Length</label>
                       <input type="text" placeholder="e.g. 120 cm max" value={editingProduct.strapLength || ''} onChange={(e) => setEditingProduct({ ...editingProduct, strapLength: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
                     </div>
+                  </div>
+                ) : (
+                  /* Accessories Details */
+                  <div className="grid grid-cols-2 gap-4 animate-fade-in">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Serial Number</label>
-                      <input type="text" placeholder="e.g. ABC12345" value={editingProduct.serialNumber || ''} onChange={(e) => setEditingProduct({ ...editingProduct, serialNumber: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Size / Length</label>
+                      <input type="text" placeholder="e.g. 5 cm, US 6, 45cm" value={editingProduct.jewelrySize || ''} onChange={(e) => setEditingProduct({ ...editingProduct, jewelrySize: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Material</label>
+                      <CustomDropdown 
+                        value={editingProduct.material} 
+                        onChange={(val) => setEditingProduct({ ...editingProduct, material: val })} 
+                        options={['Silver', 'Brass', 'Leather']}
+                        placeholder="Select Material"
+                      />
                     </div>
                   </div>
                 )}

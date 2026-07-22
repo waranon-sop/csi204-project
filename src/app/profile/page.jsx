@@ -45,8 +45,7 @@ export default function ProfileSettings() {
   }, [currentUser]);
 
   const [saved, setSaved] = useState(false);
-  const fileInputRef = React.useRef(null);
-  const { updateUser } = useAuth();
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -144,11 +143,10 @@ export default function ProfileSettings() {
 
             {/* Profile Pic Upload */}
             <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
-<<<<<<< HEAD
               <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md">
-                {formData.avatar ? (
+                {formData.avatar || formData.picture ? (
                   <img 
-                    src={formData.avatar} 
+                    src={formData.avatar || formData.picture} 
                     alt="Avatar big" 
                     className="w-full h-full object-cover"
                   />
@@ -156,19 +154,6 @@ export default function ProfileSettings() {
                   <div className="w-full h-full bg-[#EAE5DB] flex items-center justify-center text-3xl font-bold text-[#2D2D2A] uppercase">
                     {formData.fullName?.charAt(0) || 'U'}
                   </div>
-=======
-              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-sage-500/20 shadow-md bg-gray-100 flex items-center justify-center">
-                {formData.picture ? (
-                  <Image 
-                    src={formData.picture} 
-                    alt="Avatar big" 
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <User className="h-10 w-10 text-gray-400" />
->>>>>>> e49ace33209bef87fec471aa29a4bef9b58b0842
                 )}
               </div>
               <div className="text-center sm:text-left space-y-2">

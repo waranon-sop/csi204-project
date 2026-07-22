@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store, Tag } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, HelpCircle, Store, Tag, Images } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminSidebar() {
@@ -29,6 +29,7 @@ export default function AdminSidebar() {
         {[
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, adminOnly: true },
           { name: 'Inventory', path: '/admin/inventory', icon: Package },
+          { name: 'Lookbook', path: '/admin/lookbooks', icon: Images },
           { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
           { name: 'Promotions', path: '/admin/promotions', icon: Tag },
           { name: 'Users', path: '/admin/users', icon: Users, adminOnly: true },
