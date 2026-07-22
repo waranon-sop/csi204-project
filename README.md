@@ -69,6 +69,11 @@
 - [x] ระบบจัดการสต็อกเสื้อผ้ามือสอง / อัปเดตออเดอร์ (พนักงาน)
 - [x] ระบบบริหารจัดการเว็บ / จัดการสิทธิ์พนักงาน (ผู้ดูแลระบบ)
 - [x] Dashboard และดูแลความปลอดภัยระบบ
+- [x] Eco Impact Dashboard — แสดงผลการลดคาร์บอน, น้ำ และขยะแฟชั่นของลูกค้า
+- [x] Wardrobe / Favorites — บันทึกสินค้าที่ถูกใจและจัดการตู้เสื้อผ้าส่วนตัว
+- [x] ระบบ Lookbook และโปรโมชัน — จัดการโค้ดส่วนลดและ Lookbook สินค้าชุด
+- [x] Notification System — บันทึก Activity Log การดำเนินการของ Admin และ Staff
+- [x] Role-based Route Protection — ป้องกันการเข้าถึงหน้า Admin โดยตรงผ่าน URL
 
 ---
 
@@ -185,6 +190,7 @@ re-wear/
 
 - GitHub Repository: [https://github.com/waranon-sop/csi204-project](https://github.com/waranon-sop/csi204-project)
 - GitHub Pages (Web): [https://waranon-sop.github.io/csi204-project/](https://waranon-sop.github.io/csi204-project/)
+- เอกสารขออนุมัติโครงงาน: [docs/ฟอร์มอนุมัติโปรเจค-1.png](docs/ฟอร์มอนุมัติโปรเจค-1.png)
 - เอกสาร Analysis & Design: [docs/analysis-design.md](docs/analysis-design.md)
 - Figma Design: [Re-wear UI/UX](https://www.figma.com/design/1K2hJcSxbNVsy1EvjIkmAZ/Re-wear?node-id=0-1&p=f&t=ZE52yZWB8HONY6yu-0)
 
