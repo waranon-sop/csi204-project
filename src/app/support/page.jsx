@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Package, RefreshCcw, Tag, User, ChevronDown, ChevronUp, Mail, Phone, MapPin, HelpCircle } from 'lucide-react';
 import { useSupport } from '../../context/SupportContext';
 
@@ -12,16 +13,27 @@ const IconMap = {
   HelpCircle: <HelpCircle className="w-6 h-6" />
 };
 
-export default function SupportPage() {
+function SupportContent() {
   const { faqData, contactInfo, isLoaded } = useSupport();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  
   const [activeCategory, setActiveCategory] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   useEffect(() => {
-    if (isLoaded && faqData.length > 0 && !activeCategory) {
-      setActiveCategory(faqData[0].category);
+    if (isLoaded && faqData.length > 0) {
+      if (tabParam) {
+        const matchedCat = faqData.find(cat => cat.category.toLowerCase().includes(tabParam.toLowerCase()));
+        if (matchedCat) {
+          setActiveCategory(matchedCat.category);
+          setOpenFaqIndex(0);
+          return;
+        }
+      }
+      setActiveCategory(prev => prev || faqData[0].category);
     }
-  }, [isLoaded, faqData, activeCategory]);
+  }, [isLoaded, faqData, tabParam]);
 
   if (!isLoaded) {
     return (
@@ -144,5 +156,17 @@ export default function SupportPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function SupportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#3A4A2D] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <SupportContent />
+    </Suspense>
   );
 }

@@ -2,19 +2,43 @@
   "users": [
     {
       "id": "U-003",
-      "name": "Pipe Waranon",
-      "email": "pipezaza34@gmail.com",
-      "password": "Waranon_777",
+      "name": "NATTHAPONG HANCHAIPA",
+      "email": "natthapong.han@spumail.net",
+      "password": "snQ72`HVXl",
       "phone": "",
       "role": "customer",
       "referredBy": null,
-      "rank": "Harvest",
-      "total_spending": 5550060,
-      "points": 5550060,
+      "rank": null,
+      "hasInvited": true,
+      "completedMissions": [
+        "daily-5"
+      ],
+      "lastMissionResetDate": "2026-07-23",
+      "points": 100,
+      "total_spending": 2000
+    },
+    {
+      "id": "U-004",
+      "name": "18ณัฐพงศ์ หาญชัยภา",
+      "email": "47044@mws.ac.th",
+      "password": "smQ82`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": "U-003",
+      "rank": null,
+      "total_spending": 1000,
+      "points": 120,
       "hasEcoShipping": true,
-      "hasNoPackaging": true,
-      "hasReviewed": true,
-      "hasPhotoReviewed": true
+      "hasMadeFirstPurchase": true,
+      "hasInvited": true,
+      "completedMissions": [
+        "daily-5",
+        "daily-1"
+      ]
+    }
+  ]
+} "daily-1"
+      ]
     }
   ]
 }

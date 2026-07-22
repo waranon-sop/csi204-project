@@ -116,7 +116,7 @@ export default function Navbar() {
         }
       },
       { name: 'SUPPORT', path: '/support' },
-      ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
+      
     ];
   };
 

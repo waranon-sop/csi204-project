@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { useRouter } from 'next/navigation';
-import { Leaf, Eye, Truck, Package, Box, Star, Check, Zap } from 'lucide-react';
+import { Leaf, Eye, Truck, Package, Box, Star, Check } from 'lucide-react';
 import { getOrdersByUser, updateOrder } from '../../utils/localStorageHelper';
 import { useAuth } from '../../context/AuthContext';
 
@@ -40,12 +40,6 @@ export default function OrderHistory() {
       fetchOrders();
     }
   }, [currentUser]);
-
-  const handleConfirmReceipt = async (orderId) => {
-    await updateOrder(orderId, { status: 'Delivered' });
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Delivered' } : o));
-    // Simulate eco points gain (in a real app, backend handles this)
-  };
 
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -140,12 +134,6 @@ export default function OrderHistory() {
                              <Check className="h-3.5 w-3.5" />
                              Reviewed
                            </div>
-                        )}
-                        {!['Delivered', 'จัดส่งสำเร็จ'].includes(order.status) && (
-                          <button onClick={() => handleConfirmReceipt(order.id)} className="flex items-center gap-1.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full transition-colors border border-yellow-300">
-                            <Zap className="h-3.5 w-3.5" />
-                            Dev: Mark Delivered
-                          </button>
                         )}
                         <button className="flex items-center gap-1.5 bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors">
                           <Eye className="h-3.5 w-3.5" />

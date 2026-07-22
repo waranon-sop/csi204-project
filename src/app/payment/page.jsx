@@ -139,7 +139,7 @@ export default function CheckoutPage() {
 
       if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
         await updateUserById(currentUser.referredBy, { hasInvited: true });
-        if (updateUser) updateUser({ hasMadeFirstPurchase: true });
+        if (updateUser) updateUser({ hasMadeFirstPurchase: true, hasInvited: true });
       }
     }
 

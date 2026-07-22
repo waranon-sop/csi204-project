@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu, Store, HelpCircle, User } from 'lucide-react';
+import { Settings, History, Heart, Leaf, LogOut, ShieldAlert, Cpu, Store, HelpCircle, User, Ticket } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProfileDropdown({ isOpen, onClose }) {
@@ -62,13 +62,14 @@ export default function ProfileDropdown({ isOpen, onClose }) {
       case 'customer':
       default:
         return {
-          title: `${currentUser.rank || 'Seed'} Member`,
+          title: `${currentUser.rank || 'None'} Member`,
           color: 'text-[#5F6B4E]',
           icon: Leaf,
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
           menu: [
             { name: 'My Profile & Settings', path: '/profile', icon: Settings },
             { name: 'Order History', path: '/orders', icon: History },
+            { name: 'My Coupons', path: '/coupons', icon: Ticket },
             { name: 'My Wardrobe', path: '/wardrobe', icon: Heart },
             { name: 'Your Eco-Impact', path: '/eco-impact', icon: Leaf },
           ],
