@@ -6,8 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminTopbar from '../../components/admin/AdminTopbar';
 
-import { ToastProvider } from '../../components/ui/ToastProvider';
-
 export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -25,8 +23,6 @@ export default function AdminLayout({ children }) {
       router.push('/'); // Redirect to home (AuthModal will open)
     } else if (userToCheck.role !== 'admin' && userToCheck.role !== 'staff') {
       router.push('/'); // Redirect customers to home
-    } else if (userToCheck.role === 'staff' && !pathname.startsWith('/admin/inventory') && !pathname.startsWith('/admin/orders') && !pathname.startsWith('/admin/promotions')) {
-      router.push('/admin/inventory'); // Staff can only access Inventory, Orders, and Promotions
     } else {
       setIsAuthorized(true);
     }
@@ -41,16 +37,14 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-[#FAF8F5] flex font-sans">
-        <AdminSidebar />
-        <div className="flex-1 ml-56 flex flex-col min-h-screen">
-          <AdminTopbar />
-          <main className="flex-1 p-8">
-            {children}
-          </main>
-        </div>
+    <div className="min-h-screen bg-[#FAF8F5] flex font-sans">
+      <AdminSidebar />
+      <div className="flex-1 ml-56 flex flex-col min-h-screen">
+        <AdminTopbar />
+        <main className="flex-1 p-8">
+          {children}
+        </main>
       </div>
-    </ToastProvider>
+    </div>
   );
 }

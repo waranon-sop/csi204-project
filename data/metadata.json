@@ -1,0 +1,17 @@
+{
+  "productCategories": [
+    "Tops",
+    "Outerwear",
+    "Bottoms",
+    "Dresses",
+    "Accessories"
+  ],
+  "productSizes": [
+    "S",
+    "M",
+    "L",
+    "XL",
+    "XXL",
+    "OS"
+  ]
+}

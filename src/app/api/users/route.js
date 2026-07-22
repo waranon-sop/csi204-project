@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'data', 'db.json');
+const dbPath = path.join(process.cwd(), 'data', 'users.json');
 
 // Helper to read DB
 const readDB = () => {

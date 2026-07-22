@@ -1,38 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Eye, EyeOff, Package, AlertTriangle, X, ZoomIn, Download, Archive, ArchiveRestore, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle2 } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { addAdminNotification } from '../../../utils/notifications';
+import { useStaffGuard } from '../../../hooks/useRoleGuard';
 
-const mockProducts = [
-  {
-    id: 'RW-29402', name: 'Vintage Linen Overcoat', brand: 'Unknown', category: 'Outerwear',
-    price: 145, condition: 'Very Good', defects: 'No visible defects. Perfect condition.',
-    size: 'M', chest: '100 cm', length: '100 cm', status: 'In Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-18239', name: 'Raw Silk Trousers', brand: 'Silk & Co.', category: 'Bottoms',
-    price: 89, condition: 'Good', defects: 'Minor pull thread on right inner seam.',
-    size: 'L', chest: '-', length: '102 cm', status: 'Available', hidden: false,
-    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-99201', name: 'Upcycled Denim Tote', brand: 'ReThread', category: 'Accessories',
-    price: 45, condition: 'Like New', defects: 'Brand new, upcycled from surplus fabric.',
-    size: 'OS', chest: '-', length: '-', status: 'In Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-00451', name: 'Recycled Cotton Sweater', brand: 'Patagonia', category: 'Tops',
-    price: 115, condition: 'Good', defects: 'Small pilling on left sleeve cuff.',
-    size: 'S', chest: '88 cm', length: '60 cm', status: 'Sold Out', hidden: false,
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800'
-  },
-];
+
 
 const CONDITION_STYLE = {
   'Very Good': 'bg-[#EEF1EA] text-[#3A4A2D] border border-[#C2CBB8]',
@@ -48,12 +24,12 @@ const STOCK_STYLE = {
 const STATUS_BADGE = {
   'Available':  { dot: 'bg-[#5F6B4E]',  text: 'text-[#3A4A2D]',  bg: 'bg-[#EEF1EA]',  label: 'Available' },
   'Sold Out':   { dot: 'bg-[#A84C43]',  text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
-  'Out of Stock':{ dot: 'bg-[#A84C43]', text: 'text-[#A84C43]',  bg: 'bg-[#FCF5F3]',  label: 'Sold Out' },
   'Reserved':   { dot: 'bg-[#9E7A2E]',  text: 'text-[#9E7A2E]',  bg: 'bg-[#FDF9F0]',  label: 'Reserved' },
   'Draft':      { dot: 'bg-earth-400',  text: 'text-earth-500',  bg: 'bg-earth-100',  label: 'Draft' },
 };
 
 export default function AdminProducts() {
+  const { isAllowed } = useStaffGuard();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -206,9 +182,7 @@ export default function AdminProducts() {
     const matchesCategory = filterCategory === 'All' || product.category === filterCategory;
     const matchesCondition = filterCondition === 'All' || product.condition === filterCondition;
     
-    let matchesStatus = true;
-    if (filterStatus === 'Sold Out') matchesStatus = product.status === 'Sold Out' || product.status === 'Out of Stock';
-    else if (filterStatus !== 'All') matchesStatus = product.status === filterStatus || (filterStatus === 'Available' && product.status === 'In Stock');
+    let matchesStatus = filterStatus === 'All' || product.status === filterStatus;
 
     return matchesSearch && matchesCategory && matchesCondition && matchesStatus;
   });
@@ -226,9 +200,9 @@ export default function AdminProducts() {
   const paginatedProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Global store stats — aligned with standard e-commerce metrics (like Shopify)
-  const availableItems = products.filter(p => p.status === 'Available' || p.status === 'In Stock').length;
+  const availableItems = products.filter(p => p.status === 'Available').length;
   const reservedItems = products.filter(p => p.status === 'Reserved').length;
-  const outOfStock = products.filter(p => p.status === 'Sold Out' || p.status === 'Out of Stock').length;
+  const outOfStock = products.filter(p => p.status === 'Sold Out').length;
   const draftItems = products.filter(p => p.status === 'Draft').length;
 
   const statusCounts = {
@@ -456,39 +430,47 @@ export default function AdminProducts() {
 
 
       {/* Edit/Add Product Modal */}
+      {/* Edit/Add Product Modal */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-5 border-b border-earth-100 flex justify-between items-center bg-[#F9F7F4]">
-              <h2 className="text-lg font-semibold text-earth-800">{editingProduct.isNew ? 'Add New Listing' : 'Edit Listing'}</h2>
-              <button onClick={() => setEditingProduct(null)} className="p-2 text-earth-400 hover:text-earth-600 hover:bg-earth-100 rounded-xl transition-colors">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#FAF8F5] rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden max-h-[92vh] flex flex-col border border-white/20">
+            {/* Header */}
+            <div className="px-8 py-5 border-b border-earth-200/50 flex justify-between items-center bg-white/50 backdrop-blur-sm z-10 sticky top-0">
+              <h2 className="text-xl font-bold text-earth-800 tracking-tight">{editingProduct.isNew ? '✨ Add New Listing' : '✏️ Edit Listing'}</h2>
+              <button onClick={() => setEditingProduct(null)} className="p-2 text-earth-400 hover:text-earth-700 hover:bg-earth-100 rounded-full transition-all">
                 <X className="h-5 w-5" />
               </button>
             </div>
+            
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
               {/* Left Column: Image Upload */}
-              <div className="w-full md:w-2/5 p-6 border-b md:border-b-0 md:border-r border-earth-100 bg-[#F9F7F4]/30 flex flex-col relative">
+              <div className="w-full md:w-2/5 p-8 border-b md:border-b-0 md:border-r border-earth-200/50 bg-gradient-to-b from-[#F9F7F4] to-[#EEF1EA]/30 flex flex-col relative">
                 {editingProduct.image && (
                   <button 
                     onClick={() => setEditingProduct({ ...editingProduct, image: null })}
-                    className="absolute top-8 right-8 z-10 p-1.5 bg-white/90 hover:bg-white text-red-500 rounded-xl shadow-sm hover:shadow-md transition-all"
+                    className="absolute top-10 right-10 z-10 p-2 bg-white/90 hover:bg-white text-red-500 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(239,68,68,0.2)] hover:scale-105 transition-all"
                     title="Remove image"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
-              <label className="flex flex-col items-center justify-center flex-1 min-h-[300px] border-2 border-dashed border-earth-200 rounded-2xl bg-earth-50 hover:border-[#5F6B4E] hover:bg-[#EEF1EA]/50 transition-all cursor-pointer group relative overflow-hidden">
+              <label className="flex flex-col items-center justify-center flex-1 min-h-[350px] border-2 border-dashed border-earth-300/60 rounded-3xl bg-white/60 hover:border-[#5F6B4E] hover:bg-white transition-all cursor-pointer group relative overflow-hidden shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                 {editingProduct.image ? (
                   <>
-                    <Image src={editingProduct.image} alt="Upload" fill unoptimized className="object-cover" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white font-medium flex items-center gap-2"><Edit className="w-4 h-4"/> Change Image</p>
+                    <Image src={editingProduct.image} alt="Upload" fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white/90 px-4 py-2 rounded-full shadow-lg">
+                        <p className="text-earth-800 font-bold text-sm flex items-center gap-2"><Edit className="w-4 h-4"/> Change Image</p>
+                      </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-7 h-7 text-earth-400 group-hover:text-[#4A5E3A] transition-colors mb-2" />
-                    <p className="text-sm text-earth-500 group-hover:text-earth-700 font-medium">Click to upload image</p>
+                    <div className="w-16 h-16 rounded-full bg-earth-100/80 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#EEF1EA] transition-all duration-300">
+                      <Plus className="w-8 h-8 text-earth-400 group-hover:text-[#4A5E3A] transition-colors" />
+                    </div>
+                    <p className="text-sm text-earth-600 group-hover:text-[#3A4A2D] font-bold">Click to upload image</p>
+                    <p className="text-xs text-earth-400 mt-1 font-medium">JPEG, PNG up to 2MB</p>
                   </>
                 )}
                 <input 
@@ -511,95 +493,111 @@ export default function AdminProducts() {
                   }} 
                 />
               </label>
-              <p className="text-[10px] text-earth-400 text-center mt-4 uppercase tracking-widest font-semibold">Product Image</p>
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#5F6B4E]"></span>
+                <p className="text-[10px] text-earth-500 uppercase tracking-widest font-bold">Primary Photo</p>
+              </div>
               </div>
 
               {/* Right Column: Form */}
-              <div className="w-full md:w-3/5 p-6 overflow-y-auto space-y-8">
-              {/* 1. Basic Info */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">1. Basic Info</h3>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="w-full md:w-3/5 p-8 overflow-y-auto space-y-6">
+              
+              {/* 1. Basic Info Card */}
+              <div className="bg-white p-6 rounded-2xl border border-earth-200/60 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] space-y-5">
+                <div className="flex items-center gap-2 border-b border-earth-100 pb-3">
+                  <div className="w-6 h-6 rounded-lg bg-earth-100 flex items-center justify-center text-xs font-bold text-earth-600">1</div>
+                  <h3 className="text-sm font-bold text-earth-800">Basic Info</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Product Name</label>
-                    <input type="text" value={editingProduct.name || ''} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Product Name</label>
+                    <input type="text" value={editingProduct.name || ''} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" placeholder="e.g. Vintage Leather Jacket" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Brand</label>
-                    <input type="text" value={editingProduct.brand || ''} onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Brand</label>
+                    <input type="text" value={editingProduct.brand || ''} onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" placeholder="e.g. Levi's" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Category</label>
-                    <select value={editingProduct.category || ''} onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Category</label>
+                      <button type="button" onClick={() => { setAttributeTab('categories'); setIsAttributesModalOpen(true); }} className="text-[10px] text-[#5F6B4E] hover:text-[#3A4A2D] font-bold underline transition-colors">Manage</button>
+                    </div>
+                    <select value={editingProduct.category || ''} onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300 cursor-pointer appearance-none" style={{ backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B8B88' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1em' }}>
                       <option value="" disabled>Select Category</option>
                       {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Color</label>
-                    <input type="text" placeholder="e.g. Navy Blue" value={editingProduct.color || ''} onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Color</label>
+                    <input type="text" placeholder="e.g. Navy Blue" value={editingProduct.color || ''} onChange={(e) => setEditingProduct({ ...editingProduct, color: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                   </div>
                 </div>
               </div>
 
-              {/* 2. Item Details */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">2. Item Details</h3>
+              {/* 2. Item Details Card */}
+              <div className="bg-white p-6 rounded-2xl border border-earth-200/60 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] space-y-6">
+                <div className="flex items-center gap-2 border-b border-earth-100 pb-3">
+                  <div className="w-6 h-6 rounded-lg bg-earth-100 flex items-center justify-center text-xs font-bold text-earth-600">2</div>
+                  <h3 className="text-sm font-bold text-earth-800">Item Details</h3>
+                </div>
                 
                 {(!editingProduct.category || (editingProduct.category !== 'Accessories' && editingProduct.category !== 'Bags')) ? (
                   /* Clothing Details */
-                  <div className="space-y-4 animate-fade-in">
+                  <div className="space-y-5 animate-fade-in">
                     <div className="space-y-2">
-                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Size</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Size</label>
+                        <button type="button" onClick={() => { setAttributeTab('sizes'); setIsAttributesModalOpen(true); }} className="text-[10px] text-[#5F6B4E] hover:text-[#3A4A2D] font-bold underline transition-colors">Manage</button>
+                      </div>
                       <div className="flex flex-wrap gap-2">
-                        {['XS', 'S', 'M', 'L', 'XL', 'Freesize'].map(size => (
+                        {sizes.map(size => (
                           <button
                             key={size}
                             onClick={() => setEditingProduct({ ...editingProduct, size })}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${editingProduct.size === size ? 'bg-[#3A4A2D] text-white border-[#3A4A2D]' : 'bg-white text-earth-600 border-earth-200 hover:bg-earth-50'}`}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${editingProduct.size === size ? 'bg-[#3A4A2D] text-white border-[#3A4A2D] shadow-md scale-105' : 'bg-earth-50 text-earth-600 border-transparent hover:bg-earth-100 hover:scale-105'}`}
                           >
                             {size}
                           </button>
                         ))}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Chest / Waist</label>
-                        <input type="text" placeholder="e.g. 42 inches" value={editingProduct.chest || ''} onChange={(e) => setEditingProduct({ ...editingProduct, chest: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                        <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Chest / Waist</label>
+                        <input type="text" placeholder="e.g. 42 inches" value={editingProduct.chest || ''} onChange={(e) => setEditingProduct({ ...editingProduct, chest: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Length</label>
-                        <input type="text" placeholder="e.g. 28 inches" value={editingProduct.length || ''} onChange={(e) => setEditingProduct({ ...editingProduct, length: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                        <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Length</label>
+                        <input type="text" placeholder="e.g. 28 inches" value={editingProduct.length || ''} onChange={(e) => setEditingProduct({ ...editingProduct, length: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                       </div>
                     </div>
                   </div>
                 ) : (
                   /* Bags / Accessories Details */
-                  <div className="grid grid-cols-3 gap-4 animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in">
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Dimensions (W x L x H)</label>
-                      <input type="text" placeholder="e.g. 20 x 30 x 15 cm" value={editingProduct.dimensions || ''} onChange={(e) => setEditingProduct({ ...editingProduct, dimensions: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Dimensions (W x L x H)</label>
+                      <input type="text" placeholder="e.g. 20 x 30 x 15 cm" value={editingProduct.dimensions || ''} onChange={(e) => setEditingProduct({ ...editingProduct, dimensions: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Strap Length</label>
-                      <input type="text" placeholder="e.g. 120 cm max" value={editingProduct.strapLength || ''} onChange={(e) => setEditingProduct({ ...editingProduct, strapLength: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                      <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Strap Length</label>
+                      <input type="text" placeholder="e.g. 120 cm max" value={editingProduct.strapLength || ''} onChange={(e) => setEditingProduct({ ...editingProduct, strapLength: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Serial Number</label>
-                      <input type="text" placeholder="e.g. ABC12345" value={editingProduct.serialNumber || ''} onChange={(e) => setEditingProduct({ ...editingProduct, serialNumber: e.target.value })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <div className="space-y-1.5 col-span-1 md:col-span-2">
+                      <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Serial Number</label>
+                      <input type="text" placeholder="e.g. ABC12345" value={editingProduct.serialNumber || ''} onChange={(e) => setEditingProduct({ ...editingProduct, serialNumber: e.target.value })} className="w-full px-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" />
                     </div>
                   </div>
                 )}
                 
-                <div className="space-y-2 pt-2">
-                  <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Condition</label>
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Condition</label>
                   <div className="flex flex-wrap gap-2">
                     {['Like New', 'Very Good', 'Good', 'Acceptable'].map(cond => (
                       <button
                         key={cond}
                         onClick={() => setEditingProduct({ ...editingProduct, condition: cond })}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${editingProduct.condition === cond ? 'bg-[#3A4A2D] text-white border-[#3A4A2D]' : 'bg-white text-earth-600 border-earth-200 hover:bg-earth-50'}`}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${editingProduct.condition === cond ? 'bg-[#3A4A2D] text-white border-[#3A4A2D] shadow-md scale-105' : 'bg-earth-50 text-earth-600 border-transparent hover:bg-earth-100 hover:scale-105'}`}
                       >
                         {cond}
                       </button>
@@ -607,37 +605,44 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5 pt-2">
-                  <label className="block text-xs font-semibold text-amber-700 uppercase tracking-wider">⚠️ Known Defects / Notes</label>
-                  <textarea rows="2" value={editingProduct.defects || ''} onChange={(e) => setEditingProduct({ ...editingProduct, defects: e.target.value })} className="w-full px-4 py-2.5 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-sm bg-amber-50/30 text-earth-800 placeholder-earth-400 resize-none"></textarea>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-amber-600 uppercase tracking-wider flex items-center gap-1"><span className="text-amber-500">⚠️</span> Known Defects / Notes</label>
+                  <textarea rows="2" value={editingProduct.defects || ''} onChange={(e) => setEditingProduct({ ...editingProduct, defects: e.target.value })} className="w-full px-4 py-3 border border-amber-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 text-sm bg-amber-50/20 text-earth-800 placeholder-earth-400 resize-none transition-all hover:border-amber-300" placeholder="Describe any wear, tears, or stains..."></textarea>
                 </div>
               </div>
 
-              {/* 3. Pricing & Inventory */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-earth-800 border-b border-earth-100 pb-2">3. Pricing & Inventory</h3>
-                <div className="grid grid-cols-2 gap-4">
+              {/* 3. Pricing & Inventory Card */}
+              <div className="bg-white p-6 rounded-2xl border border-earth-200/60 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] space-y-5">
+                <div className="flex items-center gap-2 border-b border-earth-100 pb-3">
+                  <div className="w-6 h-6 rounded-lg bg-earth-100 flex items-center justify-center text-xs font-bold text-earth-600">3</div>
+                  <h3 className="text-sm font-bold text-earth-800">Pricing & Inventory</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider">Price (THB)</label>
-                    <input type="number" value={editingProduct.price || 0} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full px-4 py-2.5 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-[#F9F7F4] text-earth-800" />
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Price (THB)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-400 font-bold">฿</span>
+                      <input type="number" value={editingProduct.price || ''} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full pl-9 pr-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300 font-bold" placeholder="0" />
+                    </div>
                   </div>
-                  {/* SKU and Stock Qty removed for cleaner UX */}
-                  <div className="space-y-2 col-span-2 mt-2">
-                    <label className="block text-xs font-semibold text-earth-700 uppercase tracking-wider mb-1">Status</label>
+                  
+                  <div className="space-y-2 col-span-2">
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider mb-2">Publish Status</label>
                     <div className="flex flex-wrap gap-3">
                       {[
                         { value: 'Available', label: 'Available', colorClass: 'bg-[#EEF1EA] text-[#3A4A2D] border-[#C2CBB8]', dot: 'bg-[#5F6B4E]' },
                         { value: 'Reserved', label: 'Reserved', colorClass: 'bg-[#FDF9F0] text-[#9E7A2E] border-[#E8D8BA]', dot: 'bg-[#9E7A2E]' },
-                        { value: 'Draft', label: 'Draft', colorClass: 'bg-earth-100 text-earth-600 border-earth-200', dot: 'bg-earth-400' },
+                        { value: 'Draft', label: 'Draft', colorClass: 'bg-gray-100 text-gray-600 border-gray-200', dot: 'bg-gray-400' },
                         { value: 'Sold Out', label: 'Sold Out', colorClass: 'bg-[#FCF5F3] text-[#A84C43] border-[#E8D1CE]', dot: 'bg-[#A84C43]' }
                       ].map(s => (
                         <button
                           key={s.value}
                           type="button"
                           onClick={() => setEditingProduct({ ...editingProduct, status: s.value })}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${editingProduct.status === s.value ? s.colorClass + ' ring-2 ring-offset-1 ring-current' : 'bg-white border-earth-200 text-earth-500 hover:bg-earth-50'}`}
+                          className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-sm font-semibold transition-all duration-300 ${editingProduct.status === s.value ? s.colorClass + ' shadow-md scale-105' : 'bg-white border-earth-200 text-earth-500 hover:bg-earth-50 hover:border-earth-300'}`}
                         >
-                          <span className={`w-2 h-2 rounded-full ${editingProduct.status === s.value ? s.dot : 'bg-earth-300'}`} />
+                          <span className={`w-2.5 h-2.5 rounded-full transition-colors ${editingProduct.status === s.value ? s.dot : 'bg-earth-300'}`} />
                           {s.label}
                         </button>
                       ))}
@@ -647,9 +652,14 @@ export default function AdminProducts() {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-earth-100 bg-[#F9F7F4] flex justify-end gap-3 shrink-0">
-              <button onClick={() => setEditingProduct(null)} className="px-5 py-2 border border-earth-200 rounded-xl text-sm text-earth-600 hover:bg-earth-50 font-medium transition-colors">Cancel</button>
-              <button onClick={handleSaveProduct} className="px-5 py-2 bg-[#3A4A2D] text-white rounded-xl text-sm font-medium hover:bg-[#4A5E3A] transition-colors">Save Listing</button>
+            
+            {/* Footer */}
+            <div className="px-8 py-5 border-t border-earth-200/50 bg-white/50 backdrop-blur-sm flex justify-end gap-3 shrink-0">
+              <button onClick={() => setEditingProduct(null)} className="px-6 py-2.5 rounded-xl text-sm text-earth-600 hover:bg-earth-100 font-bold transition-colors">Cancel</button>
+              <button onClick={handleSaveProduct} className="px-8 py-2.5 bg-[#3A4A2D] text-white rounded-xl text-sm font-bold hover:bg-[#2A3521] shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                {editingProduct.isNew ? 'Create Listing' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, ShieldAlert, Cpu, Heart, ShoppingBag, User } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
 import AuthModal from './AuthModal';
-import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -114,6 +113,7 @@ export default function Navbar() {
           ]
         }
       },
+      { name: 'SUPPORT', path: '/support' },
       ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
     ];
   };

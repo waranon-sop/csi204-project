@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, Bell, Search, ShoppingBag, AlertTriangle, MessageSquare, Package } from 'lucide-react';
+import { LogOut, Bell, Search, ShoppingBag, AlertTriangle, MessageSquare, Package, ChevronDown } from 'lucide-react';
+import ProfileDropdown from '../ProfileDropdown';
 
 const PAGE_TITLES = {
   '/admin': { title: 'Performance Overview', sub: "Tracking the lifecycle of Re-Wear's curated textile collection" },
@@ -114,8 +115,10 @@ export default function AdminTopbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
+  const profileRef = useRef(null);
 
   const pageInfo = PAGE_TITLES[pathname] || { title: 'Admin Panel', sub: '' };
 
@@ -260,16 +263,40 @@ export default function AdminTopbar() {
             )}
           </div>
 
-          <div className="h-6 w-px bg-[#EAE5DB] mx-1"></div>
+          <div className="h-6 w-px bg-[#EAE5DB] mx-2"></div>
 
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 flex items-center justify-center bg-white border border-[#EAE5DB] rounded-xl text-[#8B8B88] hover:text-[#C57B57] hover:bg-[#FAF0EA] hover:border-[#DFAB93] transition-all duration-300 shadow-sm group"
-            title="Logout"
-          >
-            <LogOut className="h-[18px] w-[18px] group-hover:-translate-x-0.5 transition-transform" />
-          </button>
+          {/* Profile Dropdown Toggle */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="flex items-center gap-3 text-left hover:bg-[#FAF8F5] p-1.5 pl-2 rounded-xl transition-colors cursor-pointer group border border-transparent hover:border-[#EAE5DB]"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#EAE5DB] overflow-hidden flex items-center justify-center text-xs font-bold text-[#2D2D2A] shrink-0 border border-[#D8D2C8] group-hover:border-[#C2CBB8] transition-colors">
+                {currentUser?.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt="Staff"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="uppercase">
+                    {currentUser?.name?.charAt(0) || "S"}
+                  </span>
+                )}
+              </div>
+              <div className="hidden md:block pr-1">
+                <p className="text-xs font-bold text-[#2D2D2A] leading-none group-hover:text-[#4A533D] transition-colors">
+                  {currentUser?.name || "Staff Profile"}
+                </p>
+                <p className="text-[9px] text-[#8B8B88] mt-1 uppercase tracking-widest font-semibold">
+                  {currentUser?.role || "Administrator"}
+                </p>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-[#8B8B88] transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <ProfileDropdown isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+          </div>
         </div>
       </div>
     </header>

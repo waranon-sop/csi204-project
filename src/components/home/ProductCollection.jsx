@@ -231,15 +231,19 @@ export default function ProductCollection() {
   };
 
   useEffect(() => {
-    setProducts(getProducts());
-    const handleUpdate = () => setProducts(getProducts());
+    const fetchAndSetProducts = async () => {
+      setProducts(await getProducts());
+    };
+    fetchAndSetProducts();
+
+    const handleUpdate = async () => setProducts(await getProducts());
     window.addEventListener("productsUpdated", handleUpdate);
     return () => window.removeEventListener("productsUpdated", handleUpdate);
   }, []);
 
   const filteredProducts = useMemo(() => {
     const visibleProducts = products.filter(
-      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived",
+      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived" && p.status !== "Draft",
     );
     if (activeFilter === "All Pieces") return visibleProducts;
     return visibleProducts.filter((p) => p.category === activeFilter);

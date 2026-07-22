@@ -59,8 +59,8 @@ export default function Footer() {
               <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Shipping & Delivery</Link></li>
               <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Returns & Refunds</Link></li>
               <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care Guide</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">FAQ</Link></li>
-              <li><Link href="/" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Contact Us</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Help & FAQ</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 
