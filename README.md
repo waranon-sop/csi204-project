@@ -101,7 +101,7 @@
 | Charts | Recharts (Bar Chart บน Admin Dashboard) |
 | Image Optimization | next/image (Automatic WebP + Lazy Load) |
 | State Management | React Context API (Auth, Cart, Toast) |
-| Storage | localStorage / sessionStorage (Mock Database) |
+| Storage | Local JSON Database (Next.js API Routes + `fs.promises`) |
 | Version Control | Git + GitHub |
 | เครื่องมือช่วยพัฒนา | Figma, Draw.io / Lucidchart |
 
@@ -113,6 +113,7 @@
 re-wear/
 ├── src/
 │ ├── app/ # หน้าทั้งหมด (App Router) — แต่ละโฟลเดอร์ = 1 URL
+│ │ ├── api/ # Backend API Routes (จัดการ JSON DB)
 │ │ ├── page.jsx # หน้าแรก (Homepage)
 │ │ ├── product/[id]/ # หน้ารายละเอียดสินค้า (Dynamic Route)
 │ │ ├── search/ # หน้าผลการค้นหา
@@ -138,10 +139,12 @@ re-wear/
 │ ├── hooks/
 │ │ └── useAdminGuard.js # Route Protection (Admin-only pages)
 │ ├── data/ # ข้อมูล Mock (products.js)
+│ ├── lib/
+│ │ └── db.js # Utility กลางสำหรับอ่านเขียนไฟล์ JSON (Async/Await)
 │ ├── utils/
 │ │ └── notifications.js # Helper บันทึก Admin Activity Log
 │ └── styles/ # ไฟล์ CSS หลัก
-├── docs/ # เอกสารวิเคราะห์และออกแบบระบบ
+├── data/ # ฐานข้อมูลจำลอง (JSON files เช่น orders.json, users.json)
 ├── next.config.mjs # ตั้งค่า Next.js (Image Optimization)
 ├── tailwind.config.js # ตั้งค่าระบบสี Earth Tone
 └── package.json # รายชื่อปลั๊กอินและสคริปต์
@@ -173,7 +176,7 @@ re-wear/
 
 > **หมายเหตุ:**
 > - บัญชี `admin` และ `staff` จะถูกสร้างอัตโนมัติเมื่อเปิดใช้งานระบบครั้งแรก
-> - ข้อมูลทั้งหมดจัดเก็บใน **localStorage** ของบราวเซอร์ (Mock Database)
+> - ข้อมูลทั้งหมดจัดเก็บในไฟล์ **JSON (`data/*.json`)** จำลองการทำงานของ Database จริง
 > - Staff ที่พยายามเข้าหน้า Admin-Only ผ่าน URL ตรงๆ จะถูก **Redirect อัตโนมัติ** พร้อมแจ้งเตือน
 
 ---
