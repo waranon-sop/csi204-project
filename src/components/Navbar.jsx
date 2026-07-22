@@ -7,12 +7,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, ShieldAlert, Cpu, Heart, ShoppingBag, User } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
 import AuthModal from './AuthModal';
+import RewardsOnboardingModal from './RewardsOnboardingModal';
 import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
+  const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal, isRewardsOnboardingOpen, closeRewardsOnboarding } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -62,7 +63,7 @@ export default function Navbar() {
 
   const searchResults = searchQuery.trim() 
     ? mockProducts.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
         p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.brandCategory.toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 4)
@@ -78,6 +79,7 @@ export default function Navbar() {
         hasMegaMenu: true,
         megaMenuData: {
           items: [
+            { name: 'All Clothing', path: '/search?cat=CLOTHING' },
             { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
             { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
             { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
@@ -92,6 +94,7 @@ export default function Navbar() {
         hasMegaMenu: true,
         megaMenuData: {
           items: [
+            { name: 'All Accessories', path: '/search?cat=ACCESSORIES' },
             { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
             { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
             { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
@@ -181,10 +184,10 @@ export default function Navbar() {
                             className="flex items-center gap-3 p-2 hover:bg-[#F9F8F6] rounded-xl transition-colors group"
                           >
                             <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-[#E8E8F2]">
-                              <Image src={p.image} alt={p.title} fill sizes="40px" className="object-cover mix-blend-multiply" />
+                              <Image src={p.image} alt={p.name} fill sizes="40px" className="object-cover mix-blend-multiply" />
                             </div>
                             <div>
-                              <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.title}</p>
+                              <p className="text-xs font-semibold text-[#2D2D2A] line-clamp-1 group-hover:text-[#4A543C]">{p.name}</p>
                               <p className="text-[10px] text-[#C57B57] font-bold">THB {p.price}</p>
                             </div>
                           </Link>
@@ -286,7 +289,8 @@ export default function Navbar() {
       </div>
 
       {/* Tier 3: Category Links */}
-      <div className="hidden md:flex w-full justify-center items-center border-t border-[#EAE5DB] relative z-40" ref={megaMenuRef}>
+      {!pathname.startsWith('/payment') && (
+        <div className="hidden md:flex w-full justify-center items-center border-t border-[#EAE5DB] relative z-40" ref={megaMenuRef}>
         <div className="flex space-x-12 relative">
           {navLinks.map((link, index) => {
             if (link.hasMegaMenu) {
@@ -344,6 +348,7 @@ export default function Navbar() {
           })}
         </div>
       </div>
+      )}
 
       {/* Mobile Drawer Menu */}
       {isOpen && (
@@ -397,6 +402,10 @@ export default function Navbar() {
         isOpen={isAuthModalOpen} 
         onClose={closeAuthModal} 
         initialView={authModalView} 
+      />
+      <RewardsOnboardingModal
+        isOpen={isRewardsOnboardingOpen}
+        onClose={closeRewardsOnboarding}
       />
     </nav>
   );

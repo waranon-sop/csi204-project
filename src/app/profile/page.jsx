@@ -7,7 +7,7 @@ import { User, Mail, Phone, MapPin, Shield, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileSettings() {
-  const { currentUser } = useAuth();
+  const { currentUser, updateProfile } = useAuth();
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -34,6 +34,14 @@ export default function ProfileSettings() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (updateProfile) {
+      updateProfile({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address
+      });
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

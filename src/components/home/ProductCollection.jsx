@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import QuickViewModal from "./QuickViewModal";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
-import { getProducts } from "../../utils/localStorageHelper";
+import { ProductDB } from "../../utils/database";
 
 const FILTERS = ["All Pieces", "Vintage Denim", "Y2K Shirts", "Jackets"];
 
@@ -231,19 +231,69 @@ export default function ProductCollection() {
   };
 
   useEffect(() => {
-    setProducts(getProducts());
-    const handleUpdate = () => setProducts(getProducts());
+    setProducts(ProductDB.getAll());
+    const handleUpdate = () => setProducts(ProductDB.getAll());
     window.addEventListener("productsUpdated", handleUpdate);
     return () => window.removeEventListener("productsUpdated", handleUpdate);
   }, []);
 
   const filteredProducts = useMemo(() => {
-    const visibleProducts = products.filter(
+    let visibleProducts = products.filter(
       (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived",
     );
-    if (activeFilter === "All Pieces") return visibleProducts;
-    return visibleProducts.filter((p) => p.category === activeFilter);
-  }, [activeFilter, products]);
+    
+    if (activeFilter !== "All Pieces") {
+      visibleProducts = visibleProducts.filter((p) => p.category === activeFilter || p.brandCategory === activeFilter);
+    }
+
+    if (selectedFilters.length > 0) {
+      const selectedSizes = selectedFilters.filter(f => ["L", "M", "M/L", "S", "XL", "XL/XXL", "XS", "XS/S"].includes(f));
+      const selectedCategories = selectedFilters.filter(f => ["Skirts", "Dresses", "T-shirts & Tops", "Pants & Jeans", "Outerwear", "Necklaces", "Earrings", "Bracelets", "Rings", "Handbags", "Other"].includes(f));
+      const selectedColors = selectedFilters.filter(f => ["Black", "White", "Gray", "Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Brown", "Pink", "Beige"].includes(f));
+
+      visibleProducts = visibleProducts.filter(p => {
+        const pSize = (p.size || '').toUpperCase();
+        const pCat = (p.category || '').toLowerCase();
+        const pBrandCat = (p.brandCategory || '').toLowerCase();
+        const pCol = (p.color || '').toLowerCase();
+        const pName = (p.name || '').toLowerCase();
+
+        const matchSize = selectedSizes.length === 0 || selectedSizes.some(sz => pSize.includes(sz));
+        const matchCategory = selectedCategories.length === 0 || selectedCategories.some(cat => {
+           const c = cat.toLowerCase();
+           if (c === 'skirts' && (pCat.includes('กระโปรง') || pCat.includes('skirt'))) return true;
+           if (c === 'dresses' && (pCat.includes('เดรส') || pCat.includes('dress'))) return true;
+           if (c === 't-shirts & tops' && (pCat.includes('เสื้อ') || pCat.includes('top') || pCat.includes('shirt') || pCat.includes('t-shirt'))) return true;
+           if (c === 'pants & jeans' && (pCat.includes('กางเกง') || pCat.includes('pant') || pCat.includes('jean') || pCat.includes('เดนิม') || pCat.includes('denim'))) return true;
+           if (c === 'outerwear' && (pCat.includes('เสื้อคลุม') || pCat.includes('แจ็คเก็ต') || pCat.includes('jacket') || pCat.includes('coat'))) return true;
+           if (c === 'necklaces' && (pCat.includes('สร้อยคอ') || pCat.includes('necklace'))) return true;
+           if (c === 'earrings' && (pCat.includes('ต่างหู') || pCat.includes('earring'))) return true;
+           if (c === 'bracelets' && (pCat.includes('ข้อมือ') || pCat.includes('bracelet'))) return true;
+           if (c === 'rings' && (pCat.includes('แหวน') || pCat.includes('ring'))) return true;
+           if (c === 'handbags' && (pCat.includes('กระเป๋า') || pCat.includes('bag'))) return true;
+           return pCat.includes(c) || pBrandCat.includes(c);
+        });
+        const matchColor = selectedColors.length === 0 || selectedColors.some(col => pCol.includes(col.toLowerCase()) || pName.includes(col.toLowerCase()));
+
+        return matchSize && matchCategory && matchColor;
+      });
+    }
+
+    if (selectedPriceRange !== "ทั้งหมด") {
+      visibleProducts = visibleProducts.filter(p => {
+        if (selectedPriceRange === "ต่ำกว่า ฿499") return p.price <= 499;
+        if (selectedPriceRange === "฿500 - ฿999") return p.price >= 500 && p.price <= 999;
+        if (selectedPriceRange === "฿1,000 - ฿1,999") return p.price >= 1000 && p.price <= 1999;
+        if (selectedPriceRange === "฿2,000 - ฿2,999") return p.price >= 2000 && p.price <= 2999;
+        if (selectedPriceRange === "฿3,000 - ฿3,999") return p.price >= 3000 && p.price <= 3999;
+        if (selectedPriceRange === "฿4,000 - ฿4,999") return p.price >= 4000 && p.price <= 4999;
+        if (selectedPriceRange === "฿5,000 ขึ้นไป") return p.price >= 5000;
+        return true;
+      });
+    }
+
+    return visibleProducts;
+  }, [activeFilter, products, selectedFilters, selectedPriceRange]);
 
   return (
     <>
@@ -351,14 +401,16 @@ export default function ProductCollection() {
                 {openDropdown === "category" && (
                   <div className="absolute top-full left-0 w-56 bg-white border border-[#EAE5DB] border-t-0 shadow-lg z-50 py-2">
                     {[
-                      "T-Shirts",
-                      "Shirts & Blouses",
-                      "Sweaters & Knitwear",
-                      "Jackets & Coats",
-                      "Jeans",
-                      "Trousers & Pants",
                       "Skirts",
                       "Dresses",
+                      "T-shirts & Tops",
+                      "Pants & Jeans",
+                      "Outerwear",
+                      "Necklaces",
+                      "Earrings",
+                      "Bracelets",
+                      "Rings",
+                      "Handbags",
                       "Other",
                     ].map((cat) => (
                       <label
@@ -597,7 +649,7 @@ export default function ProductCollection() {
 
         {filteredProducts.length === 0 && (
           <div className="col-span-4 text-center py-20 text-[#8B8B88] font-sans text-sm">
-            ไม่มีสินค้าในหมวดหมู่นี้
+            No products available in this category
           </div>
         )}
         <motion.div
@@ -619,7 +671,7 @@ export default function ProductCollection() {
               >
                 <Image
                   src={product.image || ""}
-                  alt={product.title || product.name || "Product"}
+                  alt={product.name || "Product"}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 ease-in-out mix-blend-multiply"
@@ -637,6 +689,15 @@ export default function ProductCollection() {
                     Quick View
                   </button>
                 </div>
+
+                {product.isEarlyAccess && (
+                  <div className="absolute top-2 left-2 bg-[#2D2D2A] text-white text-[9px] font-bold px-2 py-1 uppercase rounded-sm z-20 shadow-sm flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    EARLY ACCESS
+                  </div>
+                )}
               </Link>
 
               <div className="flex justify-between items-start pt-1 font-sans px-1">
@@ -645,7 +706,7 @@ export default function ProductCollection() {
                   className="block max-w-[70%]"
                 >
                   <h3 className="font-serif font-bold text-[17px] text-[#2D2D2A] leading-snug group-hover:text-[#5F6B4E] transition-colors">
-                    {product.title}
+                    {product.name}
                   </h3>
                 </Link>
                 <div className="flex flex-col items-end">
@@ -667,16 +728,30 @@ export default function ProductCollection() {
                   e.preventDefault();
                   if (!currentUser) {
                     openAuthModal("login");
-                  } else if (currentUser.role === "customer") {
+                    return;
+                  }
+                  const hasEarlyAccess = ["Bloom", "Fruit", "Harvest"].includes(currentUser.tier);
+                  if (product.isEarlyAccess && !hasEarlyAccess) {
+                    return; // Disabled
+                  }
+                  if (currentUser.role === "customer") {
                     if (product.status !== 'Reserved' && product.status !== 'Out of Stock' && product.stock !== 0) {
                       addToCart(product);
                     }
                   }
                 }}
-                disabled={(currentUser && currentUser.role !== 'customer') || product.status === 'Reserved' || product.status === 'Out of Stock' || product.stock === 0}
+                disabled={
+                  (currentUser && currentUser.role !== 'customer') || 
+                  product.status === 'Reserved' || 
+                  product.status === 'Out of Stock' || 
+                  product.stock === 0 || 
+                  (product.isEarlyAccess && (!currentUser || !["Bloom", "Fruit", "Harvest"].includes(currentUser.tier)))
+                }
                 className={`w-full font-semibold text-[11px] py-3 rounded-xl flex justify-center items-center gap-2 transition-all mt-2 ${
                   (currentUser && currentUser.role !== 'customer')
                     ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed'
+                    : (product.isEarlyAccess && (!currentUser || !["Bloom", "Fruit", "Harvest"].includes(currentUser.tier)))
+                    ? 'bg-purple-50 text-purple-400 cursor-not-allowed border border-purple-200'
                     : product.status === 'Reserved' 
                     ? 'bg-[#EAE5DB] text-[#A0A09F] cursor-not-allowed' 
                     : (product.status === 'Out of Stock' || product.stock === 0)
@@ -684,7 +759,14 @@ export default function ProductCollection() {
                     : 'bg-[#5F6B4E] text-white hover:bg-[#4A543C] shadow-sm'
                 }`}
               >
-                {product.status === 'Reserved' ? 'ติดจอง' : (product.status === 'Out of Stock' || product.stock === 0) ? 'Out of Stock' : (
+                {product.isEarlyAccess && (!currentUser || !["Bloom", "Fruit", "Harvest"].includes(currentUser.tier)) ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Locked
+                  </>
+                ) : product.status === 'Reserved' ? 'ติดจอง' : (product.status === 'Out of Stock' || product.stock === 0) ? 'Out of Stock' : (
                   <>
                     <svg
                       className="w-3.5 h-3.5"

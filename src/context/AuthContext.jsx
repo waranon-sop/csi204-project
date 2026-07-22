@@ -13,6 +13,9 @@ export function AuthProvider({ children }) {
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState('login');
+  
+  // Rewards Onboarding State
+  const [isRewardsOnboardingOpen, setIsRewardsOnboardingOpen] = useState(false);
 
   const openAuthModal = (view = 'login') => {
     setAuthModalView(view);
@@ -21,6 +24,14 @@ export function AuthProvider({ children }) {
 
   const closeAuthModal = () => {
     setIsAuthModalOpen(false);
+  };
+
+  const openRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(true);
+  };
+
+  const closeRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(false);
   };
 
   // Initialize from localStorage and sessionStorage
@@ -90,7 +101,11 @@ export function AuthProvider({ children }) {
       email,
       password,
       phone,
-      role: 'customer' // Default role
+      role: 'customer', // Default role
+      isRewardsMember: true,
+      tier: 'Seed',
+      points: 0,
+      couponsRedeemed: 0
     };
 
     const updatedUsers = [...users, newUser];
@@ -127,7 +142,11 @@ export function AuthProvider({ children }) {
         email: mockGoogleProfile.email,
         password: '', // Google users don't need a password in this flow
         phone: '',
-        role: 'customer'
+        role: 'customer',
+        isRewardsMember: true,
+        tier: 'Seed',
+        points: 0,
+        couponsRedeemed: 0
       };
       
       const updatedUsers = [...users, user];
@@ -141,6 +160,45 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('currentUser');
     
     return { success: true };
+  };
+
+  const updateProfile = (updates) => {
+    if (!currentUser) return;
+    const updatedUser = { ...currentUser, ...updates };
+    setCurrentUser(updatedUser);
+    
+    if (localStorage.getItem('currentUser')) {
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    } else if (sessionStorage.getItem('currentUser')) {
+      sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+    
+    const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+  };
+
+  const joinRewardsProgram = () => {
+    updateProfile({ isRewardsMember: true, tier: 'Seed', points: 0, couponsRedeemed: 0 });
+  };
+
+  const addPoints = (amount) => {
+    if (!currentUser) return;
+    const newPoints = (currentUser.points || 0) + amount;
+    // Calculate new tier
+    let newTier = currentUser.tier || 'Seed';
+    if (newPoints >= 2000) newTier = 'Harvest';
+    else if (newPoints >= 1000) newTier = 'Fruit';
+    else if (newPoints >= 500) newTier = 'Bloom';
+    else if (newPoints >= 200) newTier = 'Sprout';
+    
+    updateProfile({ points: newPoints, tier: newTier });
+  };
+
+  const deductPoints = (amount) => {
+    if (!currentUser || (currentUser.points || 0) < amount) return false;
+    updateProfile({ points: (currentUser.points || 0) - amount });
+    return true;
   };
 
   const logout = () => {
@@ -164,7 +222,14 @@ export function AuthProvider({ children }) {
     isAuthModalOpen,
     authModalView,
     openAuthModal,
-    closeAuthModal
+    closeAuthModal,
+    isRewardsOnboardingOpen,
+    openRewardsOnboarding,
+    closeRewardsOnboarding,
+    updateProfile,
+    joinRewardsProgram,
+    addPoints,
+    deductPoints
   };
 
   return (

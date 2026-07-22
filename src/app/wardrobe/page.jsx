@@ -8,7 +8,7 @@ import { Heart, Plus, Leaf, Eye, Trash2, Tag, Shirt } from 'lucide-react';
 const mockSavedItems = [
   {
     id: 1,
-    title: 'เสื้อเชิ้ตลายสก็อตวินเทจแปซิฟิก',
+    name: 'เสื้อเชิ้ตลายสก็อตวินเทจแปซิฟิก',
     price: 320,
     carbonSaved: '3.8 kg CO₂e',
     image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=200',
@@ -16,7 +16,7 @@ const mockSavedItems = [
   },
   {
     id: 2,
-    title: 'หมวกไหมพรมสีชาเขียวมัทฉะ',
+    name: 'หมวกไหมพรมสีชาเขียวมัทฉะ',
     price: 180,
     carbonSaved: '1.2 kg CO₂e',
     image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
@@ -27,7 +27,7 @@ const mockSavedItems = [
 const mockMyListings = [
   {
     id: 101,
-    title: 'กางเกงสแล็กสีเทาชาร์โคลทรงกระบอก',
+    name: 'กางเกงสแล็กสีเทาชาร์โคลทรงกระบอก',
     price: 490,
     status: 'กำลังลงขาย',
     statusColor: 'text-sage-700 bg-sage-50 border-sage-200',
@@ -104,11 +104,11 @@ export default function MyWardrobe() {
                   {savedItems.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 border border-earth-200 rounded-2xl bg-earth-50/20">
                       <div className="relative w-20 h-20 bg-earth-100 rounded-xl overflow-hidden flex-shrink-0">
-                        <Image src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
+                        <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
                       </div>
                       <div className="flex-1 flex flex-col justify-between min-w-0">
                         <div>
-                          <h3 className="font-semibold text-sm text-earth-800 truncate">{item.title}</h3>
+                          <h3 className="font-semibold text-sm text-earth-800 truncate">{item.name}</h3>
                           <span className="inline-block text-[10px] text-clay-600 bg-clay-50 border border-clay-100 px-2 py-0.5 rounded mt-1">
                             {item.condition}
                           </span>
@@ -153,10 +153,10 @@ export default function MyWardrobe() {
                     <div key={listing.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-earth-200 rounded-2xl bg-earth-50/20">
                       <div className="flex items-center gap-4">
                         <div className="relative w-16 h-16 bg-earth-100 rounded-xl overflow-hidden flex-shrink-0">
-                          <Image src={listing.image} alt={listing.title} fill sizes="64px" className="object-cover" />
+                          <Image src={listing.image} alt={listing.name} fill sizes="64px" className="object-cover" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm text-earth-800">{listing.title}</h3>
+                          <h3 className="font-semibold text-sm text-earth-800">{listing.name}</h3>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full border ${listing.statusColor}`}>
                               {listing.status}

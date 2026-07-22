@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { updateProductStatus, releaseExpiredReservations, getProducts } from '../utils/localStorageHelper';
+import { useAuth } from './AuthContext';
 
 const CART_KEY = 're_wear_cart';
 const CartContext = createContext();
@@ -9,6 +10,7 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { currentUser, deductPoints } = useAuth();
 
   // Load cart from localStorage on mount — cross-check each item is still Reserved
   useEffect(() => {
@@ -48,9 +50,30 @@ export function CartProvider({ children }) {
       setIsCartOpen(true);
       return;
     }
-    updateProductStatus(product.id, 'Reserved');
+    
+    let duration = 900000; // 15 mins
+    if (currentUser?.tier === 'Harvest') {
+      duration = 86400000; // 24 hours
+    }
+    const expiresAt = Date.now() + duration;
+    
+    updateProductStatus(product.id, 'Reserved', expiresAt);
     setCartItems((prev) => [...prev, product]);
     setIsCartOpen(true);
+  };
+
+  const extendReservation = () => {
+    if (!currentUser) return { success: false, error: 'Please sign in to extend reservation' };
+    if (currentUser.tier === 'Harvest') return { success: false, error: 'You already have 24-hour cart lock' };
+    
+    if (deductPoints(50)) {
+      const newExpiresAt = Date.now() + 1800000; // 30 mins
+      cartItems.forEach(item => {
+        updateProductStatus(item.id, 'Reserved', newExpiresAt);
+      });
+      return { success: true };
+    }
+    return { success: false, error: 'Not enough points' };
   };
 
   const removeFromCart = (id) => {
@@ -66,7 +89,7 @@ export function CartProvider({ children }) {
   };
 
   const subTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const shipping = cartItems.length > 0 ? 55 : 0;
+  const shipping = cartItems.length > 0 ? 35 : 0;
   const shippingDiscount = subTotal >= 500 ? shipping : 0;
   const cartTotal = subTotal + shipping - shippingDiscount;
   return (
@@ -79,6 +102,7 @@ export function CartProvider({ children }) {
         toggleCart,
         closeCart,
         clearCart,
+        extendReservation,
         subTotal,
         shipping,
         shippingDiscount,

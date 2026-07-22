@@ -25,7 +25,7 @@ export const getProducts = () => {
   return initializeProducts();
 };
 
-export const updateProductStatus = (productId, status) => {
+export const updateProductStatus = (productId, status, expiresAt = null) => {
   if (typeof window === 'undefined') return;
   const products = getProducts();
   const updated = products.map(p => {
@@ -33,7 +33,8 @@ export const updateProductStatus = (productId, status) => {
       return { 
         ...p, 
         status, 
-        reservedAt: status === 'Reserved' ? Date.now() : null 
+        reservedAt: status === 'Reserved' ? Date.now() : null,
+        expiresAt: status === 'Reserved' ? (expiresAt || Date.now() + 900000) : null
       };
     }
     return p;
@@ -55,10 +56,11 @@ export const processOrderInventory = (cartItems) => {
            ...p,
            stock: newStock,
            status: newStock === 0 ? 'Out of Stock' : p.status,
-           reservedAt: null
+           reservedAt: null,
+           expiresAt: null
          };
       } else {
-         return { ...p, status: 'Sold Out', reservedAt: null };
+         return { ...p, status: 'Sold Out', reservedAt: null, expiresAt: null };
       }
     }
     return p;
@@ -75,10 +77,12 @@ export const releaseExpiredReservations = () => {
   let changed = false;
 
   const updated = products.map(p => {
-    // 15 minutes = 15 * 60 * 1000 = 900,000 ms
-    if (p.status === 'Reserved' && p.reservedAt && now - p.reservedAt > 900000) {
-      changed = true;
-      return { ...p, status: 'Available', reservedAt: null };
+    if (p.status === 'Reserved') {
+      const expirationTime = p.expiresAt || (p.reservedAt ? p.reservedAt + 900000 : 0);
+      if (expirationTime > 0 && now > expirationTime) {
+        changed = true;
+        return { ...p, status: 'Available', reservedAt: null, expiresAt: null };
+      }
     }
     return p;
   });

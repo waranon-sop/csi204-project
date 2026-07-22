@@ -7,32 +7,7 @@ import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { addAdminNotification } from '../../../utils/notifications';
 
-const mockProducts = [
-  {
-    id: 'RW-29402', name: 'Vintage Linen Overcoat', brand: 'Unknown', category: 'Outerwear',
-    price: 145, stock: 24, condition: 'Very Good', defects: 'No visible defects. Perfect condition.',
-    size: 'M', chest: '100 cm', length: '100 cm', status: 'In Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-18239', name: 'Raw Silk Trousers', brand: 'Silk & Co.', category: 'Bottoms',
-    price: 89, stock: 4, condition: 'Good', defects: 'Minor pull thread on right inner seam.',
-    size: 'L', chest: '-', length: '102 cm', status: 'Low Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-99201', name: 'Upcycled Denim Tote', brand: 'ReThread', category: 'Accessories',
-    price: 45, stock: 112, condition: 'Like New', defects: 'Brand new, upcycled from surplus fabric.',
-    size: 'OS', chest: '-', length: '-', status: 'In Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: 'RW-00451', name: 'Recycled Cotton Sweater', brand: 'Patagonia', category: 'Tops',
-    price: 115, stock: 0, condition: 'Good', defects: 'Small pilling on left sleeve cuff.',
-    size: 'S', chest: '88 cm', length: '60 cm', status: 'Out of Stock', hidden: false,
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800'
-  },
-];
+const mockProducts = [];
 
 const CONDITION_STYLE = {
   'Very Good': 'bg-[#EEF1EA] text-[#3A4A2D] border border-[#C2CBB8]',
@@ -99,8 +74,6 @@ export default function AdminProducts() {
     
     if (localProducts.length > 0) {
       setProducts(localProducts);
-    } else {
-      localStorage.setItem('products', JSON.stringify(mockProducts));
     }
   }, []);
 

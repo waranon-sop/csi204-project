@@ -24,7 +24,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   
   const [error, setError] = useState('');
 
-  const { login, register, loginWithGoogle } = useAuth();
+  const { login, register, loginWithGoogle, openRewardsOnboarding } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -87,6 +87,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'login' }) {
     const result = register(`${firstName.trim()} ${lastName.trim()}`.trim(), regEmail, regPassword, phone, keepSignedIn);
     if (result.success) {
       onClose();
+      openRewardsOnboarding();
     } else {
       setError(result.error);
     }

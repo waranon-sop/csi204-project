@@ -7,7 +7,12 @@ import { useAuth } from '../context/AuthContext';
 
 export default function RewardsWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const { openAuthModal } = useAuth();
+  const { currentUser, openAuthModal, joinRewardsProgram, openRewardsOnboarding } = useAuth();
+
+  // Hide the widget completely for staff and admin roles
+  if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'staff')) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-0 right-8 z-[60] flex flex-col items-end">
@@ -34,41 +39,94 @@ export default function RewardsWidget() {
             </h3>
           </div>
 
-          <p className="text-[11px] text-[#5C5C5A] font-medium leading-relaxed mb-6 px-2">
-            Join the Re-Wear REWARDS program to start earning points and exclusive benefits. <Link href="#" className="underline hover:text-[#2D2D2A]">Unlock exclusive benefits</Link>
-          </p>
+          {currentUser && currentUser.isRewardsMember ? (
+            <>
+              <p className="text-[11px] text-[#5C5C5A] font-medium leading-relaxed mb-6 px-2">
+                Welcome back, <strong>{currentUser.name}</strong>! Keep exploring to earn more points and exclusive benefits.
+              </p>
+              
+              {/* Icons Grid */}
+              <div className="flex justify-between items-center px-2 mb-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Leaf className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Points Per THB</span>
+                </div>
+                
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Tag className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Discount Reward</span>
+                </div>
 
-          {/* Icons Grid */}
-          <div className="flex justify-between items-center px-2 mb-6">
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
-                <Leaf className="w-5 h-5" strokeWidth={1.5} />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Gift className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Birthday Gift</span>
+                </div>
               </div>
-              <span className="text-[9px] text-[#8B8B88] font-bold">Points Per THB</span>
-            </div>
-            
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
-                <Tag className="w-5 h-5" strokeWidth={1.5} />
-              </div>
-              <span className="text-[9px] text-[#8B8B88] font-bold">Discount Reward</span>
-            </div>
 
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
-                <Gift className="w-5 h-5" strokeWidth={1.5} />
-              </div>
-              <span className="text-[9px] text-[#8B8B88] font-bold">Birthday Gift</span>
-            </div>
-          </div>
+              <button 
+                onClick={openRewardsOnboarding}
+                className="block w-full py-3 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded hover:bg-[#4A543C] transition-colors mb-4 text-center"
+              >
+                View My Benefits
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] text-[#5C5C5A] font-medium leading-relaxed mb-6 px-2">
+                Join the Re-Wear REWARDS program to start earning points and exclusive benefits. <button onClick={() => openAuthModal('register')} className="underline hover:text-[#2D2D2A]">Unlock exclusive benefits</button>
+              </p>
 
-          <button onClick={() => openAuthModal('register')} className="block w-full py-3 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded hover:bg-[#4A543C] transition-colors mb-4 text-center">
-            Join Now
-          </button>
-          
-          <p className="text-[11px] text-[#8B8B88] font-medium">
-            Already a member? <button onClick={() => openAuthModal('login')} className="text-[#2D2D2A] underline hover:text-[#5F6B4E]">Sign In</button>
-          </p>
+              {/* Icons Grid */}
+              <div className="flex justify-between items-center px-2 mb-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Leaf className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Points Per THB</span>
+                </div>
+                
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Tag className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Discount Reward</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border border-[#C57B57] bg-[#F9F8F6] flex items-center justify-center text-[#C57B57]">
+                    <Gift className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[9px] text-[#8B8B88] font-bold">Birthday Gift</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (currentUser) {
+                    joinRewardsProgram();
+                    openRewardsOnboarding();
+                  } else {
+                    openAuthModal('register');
+                  }
+                }} 
+                className="block w-full py-3 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded hover:bg-[#4A543C] transition-colors mb-4 text-center"
+              >
+                Join Now
+              </button>
+              
+              {!currentUser && (
+                <p className="text-[11px] text-[#8B8B88] font-medium">
+                  Already a member? <button onClick={() => openAuthModal('login')} className="text-[#2D2D2A] underline hover:text-[#5F6B4E]">Sign In</button>
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 

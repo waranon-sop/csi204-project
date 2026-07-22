@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search as SearchIcon } from 'lucide-react';
-import { mockProducts } from '../../data/products';
+import { ProductDB } from '../../utils/database';
 import QuickViewModal from '../../components/home/QuickViewModal';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -22,15 +22,26 @@ function SearchContent() {
   const { addToCart } = useCart();
   const { currentUser } = useAuth();
 
+  const [products, setProducts] = React.useState([]);
+
+  React.useEffect(() => {
+    setProducts(ProductDB.getAll());
+    const handleUpdate = () => setProducts(ProductDB.getAll());
+    window.addEventListener("productsUpdated", handleUpdate);
+    return () => window.removeEventListener("productsUpdated", handleUpdate);
+  }, []);
+
   const searchResults = useMemo(() => {
-    let results = mockProducts;
+    let results = products.filter(
+      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived"
+    );
     
     if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();
       const matched = results.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.brandCategory.toLowerCase().includes(q)
+        p.name?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q) ||
+        p.brandCategory?.toLowerCase().includes(q)
       );
       // fallback to all if no match so the user can see mock results
       if (matched.length > 0) results = matched;
@@ -47,7 +58,7 @@ function SearchContent() {
     }
 
     return results;
-  }, [query, selectedSpecs]);
+  }, [query, selectedSpecs, products]);
 
   const toggleSpec = (spec) => {
     setSelectedSpecs(prev => prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]);
@@ -77,8 +88,13 @@ function SearchContent() {
         { id: 'price', label: 'Price', options: [{name:'Under ฿500'}, {name:'฿500 - ฿1000'}, {name:'Over ฿1000'}] }
       ];
     } else if (category === 'ACCESSORIES') {
+      let materials = [{name:'Silver'}, {name:'Brass'}, {name:'Leather'}];
+      const q = query.toLowerCase();
+      if (['ring', 'bracelet', 'earring', 'necklace', 'rings', 'bracelets', 'earrings', 'necklaces'].some(item => q.includes(item))) {
+        materials = [{name:'Silver'}, {name:'Brass'}];
+      }
       return [
-        { id: 'material', label: 'Material', options: [{name:'Silver'}, {name:'Brass'}, {name:'Leather'}] },
+        { id: 'material', label: 'Material', options: materials },
         { id: 'price', label: 'Price', options: [{name:'Under ฿500'}, {name:'฿500 - ฿1000'}, {name:'Over ฿1000'}] }
       ];
     }
@@ -91,7 +107,7 @@ function SearchContent() {
   const activeFilters = getFilterOptions();
 
   return (
-    <div className="py-8 md:py-12 max-w-[1400px] mx-auto px-6 sm:px-12 font-sans">
+    <div className="py-8 md:py-12 w-full px-6 md:px-12 lg:px-16 font-sans">
       
       {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-[11px] font-medium text-[#5C5C5A] mb-8">
@@ -175,42 +191,54 @@ function SearchContent() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="group relative flex flex-col"
+              className="flex flex-col space-y-4 group relative bg-white p-4 rounded-3xl shadow-sm border border-[#EAE5DB]/50"
             >
-              <Link href={`/product/${product.id}`} className="block relative overflow-hidden h-64 mb-4 bg-white flex items-center justify-center">
+              <Link href={`/product/${product.id}`} className="relative aspect-[3/4] sm:aspect-square rounded-2xl overflow-hidden bg-[#F9F8F6] block cursor-pointer">
                 <Image
-                  src={product.image}
-                  alt={product.title}
+                  src={product.image || '/images/placeholder.jpg'}
+                  alt={product.name || 'Product image'}
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-contain p-4 mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
+                  className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 ease-in-out mix-blend-multiply"
                 />
               </Link>
               
-              <div className="text-[10px] text-[#8B8B88] mb-1">Victoria's Secret</div>
-              <Link href={`/product/${product.id}`} className="group-hover:opacity-75 transition-opacity">
-                <h3 className="text-[12px] text-[#2D2D2A] leading-relaxed mb-2 line-clamp-2">
-                  {product.title}
-                </h3>
-              </Link>
-              <div className="text-[12px] text-[#5C5C5A]">
-                THB {product.price}.00
-              </div>
-              <div className="text-[10px] text-[#8B8B88] mt-2">
-                สี 1
+              <div className="flex justify-between items-start pt-1 font-sans px-1">
+                <Link href={`/product/${product.id}`} className="block max-w-[70%]">
+                  <h3 className="font-serif font-bold text-[15px] sm:text-[17px] text-[#2D2D2A] leading-snug group-hover:text-[#5F6B4E] transition-colors">
+                    {product.name || 'Untitled Product'}
+                  </h3>
+                  <div className="text-[10px] sm:text-[11px] text-[#8B8B88] mt-1">{product.brandCategory || product.brand || "Re-Wear"}</div>
+                </Link>
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="font-sans font-bold text-[13px] sm:text-[14px] text-[#2D2D2A]">
+                    THB {product.price}
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-24">
-          <div className="w-16 h-16 bg-[#F2E9DC] rounded-full flex items-center justify-center mx-auto text-[#8B8B88] mb-4">
-            <SearchIcon className="h-6 w-6" />
+        <div className="flex flex-col items-center justify-center py-32 md:py-40 min-h-[50vh] bg-white border border-[#EAE5DB] rounded-3xl mt-8 shadow-sm">
+          <div className="w-20 h-20 bg-[#F9F8F6] rounded-full flex items-center justify-center text-[#2D2D2A] mb-6">
+            <SearchIcon className="h-8 w-8 opacity-60" />
           </div>
-          <h3 className="font-serif text-xl font-bold text-[#2D2D2A] mb-2">No pieces found</h3>
-          <p className="text-[#8B8B88] text-sm">
-            We couldn't find any items matching "{query}". Try searching for something else.
+          <h3 className="font-serif text-2xl md:text-3xl font-bold text-[#2D2D2A] mb-3">No pieces found</h3>
+          <p className="text-[#5C5C5A] text-sm md:text-base max-w-md text-center mb-8 leading-relaxed">
+            We couldn't find any items matching "{query}". Try adjusting your filters or explore our collections.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link href="/search?cat=NEW" className="px-6 py-2.5 bg-[#2D2D2A] text-white text-xs font-bold tracking-widest uppercase rounded-full hover:bg-[#1A1A1A] transition-colors">
+              New Arrivals
+            </Link>
+            <Link href="/search?cat=CLOTHING" className="px-6 py-2.5 bg-white border border-[#EAE5DB] text-[#2D2D2A] text-xs font-bold tracking-widest uppercase rounded-full hover:border-[#2D2D2A] transition-colors">
+              Clothing
+            </Link>
+            <Link href="/search?cat=ACCESSORIES" className="px-6 py-2.5 bg-white border border-[#EAE5DB] text-[#2D2D2A] text-xs font-bold tracking-widest uppercase rounded-full hover:border-[#2D2D2A] transition-colors">
+              Accessories
+            </Link>
+          </div>
         </div>
       )}
     </div>
