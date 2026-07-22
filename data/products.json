@@ -3,7 +3,7 @@
     "name": "pant",
     "brand": "uniqlo",
     "price": 359,
-    "status": "Reserved",
+    "status": "Available",
     "condition": "Very Good",
     "defects": "มีเป็นด้านข้างๆ",
     "category": "Pants & Jeans",
@@ -13,7 +13,7 @@
     "measurements": "Details: Not specified",
     "id": "RW-68499",
     "salePrice": 200,
-    "reservedAt": 1784759712337
+    "reservedAt": null
   },
   {
     "name": "เสื้อขาดๆ",
