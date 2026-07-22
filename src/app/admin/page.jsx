@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingCart, Leaf, Droplets, Wind, Trash2, Banknote, Shirt, Award, Truck, Ticket } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, ShoppingCart, Leaf, Droplets, Wind, Trash2, Banknote, Shirt, Award, Truck, Ticket, Users } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAdminGuard } from '../../hooks/useAdminGuard';
+import { useAdminGuard } from '../../hooks/useRoleGuard';
 import { useToast } from '../../components/ui/ToastProvider';
 
 export default function AdminDashboard() {
@@ -13,17 +13,18 @@ export default function AdminDashboard() {
   const { addToast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [timeFilter, setTimeFilter] = useState('Month');
+  const [timeFilter, setTimeFilter] = useState('30 Days');
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
-  const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342 });
+  const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342, newUsers: 145 });
+  const [trends, setTrends] = useState({ revenue: 12.5, activeOrders: -2.4, items: 8.1, users: 8.2 });
   const [promotions, setPromotions] = useState([]);
 
   // Show access denied toast if redirected from a protected page
   useEffect(() => {
     if (searchParams.get('denied') === '1') {
-      addToast('Access denied — admin only.');
+      addToast('Access denied — you do not have permission to view that page.');
       router.replace('/admin');
     }
   }, [searchParams]);
@@ -32,14 +33,16 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [ordersRes, settingsRes, promosRes] = await Promise.all([
+        const [ordersRes, settingsRes, promosRes, usersRes] = await Promise.all([
           fetch('/api/orders'),
           fetch('/api/settings'),
-          fetch('/api/promotions')
+          fetch('/api/promotions'),
+          fetch('/api/users')
         ]);
         const localOrders = await ordersRes.json();
         const storedSettings = await settingsRes.json();
         const localPromos = await promosRes.json();
+        const localUsers = await usersRes.json();
 
         setOrders(localOrders);
         setPromotions(localPromos);
@@ -51,18 +54,18 @@ export default function AdminDashboard() {
         const deliveredOrders = localOrders.filter(order => {
           if (order.status !== 'Delivered') return false;
           const d = new Date(order.createdAt || order.date);
-          if (timeFilter === 'Month') return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-          if (timeFilter === 'Week') return d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000);
-          if (timeFilter === 'Day') return d.getDate() === now.getDate() && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+          if (timeFilter === '30 Days') return d.getTime() > now.getTime() - (30 * 24 * 60 * 60 * 1000);
+          if (timeFilter === '7 Days') return d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000);
+          if (timeFilter === '12 Months') return d.getFullYear() === thisYear;
           return true;
         });
 
         let base = deliveredOrders.reduce((sum, o) => sum + (o.items?.length || o.itemCount || 1), 0);
         // Add dummy fallback numbers so the UI reacts satisfyingly to the toggle
         if (base === 0) {
-          if (timeFilter === 'Month') base = 892;
-          if (timeFilter === 'Week') base = 214;
-          if (timeFilter === 'Day') base = 35;
+          if (timeFilter === '12 Months') base = 4850;
+          if (timeFilter === '30 Days') base = 892;
+          if (timeFilter === '7 Days') base = 214;
         }
 
         // Fetch Eco Multipliers from Settings
@@ -83,18 +86,84 @@ export default function AdminDashboard() {
           waste: (base * ecoWaste).toFixed(1),
         });
 
-        const confirmedOrders = localOrders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
-        const totalRev = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-        
-        const active = localOrders.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
+        // ------------------ DYNAMIC TREND CALCULATION ------------------
+        let isCurrentPeriod, isPrevPeriod;
+        let msInPeriod = 30 * 24 * 60 * 60 * 1000;
 
+        if (timeFilter === '7 Days') {
+          msInPeriod = 7 * 24 * 60 * 60 * 1000;
+          isCurrentPeriod = (d) => d.getTime() > now.getTime() - msInPeriod;
+          isPrevPeriod = (d) => { const t = d.getTime(); return t > now.getTime() - (2 * msInPeriod) && t <= now.getTime() - msInPeriod; };
+        } else if (timeFilter === '30 Days') {
+          msInPeriod = 30 * 24 * 60 * 60 * 1000;
+          isCurrentPeriod = (d) => d.getTime() > now.getTime() - msInPeriod;
+          isPrevPeriod = (d) => { const t = d.getTime(); return t > now.getTime() - (2 * msInPeriod) && t <= now.getTime() - msInPeriod; };
+        } else {
+          isCurrentPeriod = (d) => d.getFullYear() === now.getFullYear();
+          isPrevPeriod = (d) => d.getFullYear() === now.getFullYear() - 1;
+        }
+
+        let currentRev = 0, prevRev = 0;
+        let currentActive = 0, prevActive = 0;
+        let currentItems = 0, prevItems = 0;
+        let currentUsers = 0, prevUsers = 0;
+
+        localOrders.forEach(o => {
+          const d = new Date(o.createdAt || o.date);
+          const rev = (o.status === 'Shipped' || o.status === 'Delivered') ? (o.total || 0) : 0;
+          const items = (o.status === 'Delivered') ? (o.items?.length || o.itemCount || 1) : 0;
+          const isActive = (o.status === 'Pending' || o.status === 'Processing') ? 1 : 0;
+
+          if (isCurrentPeriod(d)) {
+            currentRev += rev;
+            currentItems += items;
+            currentActive += isActive;
+          } else if (isPrevPeriod(d)) {
+            prevRev += rev;
+            prevItems += items;
+            prevActive += isActive;
+          }
+        });
+
+        // Calculate New Users (Real data only, exclude admin/staff)
+        localUsers.forEach(u => {
+          if (u.role === 'admin' || u.role === 'staff') return;
+          
+          const dateStr = u.joinDate || u.createdAt;
+          if (!dateStr) return;
+
+          const d = new Date(dateStr);
+          if (isNaN(d.getTime())) return; // skip invalid dates
+          
+          if (isCurrentPeriod(d)) currentUsers++;
+          else if (isPrevPeriod(d)) prevUsers++;
+        });
+
+        const calcTrend = (curr, prev) => prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100;
+        
+        let tRev = calcTrend(currentRev, prevRev);
+        let tActive = calcTrend(currentActive, prevActive);
+        let tItems = calcTrend(currentItems, prevItems);
+        let tUsers = calcTrend(currentUsers, prevUsers);
+
+        // Fallbacks if data is zero/missing for demo (except Users which are real)
+        if (currentRev === 0) {
+          if (timeFilter === '12 Months') { tRev = 12.5; tActive = 8.2; tItems = 15.0; }
+          else if (timeFilter === '30 Days') { tRev = 4.2; tActive = -2.4; tItems = 5.1; }
+          else { tRev = -1.5; tActive = 5.0; tItems = 2.0; }
+        }
+
+        setTrends({ revenue: tRev, activeOrders: tActive, items: tItems, users: tUsers });
+
+        // ------------------ MAIN STATS ------------------
         let fallbackRev = 12480;
-        if (timeFilter === 'Week') fallbackRev = 3450;
-        if (timeFilter === 'Day') fallbackRev = 540;
+        if (timeFilter === '12 Months') fallbackRev = 145000;
+        if (timeFilter === '7 Days') fallbackRev = 3450;
 
         setDashboardStats({
-          revenue: totalRev > 0 ? totalRev : fallbackRev,
-          activeOrders: active > 0 ? active : (timeFilter === 'Day' ? 12 : (timeFilter === 'Week' ? 85 : 342))
+          revenue: currentRev > 0 ? currentRev : fallbackRev,
+          activeOrders: currentActive > 0 ? currentActive : (timeFilter === '7 Days' ? 85 : (timeFilter === '30 Days' ? 342 : 1240)),
+          newUsers: currentUsers
         });
       } catch (err) {
         console.error('Failed to load dashboard data', err);
@@ -109,61 +178,69 @@ export default function AdminDashboard() {
     const confirmedOrders = orders.filter(o => o.status === 'Shipped' || o.status === 'Delivered');
     const now = new Date();
     
-    if (timeFilter === 'Day') {
-      const buckets = { '08:00': 0, '12:00': 0, '16:00': 0, '20:00': 0 };
-      confirmedOrders.forEach(o => {
-        const d = new Date(o.createdAt || o.date);
-        if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-          const h = d.getHours();
-          if (h < 10) buckets['08:00'] += o.total;
-          else if (h < 14) buckets['12:00'] += o.total;
-          else if (h < 18) buckets['16:00'] += o.total;
-          else buckets['20:00'] += o.total;
-        }
-      });
-      if (Object.values(buckets).every(v => v === 0)) {
-        return [{ time: '08:00', revenue: 150 }, { time: '12:00', revenue: 200 }, { time: '16:00', revenue: 80 }, { time: '20:00', revenue: 110 }];
-      }
-      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
-    } else if (timeFilter === 'Week') {
-      const buckets = { 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0 };
+    if (timeFilter === '7 Days') {
+      const buckets = { 'Mon': { revenue: 0, items: 0 }, 'Tue': { revenue: 0, items: 0 }, 'Wed': { revenue: 0, items: 0 }, 'Thu': { revenue: 0, items: 0 }, 'Fri': { revenue: 0, items: 0 }, 'Sat': { revenue: 0, items: 0 }, 'Sun': { revenue: 0, items: 0 } };
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       confirmedOrders.forEach(o => {
         const d = new Date(o.createdAt || o.date);
         if (d.getTime() > now.getTime() - (7 * 24 * 60 * 60 * 1000)) {
-          buckets[days[d.getDay()]] += o.total;
+          buckets[days[d.getDay()]].revenue += o.total;
+          buckets[days[d.getDay()]].items += (o.items?.length || o.itemCount || 1);
         }
       });
-      if (Object.values(buckets).every(v => v === 0)) {
+      if (Object.values(buckets).every(v => v.revenue === 0)) {
         return [
-          { time: 'Mon', revenue: 450 },
-          { time: 'Tue', revenue: 300 },
-          { time: 'Wed', revenue: 620 },
-          { time: 'Thu', revenue: 0 },
-          { time: 'Fri', revenue: 880 },
-          { time: 'Sat', revenue: 1100 },
-          { time: 'Sun', revenue: 1500 }
+          { time: 'Mon', revenue: 450, items: 12 }, { time: 'Tue', revenue: 300, items: 8 }, 
+          { time: 'Wed', revenue: 620, items: 18 }, { time: 'Thu', revenue: 0, items: 0 }, 
+          { time: 'Fri', revenue: 880, items: 25 }, { time: 'Sat', revenue: 1100, items: 32 }, 
+          { time: 'Sun', revenue: 1500, items: 40 }
         ];
       }
-      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
-    } else {
-      const buckets = { 'Week 1': 0, 'Week 2': 0, 'Week 3': 0, 'Week 4': 0 };
+      return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
+    } else if (timeFilter === '30 Days') {
+      const buckets = { 'Week 1': { revenue: 0, items: 0 }, 'Week 2': { revenue: 0, items: 0 }, 'Week 3': { revenue: 0, items: 0 }, 'Week 4': { revenue: 0, items: 0 } };
       confirmedOrders.forEach(o => {
         const d = new Date(o.createdAt || o.date);
-        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-          const w = Math.ceil(d.getDate() / 7);
-          if (w <= 4) buckets[`Week ${w}`] += o.total;
-          else buckets['Week 4'] += o.total;
+        if (d.getTime() > now.getTime() - (30 * 24 * 60 * 60 * 1000)) {
+          const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 3600 * 24));
+          const w = 4 - Math.floor(diffDays / 7);
+          const weekKey = w >= 1 && w <= 4 ? `Week ${w}` : 'Week 1';
+          buckets[weekKey].revenue += o.total;
+          buckets[weekKey].items += (o.items?.length || o.itemCount || 1);
         }
       });
-      if (Object.values(buckets).every(v => v === 0)) {
-        return [{ time: 'Week 1', revenue: 2400 }, { time: 'Week 2', revenue: 3200 }, { time: 'Week 3', revenue: 2800 }, { time: 'Week 4', revenue: 4080 }];
+      if (Object.values(buckets).every(v => v.revenue === 0)) {
+        return [
+          { time: 'Week 1', revenue: 2400, items: 70 }, { time: 'Week 2', revenue: 3200, items: 95 }, 
+          { time: 'Week 3', revenue: 2800, items: 82 }, { time: 'Week 4', revenue: 4080, items: 120 }
+        ];
       }
-      return Object.keys(buckets).map(time => ({ time, revenue: buckets[time] }));
+      return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
+    } else {
+      const buckets = { 'Jan': { revenue: 0, items: 0 }, 'Feb': { revenue: 0, items: 0 }, 'Mar': { revenue: 0, items: 0 }, 'Apr': { revenue: 0, items: 0 }, 'May': { revenue: 0, items: 0 }, 'Jun': { revenue: 0, items: 0 }, 'Jul': { revenue: 0, items: 0 }, 'Aug': { revenue: 0, items: 0 }, 'Sep': { revenue: 0, items: 0 }, 'Oct': { revenue: 0, items: 0 }, 'Nov': { revenue: 0, items: 0 }, 'Dec': { revenue: 0, items: 0 } };
+      const monthNames = Object.keys(buckets);
+      confirmedOrders.forEach(o => {
+        const d = new Date(o.createdAt || o.date);
+        if (d.getFullYear() === now.getFullYear()) {
+          buckets[monthNames[d.getMonth()]].revenue += o.total;
+          buckets[monthNames[d.getMonth()]].items += (o.items?.length || o.itemCount || 1);
+        }
+      });
+      if (Object.values(buckets).every(v => v.revenue === 0)) {
+        return monthNames.map((m, i) => ({ time: m, revenue: 15000 + (i * 2000), items: 400 + (i * 50) }));
+      }
+      return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
     }
   };
 
   const chartData = getChartData();
+
+  const getPeriodText = () => {
+    if (timeFilter === '7 Days') return 'week';
+    if (timeFilter === '30 Days') return 'month';
+    if (timeFilter === '12 Months') return 'year';
+    return timeFilter.toLowerCase();
+  };
 
   if (!isAllowed) {
     return (
@@ -179,7 +256,7 @@ export default function AdminDashboard() {
       {/* Time Filter Toggle */}
       <div className="flex justify-end mb-2">
         <div className="flex bg-[#EAE5DB]/50 rounded-lg p-1">
-          {['Day', 'Week', 'Month'].map(t => (
+          {['7 Days', '30 Days', '12 Months'].map(t => (
             <button 
               key={t}
               onClick={() => setTimeFilter(t)}
@@ -198,37 +275,61 @@ export default function AdminDashboard() {
       {/* Top Stats Row */}
       <div className="grid grid-cols-3 gap-6">
         {/* Total Revenue - dark green */}
-        <div className="bg-[#4A533D] text-white rounded-3xl p-7 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
-          <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full border border-white/20"></div>
-          <div>
-            <Banknote className="w-5 h-5 mb-3 text-white/80" />
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70 mb-1">Total Revenue</p>
+        <div className="bg-[#4A533D] text-white rounded-3xl p-7 flex flex-col justify-between min-h-[160px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full border border-white/20 transition-transform duration-500 group-hover:scale-110"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <Banknote className="w-5 h-5 mb-3 text-white/80" />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70 mb-1">Total Revenue</p>
+            </div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
+              (trends.revenue || 0) >= 0 ? 'bg-white/10 text-green-300 border-white/10' : 'bg-red-500/20 text-red-300 border-red-500/20'
+            }`}>
+              {(trends.revenue || 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {(trends.revenue || 0) > 0 ? '+' : ''}{(trends.revenue || 0).toFixed(1)}%
+            </div>
           </div>
-          <div className="flex items-baseline gap-3 mt-4">
+          <div className="flex items-baseline gap-3 mt-4 relative z-10">
             <p className="text-4xl font-serif tracking-tight">THB {dashboardStats.revenue.toLocaleString()}</p>
           </div>
         </div>
 
         {/* Active Orders - salmon */}
-        <div className="bg-[#FFAA85] text-[#5A3828] rounded-3xl p-7 flex flex-col justify-between min-h-[160px] relative overflow-hidden">
-          <div>
-            <ShoppingCart className="w-5 h-5 mb-3 text-[#5A3828]/80" />
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5A3828]/70 mb-1">Active Orders</p>
+        <div className="bg-[#FFAA85] text-[#5A3828] rounded-3xl p-7 flex flex-col justify-between min-h-[160px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <ShoppingCart className="w-5 h-5 mb-3 text-[#5A3828]/80" />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5A3828]/70 mb-1">Active Orders</p>
+            </div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
+              (trends.activeOrders || 0) <= 0 ? 'bg-green-500/20 text-green-800 border-green-500/20' : 'bg-red-500/20 text-red-800 border-red-500/20'
+            }`}>
+              {(trends.activeOrders || 0) <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+              {(trends.activeOrders || 0) > 0 ? '+' : ''}{(trends.activeOrders || 0).toFixed(1)}%
+            </div>
           </div>
-          <div className="flex items-baseline gap-3 mt-4">
+          <div className="flex items-baseline gap-3 mt-4 relative z-10">
             <p className="text-4xl font-serif tracking-tight">{dashboardStats.activeOrders}</p>
           </div>
         </div>
 
-        {/* Clothes Circulated - warm cream */}
-        <div className="bg-[#EAE5DB] text-[#2D2D2A] rounded-3xl p-7 flex flex-col justify-between min-h-[160px]">
-          <div>
-            <Shirt className="w-5 h-5 mb-3 text-[#2D2D2A]/80" />
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5C5C58] mb-1">Clothes Circulated</p>
+        {/* New Users - warm cream */}
+        <div className="bg-[#EAE5DB] text-[#2D2D2A] rounded-3xl p-7 flex flex-col justify-between min-h-[160px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
+          <div className="flex justify-between items-start">
+            <div>
+              <Users className="w-5 h-5 mb-3 text-[#2D2D2A]/80" />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5C5C58] mb-1">New Users</p>
+            </div>
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
+              (trends.users || 0) >= 0 ? 'bg-[#4A533D]/10 text-[#4A533D] border-[#4A533D]/10' : 'bg-red-500/10 text-red-700 border-red-500/10'
+            }`}>
+              {(trends.users || 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {(trends.users || 0) > 0 ? '+' : ''}{(trends.users || 0).toFixed(1)}%
+            </div>
           </div>
           <div className="flex items-baseline gap-2 mt-4">
-            <p className="text-4xl font-serif tracking-tight">{ecoStats.items}</p>
-            <span className="text-xs font-semibold text-[#8B8B88]">Items this period</span>
+            <p className="text-4xl font-serif tracking-tight">{dashboardStats.newUsers}</p>
+            <span className="text-xs font-semibold text-[#8B8B88]">Signups</span>
           </div>
         </div>
       </div>
@@ -239,111 +340,136 @@ export default function AdminDashboard() {
         {/* Circulation Trends Chart */}
         <div className="col-span-2 bg-transparent rounded-3xl p-7 border border-[#EAE5DB]">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-sm font-serif text-[#5C5C58]">Circulation Trends</h2>
+            <h2 className="text-sm font-serif text-[#5C5C58]">Revenue Trends</h2>
             <div className="flex items-center gap-4 text-xs font-semibold text-[#2D2D2A]">
               <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#4A533D] inline-block"></span> Revenue</span>
             </div>
           </div>
 
           {/* Chart */}
-          <div className="h-52 w-full mt-4">
+          <div className="h-64 w-full mt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DB" />
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4A533D" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#4A533D" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE5DB" opacity={0.5} />
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} tickFormatter={(value) => `THB ${value}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#8B8B88', fontWeight: 500 }} tickFormatter={(value) => `THB ${value.toLocaleString()}`} />
                 <Tooltip 
-                  cursor={{ fill: '#F5F2ED' }}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #EAE5DB', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', fontSize: '13px', padding: '10px 14px' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#2D2D2A', marginBottom: '4px' }}
-                  formatter={(value, name) => [name === 'revenue' ? `THB ${value}` : value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                  cursor={{ stroke: '#4A533D', strokeWidth: 1, strokeDasharray: '3 3', fill: 'transparent' }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white/90 backdrop-blur-md border border-[#EAE5DB] p-4 rounded-xl shadow-xl">
+                          <p className="font-serif text-[#2D2D2A] font-bold text-sm mb-3 border-b border-[#EAE5DB] pb-2">{label}</p>
+                          <p className="text-[#4A533D] font-bold text-sm mb-1 flex items-center justify-between gap-4">
+                            <span>Revenue:</span> 
+                            <span>THB {payload[0].value.toLocaleString()}</span>
+                          </p>
+                          <p className="text-[#8B8B88] font-semibold text-xs flex items-center justify-between gap-4">
+                            <span>Items Circulated:</span> 
+                            <span className="text-[#2D2D2A]">{payload[0].payload.items}</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
-                <Bar dataKey="revenue" fill="#4A533D" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
+                <Area type="monotone" dataKey="revenue" stroke="#4A533D" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Promotion Usage */}
+        {/* Recent Orders (Live Orders) */}
         <div className="bg-white rounded-3xl p-7 border border-[#EAE5DB] flex flex-col">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-sm font-serif text-[#5C5C58]">Promotion Usage</h2>
+            <h2 className="text-sm font-serif text-[#5C5C58]">Recent Orders</h2>
           </div>
-          <div className="flex-1 space-y-6">
-            {promotions.length > 0 ? (
-              [...promotions].sort((a, b) => b.used - a.used).slice(0, 3).map((promo, idx) => {
-                const isWarning = promo.status === 'Expired' || (promo.usageLimit && promo.used >= promo.usageLimit);
+          <div className="flex-1 space-y-5">
+            {orders.length > 0 ? (
+              [...orders].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 4).map((order, idx) => {
+                const getStatusColor = (status) => {
+                  switch(status) {
+                    case 'Pending': return 'bg-[#C57B57] text-white';
+                    case 'Processing': return 'bg-blue-600 text-white';
+                    case 'Shipped': return 'bg-[#3A4A2D] text-white';
+                    case 'Delivered': return 'bg-emerald-600 text-white';
+                    case 'Cancelled': return 'bg-red-500 text-white';
+                    default: return 'bg-gray-100 text-gray-700';
+                  }
+                };
                 return (
-                  <div key={promo.id || idx} className="flex gap-4 items-start">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isWarning ? 'bg-[#FADCC7]' : 'bg-[#E3E7D3]'}`}>
-                      <Ticket className={`w-4 h-4 ${isWarning ? 'text-[#C57B57]' : 'text-[#4A533D]'}`} />
-                    </div>
+                  <div key={order.id || idx} className="flex justify-between items-center pb-4 border-b border-[#EAE5DB]/50 last:border-0 last:pb-0">
                     <div>
-                      <p className="text-xs font-semibold text-[#2D2D2A]">Code: {promo.code}</p>
-                      <p className="text-[10px] text-[#5C5C58] mt-1 leading-tight">
-                        Used {promo.used} times {promo.usageLimit ? `/ ${promo.usageLimit}` : ''}
-                        {promo.status === 'Expired' && ' (Expired)'}
-                      </p>
+                      <p className="text-xs font-bold text-[#2D2D2A] mb-1">Order #{order.id}</p>
+                      <p className="text-[10px] text-[#8B8B88]">{order.customer?.name || 'Customer'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-[#4A533D] mb-1">THB {order.total?.toLocaleString()}</p>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="text-xs text-[#8B8B88] text-center mt-10">No promotions data available.</div>
+              <div className="text-xs text-[#8B8B88] text-center mt-10">No recent orders.</div>
             )}
           </div>
-          <button onClick={() => router.push('/admin/promotions')} className="mt-8 text-[11px] font-semibold text-[#5F6B4E] underline underline-offset-4 text-left hover:text-[#4A533D] transition-colors">
-            Manage Promotions
+          <button onClick={() => router.push('/admin/orders')} className="mt-8 text-[11px] font-semibold text-[#5F6B4E] underline underline-offset-4 text-left hover:text-[#4A533D] transition-colors">
+            View All Orders
           </button>
         </div>
       </div>
 
-      {/* Eco Impact Strip */}
-      <div className="bg-[#4A533D] rounded-3xl p-7 text-white border border-[#3D4532]">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h2 className="text-sm font-serif text-[#E3E7D3]">Eco-Impact Summary</h2>
-            <p className="text-white/60 text-[11px] mt-1 font-sans">Calculated from all Delivered orders</p>
+      {/* Eco Impact Strip - Clean Premium Redesign */}
+      <div className="bg-[#4A533D] rounded-3xl p-8 md:p-10 text-white shadow-xl mt-8 border border-[#3D4532] relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full border border-white/10 opacity-50"></div>
+        <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full border border-white/10 opacity-50"></div>
+
+        <div className="flex items-center gap-4 mb-8 relative z-10">
+          <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/10">
+            <Leaf className="w-6 h-6 text-[#93D5C5]" />
           </div>
+          <h2 className="text-2xl font-serif text-[#E3E7D3] tracking-wide">
+            Circulating <span className="text-white font-bold">{ecoStats.items}</span> items this {getPeriodText()} has saved:
+          </h2>
         </div>
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-[#3D4532]/50 border border-[#5F6B4E]/30 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[#5F6B4E]/50 flex items-center justify-center">
-                <Droplets className="w-4 h-4 text-[#A8C7FA]" />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#E3E7D3]">Water Saved</p>
-            </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+          {/* Water Card */}
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/10 flex flex-col justify-between min-h-[140px] hover:bg-white/10 transition-colors">
             <div>
-              <p className="text-3xl font-serif">{ecoStats.water}</p>
-              <p className="text-[10px] text-white/50 mt-1 uppercase tracking-wide">Liters</p>
+              <Droplets className="w-5 h-5 mb-3 text-[#A8C7FA]" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Water Saved (Liters)</p>
             </div>
+            <p className="text-4xl font-serif tracking-tight">{ecoStats.water}</p>
           </div>
           
-          <div className="bg-[#3D4532]/50 border border-[#5F6B4E]/30 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[#5F6B4E]/50 flex items-center justify-center">
-                <Wind className="w-4 h-4 text-[#93D5C5]" />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#E3E7D3]">CO2 Reduced</p>
-            </div>
+          {/* CO2 Card */}
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/10 flex flex-col justify-between min-h-[140px] hover:bg-white/10 transition-colors">
             <div>
-              <p className="text-3xl font-serif">{ecoStats.co2}</p>
-              <p className="text-[10px] text-white/50 mt-1 uppercase tracking-wide">Kilograms</p>
+              <Wind className="w-5 h-5 mb-3 text-[#93D5C5]" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">CO2 Avoided (Kg)</p>
             </div>
+            <p className="text-4xl font-serif tracking-tight">{ecoStats.co2}</p>
           </div>
           
-          <div className="bg-[#3D4532]/50 border border-[#5F6B4E]/30 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-[#5F6B4E]/50 flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-[#FDE293]" />
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#E3E7D3]">Waste Diverted</p>
-            </div>
+          {/* Waste Card */}
+          <div className="bg-white/5 rounded-2xl p-6 border border-white/10 flex flex-col justify-between min-h-[140px] hover:bg-white/10 transition-colors">
             <div>
-              <p className="text-3xl font-serif">{ecoStats.waste}</p>
-              <p className="text-[10px] text-white/50 mt-1 uppercase tracking-wide">Kilograms</p>
+              <Trash2 className="w-5 h-5 mb-3 text-[#FDE293]" />
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Waste Prevented (Kg)</p>
             </div>
+            <p className="text-4xl font-serif tracking-tight">{ecoStats.waste}</p>
           </div>
         </div>
       </div>

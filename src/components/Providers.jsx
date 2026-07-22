@@ -6,7 +6,10 @@ import { UserProvider } from '../context/UserContext';
 import { CartProvider } from '../context/CartContext';
 import { AuthProvider } from '../context/AuthContext';
 import { FavoritesProvider } from '../context/FavoritesContext';
+import { SettingsProvider } from '../context/SettingsContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ToastProvider } from './ui/ToastProvider';
+import { SupportProvider } from '../context/SupportContext';
 
 export default function Providers({ children }) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -24,18 +27,24 @@ export default function Providers({ children }) {
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
-      <AuthProvider>
-        <FavoritesProvider>
-          <CartProvider>
-            <UserProvider>
-              <Suspense fallback={null}>
-                <ReferralTracker />
-              </Suspense>
-              {children}
-            </UserProvider>
-          </CartProvider>
-        </FavoritesProvider>
-      </AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              <UserProvider>
+                <SupportProvider>
+                  <ToastProvider>
+                    <Suspense fallback={null}>
+                      <ReferralTracker />
+                    </Suspense>
+                    {children}
+                  </ToastProvider>
+                </SupportProvider>
+              </UserProvider>
+            </CartProvider>
+          </FavoritesProvider>
+        </AuthProvider>
+      </SettingsProvider>
     </GoogleOAuthProvider>
   );
 }

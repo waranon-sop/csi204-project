@@ -1,0 +1,12 @@
+{
+  "storeSettings": {
+    "storeName": "Re-Wear Store",
+    "contactEmail": "support@rewear.com",
+    "currency": "USD ($)",
+    "ecoWater": 2700,
+    "ecoCO2": 6.5,
+    "ecoWaste": 0.2,
+    "shippingFlatRate": 5,
+    "freeShippingThreshold": 50
+  }
+}

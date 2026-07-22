@@ -6,41 +6,9 @@ import Image from 'next/image';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAuth } from '../../../context/AuthContext';
 import { addAdminNotification } from '../../../utils/notifications';
+import { useStaffGuard } from '../../../hooks/useRoleGuard';
 
-const mockOrders = [
-  {
-    id: '#RW-92031', customer: 'Sarah Jenkins', email: 'sarah.j@example.com', phone: '+66 81 234 5678',
-    address: '123 Green Avenue, Phaya Thai, Bangkok, 10400, Thailand',
-    date: 'Oct 24, 2023', total: 185, shipping: 15, status: 'Pending', trackingNumber: '',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-    slipImage: null,
-    items: [{ name: 'Vintage Heritage Trench', detail: 'Size: M · Camel', price: 170, image: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&q=80&w=100' }],
-  },
-  {
-    id: '#RW-92032', customer: 'Michael Chen', email: 'm.chen@example.com', phone: '+66 86 543 2100',
-    address: '45 Sukhumvit Soi 11, Watthana, Bangkok, 10110, Thailand',
-    date: 'Oct 23, 2023', total: 72, shipping: 15, status: 'Shipped', trackingNumber: 'TH789456123TH',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100',
-    slipImage: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300',
-    items: [{ name: 'Raw Linen Resort Shirt', detail: 'Size: L · Forest', price: 57, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=100' }],
-  },
-  {
-    id: '#RW-92033', customer: 'Emma Watson', email: 'emma.w@example.com', phone: '+66 90 123 7788',
-    address: '88 Silom Road, Bang Rak, Bangkok, 10500, Thailand',
-    date: 'Oct 23, 2023', total: 128, shipping: 15, status: 'Pending', trackingNumber: '',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100',
-    slipImage: null,
-    items: [{ name: 'Upcycled Selvedge Denim', detail: 'Size: 32 · Indigo', price: 113, image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&q=80&w=100' }],
-  },
-  {
-    id: '#RW-92034', customer: 'David Miller', email: 'david.m@example.com', phone: '+66 62 987 4455',
-    address: '22/3 Ratchadaphisek Road, Din Daeng, Bangkok, 10400, Thailand',
-    date: 'Oct 22, 2023', total: 45, shipping: 15, status: 'Shipped', trackingNumber: 'TH112233445TH',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
-    slipImage: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=300',
-    items: [{ name: 'Terracotta Clay Set', detail: 'Handmade · Earth', price: 30, image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=100' }],
-  },
-];
+
 
 const STATUS_CONFIG = {
   Pending:    { color: 'bg-[#C57B57] text-white',          icon: Clock },
@@ -51,6 +19,7 @@ const STATUS_CONFIG = {
 };
 
 export default function AdminOrders() {
+  const { isAllowed } = useStaffGuard();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -319,23 +288,9 @@ export default function AdminOrders() {
                     <td className="px-6 py-4 text-earth-500 font-medium text-sm whitespace-nowrap">{order.date}</td>
                     <td className="px-6 py-4 font-bold text-[#3A4A2D] text-[15px] whitespace-nowrap">THB {order.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <select 
-                        value={order.status}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          handleSaveOrder({...order, status: e.target.value});
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className={`appearance-none cursor-pointer pl-3 pr-8 py-1 rounded-full text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-earth-200/50 ${STATUS_CONFIG[order.status]?.color}`}
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 0.5rem center',
-                          backgroundSize: '1em'
-                        }}
-                      >
-                        {Object.keys(STATUS_CONFIG).map(s => <option key={s} value={s} className="bg-white text-earth-800">{s}</option>)}
-                      </select>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${STATUS_CONFIG[order.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                        {order.status}
+                      </span>
                       {order.trackingNumber && (
                         <p className="text-[10px] text-earth-500 font-medium mt-1.5 flex items-center gap-1">
                           <Truck className="w-3 h-3"/> {order.trackingNumber}

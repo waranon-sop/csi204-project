@@ -60,7 +60,7 @@ export default function Footer() {
               <li><Link href="/garment-care" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Garment Care</Link></li>
               <li><Link href="/payment-methods" onClick={handleProtectedLink} className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Payment Options</Link></li>
               <li><Link href="/help" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Shipping & Returns</Link></li>
-              <li><Link href="/help#faq-section" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">FAQ & Contact Us</Link></li>
+              <li><Link href="/support" className="text-[13px] text-[#8B8B88] hover:text-white transition-colors">Support & Contact Us</Link></li>
             </ul>
           </div>
 

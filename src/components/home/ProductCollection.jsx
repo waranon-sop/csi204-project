@@ -156,7 +156,7 @@ export default function ProductCollection() {
 
   const filteredProducts = useMemo(() => {
     const visibleProducts = products.filter(
-      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived",
+      (p) => p.status !== "Sold Out" && p.status !== "Hidden" && p.status !== "Archived" && p.status !== "Draft",
     );
     if (activeFilter === "All Pieces") return visibleProducts;
     return visibleProducts.filter((p) => p.category === activeFilter);

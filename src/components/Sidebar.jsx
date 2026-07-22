@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -12,6 +12,12 @@ export default function Sidebar() {
   const { currentUser, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'staff')) {
+      router.push('/admin');
+    }
+  }, [currentUser, router]);
 
   const user = currentUser || { name: 'Guest', role: 'customer', rank: 'Seed' };
 

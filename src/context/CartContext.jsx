@@ -12,15 +12,18 @@ export function CartProvider({ children }) {
 
   // Load cart from localStorage on mount — cross-check each item is still Reserved
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-    if (savedCart.length > 0) {
-      const currentProducts = getProducts();
-      const validItems = savedCart.filter(item => {
-        const prod = currentProducts.find(p => p.id === item.id);
-        return prod && prod.status === 'Reserved';
-      });
-      setCartItems(validItems);
-    }
+    const initCart = async () => {
+      const savedCart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+      if (savedCart.length > 0) {
+        const currentProducts = await getProducts();
+        const validItems = savedCart.filter(item => {
+          const prod = currentProducts.find(p => p.id === item.id);
+          return prod && prod.status === 'Reserved';
+        });
+        setCartItems(validItems);
+      }
+    };
+    initCart();
   }, []);
 
   // Sync cart to localStorage whenever it changes
@@ -30,9 +33,10 @@ export function CartProvider({ children }) {
 
   // Soft lock release check
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (releaseExpiredReservations()) {
-        const currentProducts = getProducts();
+    const interval = setInterval(async () => {
+      const released = await releaseExpiredReservations();
+      if (released) {
+        const currentProducts = await getProducts();
         setCartItems((prev) => prev.filter(item => {
           const prod = currentProducts.find(p => p.id === item.id);
           return prod && prod.status === 'Reserved';

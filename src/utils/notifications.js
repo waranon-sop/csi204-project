@@ -4,7 +4,7 @@ export const addAdminNotification = async (user, action, target, type) => {
       user: user || 'System',
       action: action,
       target: target,
-      time: 'Just now',
+      time: new Date().toISOString(),
       type: type || 'system',
       read: false
     };

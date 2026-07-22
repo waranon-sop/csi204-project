@@ -1,0 +1,70 @@
+{
+  "users": [
+    {
+      "id": "U-001",
+      "name": "ยิ่งยศ ผู้ดูแลระบบ",
+      "email": "admin@rewear.com",
+      "password": "admin",
+      "role": "admin",
+      "status": "active",
+      "joinDate": "2024-01-01"
+    },
+    {
+      "id": "U-002",
+      "name": "สมหญิง พนักงาน",
+      "email": "staff@rewear.com",
+      "password": "staff",
+      "role": "staff",
+      "status": "active",
+      "joinDate": "2024-01-02"
+    },
+    {
+      "id": "U-003",
+      "name": "Hum",
+      "email": "hum@rewear.com",
+      "password": "waranon777",
+      "role": "staff",
+      "joinDate": "21 Jul 2026",
+      "orders": 0,
+      "avatar": null
+    },
+    {
+      "id": "U-004",
+      "name": "NATTHAPONG HANCHAIPA",
+      "email": "natthapong.han@spumail.net",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": "Harvest",
+      "total_spending": 15411111256,
+      "points": 15411111256,
+      "hasEcoShipping": true,
+      "hasInvited": true
+    },
+    {
+      "id": "U-005",
+      "name": "18ณัฐพงศ์ หาญชัยภา",
+      "email": "47044@mws.ac.th",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": "Seed"
+    },
+    {
+      "id": "U-006",
+      "name": "Owojen",
+      "email": "lamnamazeda@gmail.com",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": "U-004",
+      "rank": "Harvest",
+      "total_spending": 15411111256,
+      "points": 15411111256,
+      "hasEcoShipping": true,
+      "hasMadeFirstPurchase": true
+    }
+  ]
+}

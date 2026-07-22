@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search as SearchIcon } from 'lucide-react';
-import { mockProducts } from '../../data/products';
+import { getProducts } from '../../utils/localStorageHelper';
 import QuickViewModal from '../../components/home/QuickViewModal';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -22,8 +22,20 @@ function SearchContent() {
   const { addToCart } = useCart();
   const { currentUser } = useAuth();
 
+  const [products, setProducts] = React.useState([]);
+
+  React.useEffect(() => {
+    getProducts().then(setProducts);
+  }, []);
+
   const searchResults = useMemo(() => {
-    let results = mockProducts;
+    // Filter out items that shouldn't be visible to customers
+    let results = products.filter(p => 
+      p.status !== "Sold Out" && 
+      p.status !== "Hidden" && 
+      p.status !== "Archived" && 
+      p.status !== "Draft"
+    );
     
     if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();

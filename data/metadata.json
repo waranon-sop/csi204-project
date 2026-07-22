@@ -1,0 +1,23 @@
+{
+  "categories": [
+    "Skirts",
+    "Dresses",
+    "T-shirts & Tops",
+    "Pants & Jeans",
+    "Outerwear",
+    "Necklaces",
+    "Earrings",
+    "Bracelets",
+    "Rings",
+    "Handbags"
+  ],
+  "sizes": [
+    "XS",
+    "S",
+    "M",
+    "L",
+    "XL",
+    "XXL",
+    "OS"
+  ]
+}
