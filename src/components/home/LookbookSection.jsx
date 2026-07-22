@@ -14,25 +14,37 @@ export default function LookbookSection({ products }) {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const loaded = getLookbooks();
-    setRawLookbooks(loaded);
-    const initialSelections = {};
-    loaded.forEach(lb => {
-      initialSelections[lb.id] = lb.items.map(i => i.id);
-    });
-    setActiveLookSelections(initialSelections);
-    
-    const handleLookbookUpdate = () => {
-      const updated = getLookbooks();
-      setRawLookbooks(updated);
-      const newSelections = {};
-      updated.forEach(lb => {
-        newSelections[lb.id] = lb.items.map(i => i.id);
-      });
-      setActiveLookSelections(newSelections);
+    let isMounted = true;
+    const fetchLookbooks = async () => {
+      const loaded = await getLookbooks();
+      if (isMounted && loaded) {
+        setRawLookbooks(loaded);
+        const initialSelections = {};
+        loaded.forEach(lb => {
+          initialSelections[lb.id] = lb.items.map(i => i.id);
+        });
+        setActiveLookSelections(initialSelections);
+      }
     };
+    fetchLookbooks();
+
+    const handleLookbookUpdate = async () => {
+      const updated = await getLookbooks();
+      if (isMounted && updated) {
+        setRawLookbooks(updated);
+        const newSelections = {};
+        updated.forEach(lb => {
+          newSelections[lb.id] = lb.items.map(i => i.id);
+        });
+        setActiveLookSelections(newSelections);
+      }
+    };
+    
     window.addEventListener('lookbooksUpdated', handleLookbookUpdate);
-    return () => window.removeEventListener('lookbooksUpdated', handleLookbookUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('lookbooksUpdated', handleLookbookUpdate);
+    };
   }, []);
 
   const lookbooks = useMemo(() => {

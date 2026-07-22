@@ -54,7 +54,7 @@ export default function ProductDetail() {
           <span>›</span>
           <span>{categoryStr}</span>
           <span>›</span>
-          <span className="text-[#2D2D2A]">{product.title}</span>
+          <span className="text-[#2D2D2A]">{product.title || product.name}</span>
         </nav>
       </div>
 
@@ -65,7 +65,7 @@ export default function ProductDetail() {
         <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 h-[600px] lg:h-[700px]">
           {/* Thumbnails */}
           <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-visible shrink-0">
-            {[product.hoverImage, product.image].map((imgUrl, idx) => (
+            {[product.hoverImage, product.image].filter(url => url && url.trim() !== '').map((imgUrl, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveImage(imgUrl)}
@@ -80,7 +80,7 @@ export default function ProductDetail() {
 
           {/* Main Image */}
           <div className="relative flex-grow bg-[#EAE5DB]/30 rounded-[2rem] overflow-hidden">
-            <Image src={activeImage} alt={product.title} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover mix-blend-multiply" />
+            <Image src={activeImage || '/images/products/rw_item_01.jpg'} alt={product.title || product.name || 'Product'} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover mix-blend-multiply" />
             <div className="absolute top-6 left-6 flex flex-col gap-2">
               <span className="text-[9px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full bg-[#5F6B4E] text-[#FAF8F5] shadow-sm w-fit">
                 ONE OF ONE
@@ -96,7 +96,7 @@ export default function ProductDetail() {
         <div className="lg:col-span-5 flex flex-col justify-center space-y-8">
           <div className="space-y-3">
             <h1 className="font-serif text-4xl lg:text-5xl font-semibold leading-tight text-[#4A543C]">
-              {product.title}
+              {product.title || product.name}
             </h1>
             <p className="font-serif text-2xl font-bold text-[#8B6B57]">
               THB {product.price}.00
@@ -107,7 +107,7 @@ export default function ProductDetail() {
           <div className="flex items-center gap-4 border-b border-[#F2E9DC] pb-6">
             <div className="flex items-center gap-2 bg-[#F2E9DC]/60 px-4 py-2 rounded-full border border-[#E2D5C4]/60">
               <ShieldCheck className="h-4 w-4 text-[#C57B57]" />
-              <span className="text-[11px] font-bold text-[#8B6B57]">Condition: {product.condition}</span>
+              <span className="text-[11px] font-bold text-[#8B6B57]">Condition: {product.condition || 'Good'}</span>
             </div>
             <span className="text-[10px] text-[#8B8B88] font-light">
               Circa 1990s
@@ -120,7 +120,7 @@ export default function ProductDetail() {
               STORY & DETAILS
             </h3>
             <p className="text-xs text-[#5C5C5A] leading-relaxed font-light">
-              {product.description}
+              {product.description || 'A timeless vintage piece, expertly sourced and ready for its next chapter.'}
             </p>
           </div>
 
@@ -136,7 +136,7 @@ export default function ProductDetail() {
             </div>
             <div className="flex items-center gap-2.5">
               <span className="text-xs font-bold text-[#8B8B88] w-4 text-center">T</span>
-              <span>Size: {product.size}</span>
+              <span>Size: {product.size || 'OS'}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <MapPin className="h-4 w-4 shrink-0 text-[#8B8B88]" />
@@ -153,7 +153,7 @@ export default function ProductDetail() {
               <h3 className="text-[10px] font-bold tracking-[0.2em] text-[#2D2D2A] uppercase">Measurements (Inches)</h3>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              {product.measurements.split(',').map((m, i) => {
+              {(product.measurements || 'Chest: 20, Length: 25').split(',').map((m, i) => {
                 const [label, value] = m.trim().split(':');
                 return (
                   <div key={i} className="flex flex-col items-center bg-white rounded-xl p-3 border border-[#F2E9DC] gap-1">
@@ -244,14 +244,14 @@ export default function ProductDetail() {
             <Link href={`/product/${p.id}`} key={p.id} className="group cursor-pointer">
               <div className="relative aspect-square bg-[#EAE5DB]/40 rounded-3xl overflow-hidden mb-4">
                 <Image 
-                  src={p.image} 
-                  alt={p.title} 
+                  src={p.image || '/images/products/rw_item_01.jpg'} 
+                  alt={p.title || p.name || 'Product'} 
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
                   className="object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-700 ease-in-out" 
                 />
               </div>
-              <h3 className="font-serif text-sm font-semibold text-[#4A543C] group-hover:text-[#5F6B4E] transition-colors line-clamp-1">{p.title}</h3>
+              <h3 className="font-serif text-sm font-semibold text-[#4A543C] group-hover:text-[#5F6B4E] transition-colors line-clamp-1">{p.title || p.name}</h3>
               <p className="font-serif text-sm font-bold text-[#8B6B57] mt-1">THB {p.price}.00</p>
             </Link>
           ))}

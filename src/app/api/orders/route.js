@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
@@ -16,6 +17,14 @@ export async function POST(request) {
       newOrder.id = `#RW-${Math.floor(Math.random() * 90000) + 10000}`;
     }
     
+    if (!newOrder.status) {
+      newOrder.status = 'Pending';
+    }
+    
+    if (!newOrder.date) {
+      newOrder.date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    
     db.orders.unshift(newOrder);
     await writeDB('orders.json', db);
     
@@ -24,3 +33,4 @@ export async function POST(request) {
     return Response.json({ error: 'Failed to create order' }, { status: 500 });
   }
 }
+

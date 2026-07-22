@@ -114,72 +114,81 @@ export const getOrdersByUser = async (userId) => {
   }
 };
 
-export const getOrderById = (orderId) => {
+export const getOrderById = async (orderId) => {
   if (typeof window === 'undefined') return null;
-  const stored = localStorage.getItem(ORDERS_KEY);
-  if (!stored) return null;
-  const orders = JSON.parse(stored);
-  return orders.find(o => o.id === orderId) || null;
+  try {
+    const res = await fetch('/api/orders');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const orders = await res.json();
+    return orders.find(o => o.id === orderId) || null;
+  } catch (e) {
+    console.error("Failed to fetch order", e);
+    return null;
+  }
 };
 
-export const updateOrder = (orderId, updates) => {
+export const updateOrder = async (orderId, updates) => {
   if (typeof window === 'undefined') return;
-  const stored = localStorage.getItem(ORDERS_KEY);
-  if (!stored) return;
-  const orders = JSON.parse(stored);
-  const updatedOrders = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(updatedOrders));
-};
-
-export const updateUserById = (userId, updates) => {
-  if (typeof window === 'undefined') return;
-  const storedUsers = localStorage.getItem('users');
-  if (!storedUsers) return;
-  const users = JSON.parse(storedUsers);
-  const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
-  localStorage.setItem('users', JSON.stringify(updatedUsers));
-  
-  // Sync to backend DB
-  const updatedUser = updatedUsers.find(u => u.id === userId);
-  if (updatedUser) {
-    fetch(`/api/users/${userId}`, {
+  try {
+    await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedUser)
-    }).catch(err => console.error('Failed to sync updated user by admin', err));
+      body: JSON.stringify(updates)
+    });
+  } catch (e) {
+    console.error("Failed to update order", e);
   }
 };
 
-const LOOKBOOKS_KEY = 'lookbooks';
+export const updateUserById = async (userId, updates) => {
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch(`/api/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+  } catch (err) {
+    console.error('Failed to sync updated user', err);
+  }
+};
 
-export const getLookbooks = () => {
+export const getLookbooks = async () => {
   if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(LOOKBOOKS_KEY);
-  if (stored) {
-    return JSON.parse(stored);
+  try {
+    const res = await fetch('/api/lookbooks');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error("Failed to fetch lookbooks", e);
+    return [];
   }
-  return [];
 };
 
-export const saveLookbook = (lookbook) => {
+export const saveLookbook = async (lookbook) => {
   if (typeof window === 'undefined') return;
-  const lookbooks = getLookbooks();
-  
-  if (lookbook.id && lookbooks.some(l => l.id === lookbook.id)) {
-    const updated = lookbooks.map(l => l.id === lookbook.id ? lookbook : l);
-    localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(updated));
-  } else {
-    lookbook.id = `look-${Date.now()}`;
-    lookbooks.push(lookbook);
-    localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(lookbooks));
+  try {
+    const isUpdate = Boolean(lookbook.id);
+    const url = isUpdate ? `/api/lookbooks/${lookbook.id}` : '/api/lookbooks';
+    const method = isUpdate ? 'PUT' : 'POST';
+    
+    await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lookbook)
+    });
+    window.dispatchEvent(new Event('lookbooksUpdated'));
+  } catch (e) {
+    console.error("Failed to save lookbook", e);
   }
-  window.dispatchEvent(new Event('lookbooksUpdated'));
 };
 
-export const deleteLookbook = (id) => {
+export const deleteLookbook = async (id) => {
   if (typeof window === 'undefined') return;
-  const lookbooks = getLookbooks();
-  const updated = lookbooks.filter(l => l.id !== id);
-  localStorage.setItem(LOOKBOOKS_KEY, JSON.stringify(updated));
-  window.dispatchEvent(new Event('lookbooksUpdated'));
+  try {
+    await fetch(`/api/lookbooks/${id}`, { method: 'DELETE' });
+    window.dispatchEvent(new Event('lookbooksUpdated'));
+  } catch (e) {
+    console.error("Failed to delete lookbook", e);
+  }
 };

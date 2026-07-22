@@ -40,9 +40,9 @@ function SearchContent() {
     if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();
       const matched = results.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.brandCategory.toLowerCase().includes(q)
+        (p.title || p.name || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
+        (p.brandCategory || p.brand || '').toLowerCase().includes(q)
       );
       // fallback to all if no match so the user can see mock results
       if (matched.length > 0) results = matched;
@@ -191,8 +191,8 @@ function SearchContent() {
             >
               <Link href={`/product/${product.id}`} className="block relative overflow-hidden h-64 mb-4 bg-white flex items-center justify-center">
                 <Image
-                  src={product.image}
-                  alt={product.title}
+                  src={product.image || '/images/products/rw_item_01.jpg'}
+                  alt={product.title || product.name || 'Product'}
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
                   className="object-contain p-4 mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
@@ -202,7 +202,7 @@ function SearchContent() {
               <div className="text-[10px] text-[#8B8B88] mb-1">Victoria's Secret</div>
               <Link href={`/product/${product.id}`} className="group-hover:opacity-75 transition-opacity">
                 <h3 className="text-[12px] text-[#2D2D2A] leading-relaxed mb-2 line-clamp-2">
-                  {product.title}
+                  {product.title || product.name}
                 </h3>
               </Link>
               <div className="text-[12px] text-[#5C5C5A]">

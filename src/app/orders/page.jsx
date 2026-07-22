@@ -33,14 +33,20 @@ export default function OrderHistory() {
 
   useEffect(() => {
     if (currentUser?.id) {
-      setOrders(getOrdersByUser(currentUser.id));
+      const fetchOrders = async () => {
+        const data = await getOrdersByUser(currentUser.id);
+        setOrders(data);
+      };
+      fetchOrders();
     }
   }, [currentUser]);
 
-  const markDelivered = (orderId) => {
-    updateOrder(orderId, { status: 'Delivered' });
-    setOrders(getOrdersByUser(currentUser.id));
+  const handleConfirmReceipt = async (orderId) => {
+    await updateOrder(orderId, { status: 'Delivered' });
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Delivered' } : o));
+    // Simulate eco points gain (in a real app, backend handles this)
   };
+
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -124,7 +130,7 @@ export default function OrderHistory() {
                           </div>
                         )}
                         {['Delivered', 'จัดส่งสำเร็จ'].includes(order.status) && !order.hasReviewed && (
-                          <button onClick={() => router.push(`/review/${order.id}`)} className="flex items-center gap-1.5 bg-sage-50 hover:bg-sage-100 text-sage-700 text-xs font-medium px-4 py-2 rounded-full border border-sage-200 transition-colors">
+                          <button onClick={() => router.push(`/review/${encodeURIComponent(order.id)}`)} className="flex items-center gap-1.5 bg-sage-50 hover:bg-sage-100 text-sage-700 text-xs font-medium px-4 py-2 rounded-full border border-sage-200 transition-colors">
                             <Star className="h-3.5 w-3.5" />
                             Write Review
                           </button>
@@ -136,7 +142,7 @@ export default function OrderHistory() {
                            </div>
                         )}
                         {!['Delivered', 'จัดส่งสำเร็จ'].includes(order.status) && (
-                          <button onClick={() => markDelivered(order.id)} className="flex items-center gap-1.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full transition-colors border border-yellow-300">
+                          <button onClick={() => handleConfirmReceipt(order.id)} className="flex items-center gap-1.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full transition-colors border border-yellow-300">
                             <Zap className="h-3.5 w-3.5" />
                             Dev: Mark Delivered
                           </button>

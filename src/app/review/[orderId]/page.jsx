@@ -26,9 +26,13 @@ export default function ReviewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
-    if (orderId) {
-      const found = getOrderById(orderId);
+    const fetchOrder = async () => {
+      const decodedId = decodeURIComponent(orderId);
+      const found = await getOrderById(decodedId);
       if (found) setOrder(found);
+    }
+    if (orderId) {
+      fetchOrder();
     }
   }, [orderId]);
 
@@ -46,13 +50,14 @@ export default function ReviewPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (rating === 0) return;
     setIsSubmitting(true);
 
     // Save review data to localStorage (or update order)
-    updateOrder(orderId, { hasReviewed: true });
+    const decodedId = decodeURIComponent(orderId);
+    await updateOrder(decodedId, { hasReviewed: true });
     
     if (updateUser) {
       const updates = { hasReviewed: true };

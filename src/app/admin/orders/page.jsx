@@ -50,7 +50,7 @@ export default function AdminOrders() {
 
   const handleSaveOrder = async (updatedOrder) => {
     try {
-      await fetch(`/api/orders/${updatedOrder.id}`, {
+      await fetch(`/api/orders/${encodeURIComponent(updatedOrder.id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedOrder)

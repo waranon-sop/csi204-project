@@ -111,16 +111,20 @@ export default function CheckoutPage() {
       slipImage: null
     };
 
-    createOrder(orderData);
-    processOrderInventory(cartItems);
+    await createOrder(orderData);
+    await processOrderInventory(cartItems);
     
     // Increment promo usage if applied
     if (appliedPromo) {
-      const promos = JSON.parse(localStorage.getItem('promotions')) || [];
-      const updatedPromos = promos.map(p => 
-        p.id === appliedPromo.id ? { ...p, used: p.used + 1 } : p
-      );
-      localStorage.setItem('promotions', JSON.stringify(updatedPromos));
+      try {
+        await fetch(`/api/promotions/${appliedPromo.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ used: (appliedPromo.used || 0) + 1 })
+        });
+      } catch (err) {
+        console.error("Failed to update promo usage", err);
+      }
     }
     
     clearCart();
@@ -134,7 +138,7 @@ export default function CheckoutPage() {
       }
 
       if (currentUser.referredBy && !currentUser.hasMadeFirstPurchase) {
-        updateUserById(currentUser.referredBy, { hasInvited: true });
+        await updateUserById(currentUser.referredBy, { hasInvited: true });
         if (updateUser) updateUser({ hasMadeFirstPurchase: true });
       }
     }

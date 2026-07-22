@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { readDB, writeDB } from '../../../lib/db';
 
 export async function GET() {
@@ -22,3 +23,4 @@ export async function PUT(request) {
     return Response.json({ error: 'Failed to update metadata' }, { status: 500 });
   }
 }
+

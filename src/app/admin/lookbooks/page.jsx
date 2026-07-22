@@ -14,10 +14,15 @@ export default function AdminLookbooks() {
   const [searchQuery, setSearchQuery] = useState('');
   const { addToast } = useToast();
 
+  const fetchLookbooks = async () => {
+    const data = await getLookbooks();
+    setLookbooks(data);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLookbooks(getLookbooks());
+        await fetchLookbooks();
         const prodRes = await fetch('/api/products');
         const prodData = await prodRes.json();
         setProducts(prodData);
@@ -29,7 +34,7 @@ export default function AdminLookbooks() {
     };
     fetchData();
 
-    const handleLookbookUpdate = () => setLookbooks(getLookbooks());
+    const handleLookbookUpdate = () => fetchLookbooks();
     window.addEventListener('lookbooksUpdated', handleLookbookUpdate);
     
     const handleProductsUpdate = async () => {
@@ -49,7 +54,7 @@ export default function AdminLookbooks() {
     };
   }, []);
 
-  const handleSaveLookbook = () => {
+  const handleSaveLookbook = async () => {
     if (!editingLookbook.title?.trim() || !editingLookbook.subtitle?.trim()) {
       addToast('Please provide a title and subtitle', 'error');
       return;
