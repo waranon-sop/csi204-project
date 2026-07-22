@@ -105,7 +105,16 @@ export default function CartDrawer() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-semibold px-2 py-1 bg-[#F2E9DC] text-[#2D2D2A] rounded">Qty: 1</span>
-                        <span className="font-serif font-bold text-base text-[#8B6B57]">THB {item.price}</span>
+                        <div className="flex flex-col text-right">
+                          {item.salePrice > 0 ? (
+                            <>
+                              <span className="font-serif font-bold text-base text-red-600">THB {item.salePrice}</span>
+                              <span className="text-[10px] line-through text-[#8B8B88]">THB {item.price}</span>
+                            </>
+                          ) : (
+                            <span className="font-serif font-bold text-base text-[#8B6B57]">THB {item.price}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

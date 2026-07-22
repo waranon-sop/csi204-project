@@ -3,19 +3,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { updateProductStatus, releaseExpiredReservations, getProducts } from '../utils/localStorageHelper';
 import { useSettings } from './SettingsContext';
-
-const CART_KEY = 're_wear_cart';
+import { useAuth } from './AuthContext';
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { settings } = useSettings();
+  const { currentUser } = useAuth();
+
+  const userCartKey = currentUser ? `re_wear_cart_${currentUser.id}` : 're_wear_cart_guest';
 
   // Load cart from localStorage on mount — cross-check each item is still Reserved
   useEffect(() => {
     const initCart = async () => {
-      const savedCart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+      const savedCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
       if (savedCart.length > 0) {
         const currentProducts = await getProducts();
         const validItems = savedCart.filter(item => {
@@ -23,15 +25,17 @@ export function CartProvider({ children }) {
           return prod && prod.status === 'Reserved';
         });
         setCartItems(validItems);
+      } else {
+        setCartItems([]);
       }
     };
     initCart();
-  }, []);
+  }, [userCartKey]);
 
   // Sync cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
-  }, [cartItems]);
+    localStorage.setItem(userCartKey, JSON.stringify(cartItems));
+  }, [cartItems, userCartKey]);
 
   // Soft lock release check
   useEffect(() => {
@@ -68,10 +72,10 @@ export function CartProvider({ children }) {
   const closeCart = () => setIsCartOpen(false);
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(userCartKey);
   };
 
-  const subTotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+  const subTotal = cartItems.reduce((sum, item) => sum + (item.salePrice > 0 ? item.salePrice : item.price), 0);
   const shipping = cartItems.length > 0 ? 55 : 0;
   const freeThreshold = settings?.freeShippingThreshold ?? 500;
   const shippingDiscount = subTotal >= freeThreshold ? shipping : 0;

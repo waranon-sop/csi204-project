@@ -17,7 +17,8 @@ export default function AdminProfile() {
     name: '',
     email: '',
     phone: '',
-    password: '',
+    newPassword: '',
+    confirmPassword: '',
     avatar: '',
   });
   
@@ -32,7 +33,8 @@ export default function AdminProfile() {
         name: currentUser.name || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        password: currentUser.password || '',
+        newPassword: '',
+        confirmPassword: '',
         avatar: currentUser.avatar || '',
       });
     }
@@ -60,10 +62,24 @@ export default function AdminProfile() {
   };
 
   const handleSave = async () => {
+    if (formData.newPassword !== formData.confirmPassword) {
+      addToast('Passwords do not match', 'error');
+      return;
+    }
+    
     setIsSaving(true);
     try {
       // API call and localStorage updates are handled by updateUser in AuthContext
-      updateUser(formData);
+      const dataToSave = { ...formData };
+      
+      if (dataToSave.newPassword) {
+        dataToSave.password = dataToSave.newPassword;
+      }
+      
+      delete dataToSave.newPassword;
+      delete dataToSave.confirmPassword;
+      
+      updateUser(dataToSave);
       
       setIsSuccess(true);
       addToast('Profile updated successfully!');
@@ -184,47 +200,54 @@ export default function AdminProfile() {
                   {!isAdmin && <p className="text-[10px] text-red-500 mt-1 font-medium">To change your email, please contact an Administrator.</p>}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-[#5C5C5A] uppercase tracking-widest flex items-center justify-between">
-                      <span>New Password</span>
-                      {!isAdmin && <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded">Admin Only</span>}
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        disabled={!isAdmin}
-                        placeholder={isAdmin ? "Enter new password" : "••••••••"}
-                        className={`w-full px-4 py-2.5 rounded-xl border border-[#EAE5DB] focus:outline-none focus:border-[#2D2D2A] text-sm text-[#2D2D2A] transition-all pr-10 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-[#FAF8F5] focus:bg-white'}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                <div className="pt-2">
+                  <h4 className="text-[13px] font-bold text-[#2D2D2A] mb-1">Change Password</h4>
+                  <p className="text-[11px] text-[#8B8B88] mb-4">Leave fields blank if you do not want to change your password.</p>
+                  <div className="grid grid-cols-1 gap-6 max-w-md">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-[#5C5C5A] uppercase tracking-widest flex items-center justify-between">
+                        <span>New Password</span>
+                        {!isAdmin && <span className="text-[9px] text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded">Admin Only</span>}
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          name="newPassword"
+                          value={formData.newPassword}
+                          onChange={handleChange}
+                          disabled={!isAdmin}
+                          placeholder={isAdmin ? "Enter new password" : "••••••••"}
+                          className={`w-full px-4 py-2.5 rounded-xl border border-[#EAE5DB] focus:outline-none focus:border-[#2D2D2A] text-sm text-[#2D2D2A] transition-all pr-10 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-[#FAF8F5] focus:bg-white'}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-[#5C5C5A] uppercase tracking-widest">Confirm Password</label>
-                    <div className="relative">
-                      <input 
-                        type={showConfirmPassword ? "text" : "password"} 
-                        placeholder="••••••••"
-                        disabled={!isAdmin}
-                        className={`w-full px-4 py-2.5 rounded-xl border border-[#EAE5DB] focus:outline-none focus:border-[#2D2D2A] text-sm text-[#2D2D2A] transition-all pr-10 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-[#FAF8F5] focus:bg-white'}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-[#5C5C5A] uppercase tracking-widest">Confirm Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showConfirmPassword ? "text" : "password"} 
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder={isAdmin ? "Confirm new password" : "••••••••"}
+                          disabled={!isAdmin}
+                          className={`w-full px-4 py-2.5 rounded-xl border border-[#EAE5DB] focus:outline-none focus:border-[#2D2D2A] text-sm text-[#2D2D2A] transition-all pr-10 ${!isAdmin ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-[#FAF8F5] focus:bg-white'}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

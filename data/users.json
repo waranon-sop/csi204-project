@@ -39,6 +39,16 @@
       "role": "customer",
       "referredBy": null,
       "rank": "Seed"
+    },
+    {
+      "id": "U-005",
+      "name": "Pipwe dawda",
+      "email": "waranon.sop@gmail.com",
+      "password": "Waranon_777",
+      "phone": "Waranon_777",
+      "role": "customer",
+      "referredBy": null,
+      "rank": "Seed"
     }
   ]
 }

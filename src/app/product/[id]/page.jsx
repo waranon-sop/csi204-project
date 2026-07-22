@@ -82,6 +82,11 @@ export default function ProductDetail() {
           <div className="relative flex-grow bg-[#EAE5DB]/30 rounded-[2rem] overflow-hidden">
             <Image src={activeImage || '/images/products/rw_item_01.jpg'} alt={product.title || product.name || 'Product'} fill sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover mix-blend-multiply" />
             <div className="absolute top-6 left-6 flex flex-col gap-2">
+              {product.salePrice > 0 && (
+                <span className="text-[9px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full bg-red-600 text-white shadow-sm w-fit">
+                  ON SALE {Math.round(((product.price - product.salePrice) / product.price) * 100)}% OFF
+                </span>
+              )}
               <span className="text-[9px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full bg-[#5F6B4E] text-[#FAF8F5] shadow-sm w-fit">
                 ONE OF ONE
               </span>
@@ -98,9 +103,16 @@ export default function ProductDetail() {
             <h1 className="font-serif text-4xl lg:text-5xl font-semibold leading-tight text-[#4A543C]">
               {product.title || product.name}
             </h1>
-            <p className="font-serif text-2xl font-bold text-[#8B6B57]">
-              THB {product.price}.00
-            </p>
+            <div className="font-serif text-2xl font-bold text-[#8B6B57] flex items-center gap-3">
+              {product.salePrice > 0 ? (
+                <>
+                  <span className="text-red-600">THB {product.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-lg line-through opacity-50">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                </>
+              ) : (
+                <span>THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              )}
+            </div>
           </div>
 
           {/* Condition Pill & Era */}

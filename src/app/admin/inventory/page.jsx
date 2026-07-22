@@ -410,7 +410,16 @@ export default function AdminProducts() {
                       {product.condition}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-bold text-[#3A4A2D] text-[15px]">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                  <td className="px-6 py-4">
+                    {product.salePrice > 0 ? (
+                      <div className="flex flex-col">
+                        <span className="font-bold text-red-600 text-[15px]">THB {product.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-xs text-earth-400 line-through">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ) : (
+                      <span className="font-bold text-[#3A4A2D] text-[15px]">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     {(() => {
                       const badge = STATUS_BADGE[product.status] || STATUS_BADGE['Draft'];
@@ -747,6 +756,14 @@ export default function AdminProducts() {
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-400 font-bold">฿</span>
                       <input type="number" value={editingProduct.price || ''} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full pl-9 pr-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300 font-bold" placeholder="0" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider flex items-center gap-1">Sale Price <span className="text-[10px] text-earth-400 normal-case">(Optional)</span></label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-400 font-bold">฿</span>
+                      <input type="number" value={editingProduct.salePrice || ''} onChange={(e) => setEditingProduct({ ...editingProduct, salePrice: parseFloat(e.target.value) || 0 })} className="w-full pl-9 pr-4 py-3 border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/30 text-sm bg-red-50/30 text-red-800 transition-all hover:border-red-300 font-bold placeholder-red-300" placeholder="0" />
                     </div>
                   </div>
                   

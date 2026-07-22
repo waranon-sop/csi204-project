@@ -19,6 +19,7 @@ function SearchContent() {
   const [selectedProduct, setSelectedProduct] = React.useState(null);
   const [openFilter, setOpenFilter] = React.useState(null);
   const [selectedSpecs, setSelectedSpecs] = React.useState([]);
+  const [activeDiscountPill, setActiveDiscountPill] = React.useState('all');
   const { addToCart } = useCart();
   const { currentUser } = useAuth();
 
@@ -36,8 +37,17 @@ function SearchContent() {
       p.status !== "Archived" && 
       p.status !== "Draft"
     );
-    
-    if (query && query.toLowerCase() !== 'all items') {
+    if (category === 'SALE') {
+      results = results.filter(p => p.salePrice > 0);
+      
+      if (activeDiscountPill !== 'all') {
+        const discountThreshold = parseInt(activeDiscountPill, 10);
+        results = results.filter(p => {
+           const discount = Math.round(((p.price - p.salePrice) / p.price) * 100);
+           return discount >= discountThreshold;
+        });
+      }
+    } else if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();
       const matched = results.filter(p =>
         (p.title || p.name || '').toLowerCase().includes(q) ||
@@ -178,6 +188,30 @@ function SearchContent() {
         </div>
       )}
 
+      {category === 'SALE' && (
+        <div className="flex flex-wrap gap-3 mb-8">
+          {[
+            { id: 'all', label: 'All Deals' },
+            { id: '10', label: '10%+ OFF' },
+            { id: '20', label: '20%+ OFF' },
+            { id: '50', label: '50%+ OFF' },
+            { id: '70', label: '70%+ OFF' },
+          ].map(pill => (
+            <button
+              key={pill.id}
+              onClick={() => setActiveDiscountPill(pill.id)}
+              className={`px-5 py-2 rounded-full text-[11px] font-bold tracking-widest uppercase transition-all duration-300 ${
+                activeDiscountPill === pill.id
+                  ? 'bg-[#2D2D2A] text-white shadow-md scale-105'
+                  : 'bg-white border border-[#EAE5DB] text-[#5C5C5A] hover:bg-[#F9F8F6]'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {searchResults.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-12">
           {searchResults.map((product) => (
@@ -190,6 +224,11 @@ function SearchContent() {
               className="group relative flex flex-col"
             >
               <Link href={`/product/${product.id}`} className="block relative overflow-hidden h-64 mb-4 bg-white flex items-center justify-center">
+                {product.salePrice > 0 && (
+                  <span className="absolute top-2 left-2 z-10 text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded-sm bg-red-600 text-white shadow-sm">
+                    SALE {Math.round(((product.price - product.salePrice) / product.price) * 100)}%
+                  </span>
+                )}
                 <Image
                   src={product.image || '/images/products/rw_item_01.jpg'}
                   alt={product.title || product.name || 'Product'}
@@ -199,18 +238,29 @@ function SearchContent() {
                 />
               </Link>
               
-              <div className="text-[10px] text-[#8B8B88] mb-1">Victoria's Secret</div>
+              {product.brand && (
+                <div className="text-[10px] text-[#8B8B88] mb-1 capitalize">{product.brand}</div>
+              )}
               <Link href={`/product/${product.id}`} className="group-hover:opacity-75 transition-opacity">
                 <h3 className="text-[12px] text-[#2D2D2A] leading-relaxed mb-2 line-clamp-2">
                   {product.title || product.name}
                 </h3>
               </Link>
               <div className="text-[12px] text-[#5C5C5A]">
-                THB {product.price}.00
+                {product.salePrice > 0 ? (
+                  <div className="flex flex-col">
+                    <span className="text-red-600 font-bold">THB {product.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    <span className="line-through opacity-50 text-[10px]">THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                ) : (
+                  <span>THB {product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                )}
               </div>
-              <div className="text-[10px] text-[#8B8B88] mt-2">
-                สี 1
-              </div>
+              {product.color && (
+                <div className="text-[10px] text-[#8B8B88] mt-2 capitalize">
+                  Color: {product.color}
+                </div>
+              )}
             </motion.div>
           ))}
         </div>

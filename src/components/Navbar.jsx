@@ -32,10 +32,14 @@ export default function Navbar() {
   const isActive = (path) => pathname === path;
 
   // Close search/mega-menu when clicking outside
+  const searchKey = currentUser ? `reWearRecentSearches_${currentUser.id}` : 'reWearRecentSearches_guest';
+  
   useEffect(() => {
-    const stored = localStorage.getItem('reWearRecentSearches');
+    const stored = localStorage.getItem(searchKey);
     if (stored) {
       try { setRecentSearches(JSON.parse(stored)); } catch (e) {}
+    } else {
+      setRecentSearches([]);
     }
 
     function handleClickOutside(event) {
@@ -71,7 +75,7 @@ export default function Navbar() {
       const q = searchQuery.trim();
       const updatedSearches = [q, ...recentSearches.filter(s => s !== q)].slice(0, 5);
       setRecentSearches(updatedSearches);
-      localStorage.setItem('reWearRecentSearches', JSON.stringify(updatedSearches));
+      localStorage.setItem(searchKey, JSON.stringify(updatedSearches));
       
       router.push(`/search?q=${encodeURIComponent(q)}`);
       setIsSearchFocused(false);
@@ -122,17 +126,7 @@ export default function Navbar() {
       },
       { 
         name: 'SALE', 
-        path: '#',
-        hasMegaMenu: true,
-        megaMenuData: {
-          items: [
-            { name: '10% OFF', path: '/search?q=10%25%20OFF&cat=SALE' },
-            { name: '20% OFF', path: '/search?q=20%25%20OFF&cat=SALE' },
-            { name: '30% OFF', path: '/search?q=30%25%20OFF&cat=SALE' },
-            { name: '50% OFF', path: '/search?q=50%25%20OFF&cat=SALE' },
-            { name: '70% OFF', path: '/search?q=70%25%20OFF&cat=SALE' },
-          ]
-        }
+        path: '/search?cat=SALE'
       },
       { name: 'SUPPORT', path: '/support' },
       ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
@@ -231,7 +225,7 @@ export default function Navbar() {
                           <span>Recent Searches</span>
                           <button 
                             type="button" 
-                            onMouseDown={(e) => { e.preventDefault(); setRecentSearches([]); localStorage.removeItem('reWearRecentSearches'); }} 
+                            onMouseDown={(e) => { e.preventDefault(); setRecentSearches([]); localStorage.removeItem(searchKey); }} 
                             className="hover:text-[#C57B57]"
                           >
                             Clear

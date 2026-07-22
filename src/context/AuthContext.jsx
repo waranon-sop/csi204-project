@@ -55,106 +55,13 @@ export function AuthProvider({ children }) {
         storedUsers = JSON.parse(localStorage.getItem("users")) || [];
       }
 
-      // Auto-clean up duplicate users (fix for the old seed bug)
-      const uniqueUsers = new Map();
-      storedUsers.forEach((u) => {
-        if (uniqueUsers.has(u.id)) {
-          // Prefer the customized one over the default seed
-          if (u.email !== "staff" && u.email !== "admin") {
-            uniqueUsers.set(u.id, u);
-          }
-        } else {
-          uniqueUsers.set(u.id, u);
-        }
-      });
-      storedUsers = Array.from(uniqueUsers.values());
-
-      let ranksUpdated = false;
-      // Migrate old ranks for users
-      storedUsers = storedUsers.map(u => {
-        if (u.rank === 'Monstrosa') {
-          ranksUpdated = true;
-          return { ...u, rank: 'Harvest' };
-        }
-        if (u.rank === 'Variegata') {
-          ranksUpdated = true;
-          return { ...u, rank: 'Fruit' };
-        }
-        return u;
-      });
-
-      localStorage.setItem("users", JSON.stringify(storedUsers));
-
-      // Seed initial admin if not exists
-      if (
-        !storedUsers.find((u) => u.id === "U-001" || u.id === "ADM-0001" || u.id === "seed-admin-001")
-      ) {
-        const seedAdmin = {
-          id: "U-001",
-          name: "ยิ่งยศ ผู้ดูแลระบบ",
-          email: "admin@rewear.com",
-          password: "admin",
-          role: "admin",
-        };
-        storedUsers = [seedAdmin, ...storedUsers];
-        localStorage.setItem("users", JSON.stringify(storedUsers));
-      } else {
-        // Migrate old email 'admin' -> 'admin@rewear.com' and old IDs to 'U-001'
-        storedUsers = storedUsers.map((u) => {
-          if (u.id === "seed-admin-001" || u.id === "ADM-0001" || u.id === "U-001") {
-            return {
-              ...u,
-              id: "U-001",
-              email: (u.email === "admin" || !u.email) ? "admin@rewear.com" : u.email,
-              role: "admin", // Ensure role is always admin
-            };
-          }
-          return u;
-        });
-        localStorage.setItem("users", JSON.stringify(storedUsers));
-      }
-
-      // Seed initial staff if not exists
-      if (
-        !storedUsers.find((u) => u.id === "U-002" || u.id === "STF-0001" || u.id === "seed-staff-001")
-      ) {
-        const seedStaff = {
-          id: "U-002",
-          name: "สมหญิง พนักงาน",
-          email: "staff@rewear.com",
-          password: "staff",
-          role: "staff",
-        };
-        storedUsers = [seedStaff, ...storedUsers];
-        localStorage.setItem("users", JSON.stringify(storedUsers));
-      } else {
-        // Migrate old email 'staff' -> 'staff@rewear.com' and old IDs to 'U-002'
-        storedUsers = storedUsers.map((u) => {
-          if (u.id === "seed-staff-001" || u.id === "STF-0001" || u.id === "U-002") {
-            return {
-              ...u,
-              id: "U-002",
-              email: (u.email === "staff" || !u.email) ? "staff@rewear.com" : u.email,
-            };
-          }
-          return u;
-        });
-        localStorage.setItem("users", JSON.stringify(storedUsers));
-      }
 
       let storedSession =
         JSON.parse(sessionStorage.getItem("currentUser")) ||
         JSON.parse(localStorage.getItem("currentUser")) ||
         null;
 
-      // Migrate active session ID if needed
       if (storedSession) {
-        if (storedSession.id === "seed-admin-001" || storedSession.id === "ADM-0001") storedSession.id = "U-001";
-        if (storedSession.id === "seed-staff-001" || storedSession.id === "STF-0001") storedSession.id = "U-002";
-        
-        if (storedSession.rank === 'Monstrosa') storedSession.rank = 'Harvest';
-        if (storedSession.rank === 'Variegata') storedSession.rank = 'Fruit';
-
         // Ensure session user still exists and update data
         const currentUserInDB = storedUsers.find(u => u.id === storedSession.id);
         if (currentUserInDB) {

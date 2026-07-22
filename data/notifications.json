@@ -2,6 +2,60 @@
   "notifications": [
     {
       "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "เสื้อขาดๆ",
+      "time": "2026-07-22T22:10:53.104Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758253139
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Restored product",
+      "target": "เสื้อขาดๆ",
+      "time": "2026-07-22T22:10:37.685Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758237729
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Moved product to draft",
+      "target": "เสื้อขาดๆ",
+      "time": "2026-07-22T22:10:36.587Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758236602
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Updated product",
+      "target": "pant",
+      "time": "2026-07-22T22:07:48.445Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758068466
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Restored product",
+      "target": "pant",
+      "time": "2026-07-22T22:07:41.875Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758061889
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
+      "action": "Moved product to draft",
+      "target": "pant",
+      "time": "2026-07-22T22:07:41.156Z",
+      "type": "product",
+      "read": false,
+      "id": 1784758061735
+    },
+    {
+      "user": "ยิ่งยศ ผู้ดูแลระบบ",
       "action": "Created a new discount code",
       "target": "KM-Q74AU1",
       "time": "2026-07-22T18:45:46.256Z",
