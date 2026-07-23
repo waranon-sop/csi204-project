@@ -1,9 +1,34 @@
 [
   {
+    "defects": "",
+    "category": "Dresses",
+    "price": 850,
+    "size": "M",
+    "condition": "Good",
+    "image": "",
+    "name": "UAT Test Dress",
+    "brand": "UAT Brand",
+    "status": "Reserved",
+    "id": "RW-45699"
+  },
+  {
+    "name": "UAT Admin Shirt",
+    "brand": "UAT Brand",
+    "price": 1500,
+    "status": "Available",
+    "condition": "Very Good",
+    "defects": "",
+    "category": "Tops",
+    "size": "M",
+    "color": "Blue",
+    "measurements": "Details: Not specified",
+    "id": "RW-82496"
+  },
+  {
     "name": "100",
     "brand": "1",
     "price": 100000,
-    "status": "Sold Out",
+    "status": "Draft",
     "condition": "Very Good",
     "defects": "",
     "category": "Tops",

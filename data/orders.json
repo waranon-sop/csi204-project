@@ -1,6 +1,22 @@
 {
   "orders": [
     {
+      "shippingFee": 50,
+      "total": 500,
+      "date": "Jul 23 2026",
+      "userId": "U-UAT-001",
+      "status": "Delivered",
+      "items": [
+        {
+          "price": 500,
+          "quantity": 1,
+          "productId": "RW-12345",
+          "name": "Test Shirt"
+        }
+      ],
+      "id": "#RW-52270"
+    },
+    {
       "userId": "U-004",
       "customer": "18ณัฐพงศ์ หาญชัยภา",
       "email": "47044@mws.ac.th",

@@ -182,8 +182,6 @@ export default function ProductCollection() {
                   </div>
                 )}
 
-
-
                 <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 items-start">
                   {product.isEarlyAccess && (
                     <div className="bg-[#2D2D2A] text-white text-[9px] font-bold px-2 py-1 uppercase rounded-sm shadow-sm flex items-center gap-1">
@@ -191,11 +189,6 @@ export default function ProductCollection() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                       EARLY ACCESS
-                    </div>
-                  )}
-                  {product.originalPrice && product.originalPrice > product.price && (
-                    <div className="bg-[#D03C31] text-white text-[10px] font-bold px-2 py-1 uppercase rounded-sm shadow-sm flex items-center gap-1">
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                     </div>
                   )}
                 </div>
@@ -211,13 +204,8 @@ export default function ProductCollection() {
                   </h3>
                 </Link>
                 <div className="flex flex-col items-end">
-                  {product.originalPrice && (
-                    <span className="text-[10px] text-[#8B8B88] line-through font-medium leading-none mb-0.5">
-                      THB {product.originalPrice}
-                    </span>
-                  )}
                   <span
-                    className={`font-sans font-bold text-[14px] ${product.originalPrice ? "text-[#D03C31]" : "text-[#2D2D2A]"}`}
+                    className="font-sans font-bold text-[14px] text-[#2D2D2A]"
                   >
                     THB {product.price}
                   </span>

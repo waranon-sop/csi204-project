@@ -16,9 +16,9 @@ export default function AdminDashboard() {
   const [timeFilter, setTimeFilter] = useState('30 Days');
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
-  const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342, newUsers: 145, topCategory: 'None', topCategoryCount: 0 });
-  const [trends, setTrends] = useState({ revenue: 12.5, activeOrders: -2.4, items: 8.1, users: 8.2 });
+  const [ecoStats, setEcoStats] = useState({ items: 0, water: '0', co2: '0', waste: '0' });
+  const [dashboardStats, setDashboardStats] = useState({ revenue: 0, activeOrders: 0, newUsers: 0, topCategory: 'None', topCategoryCount: 0 });
+  const [trends, setTrends] = useState({ revenue: 0, activeOrders: 0, items: 0, users: 0 });
   const [promotions, setPromotions] = useState([]);
 
   // Show access denied toast if redirected from a protected page
@@ -270,12 +270,6 @@ export default function AdminDashboard() {
               <Banknote className="w-5 h-5 mb-3 text-white/80" />
               <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70 mb-1">Total Revenue</p>
             </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
-              (trends.revenue || 0) >= 0 ? 'bg-white/10 text-green-300 border-white/10' : 'bg-red-500/20 text-red-300 border-red-500/20'
-            }`}>
-              {(trends.revenue || 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {(trends.revenue || 0) > 0 ? '+' : ''}{(trends.revenue || 0).toFixed(1)}%
-            </div>
           </div>
           <div className="flex items-baseline gap-3 mt-4 relative z-10">
             <p className="text-4xl font-serif tracking-tight">THB {dashboardStats.revenue.toLocaleString()}</p>
@@ -288,12 +282,6 @@ export default function AdminDashboard() {
             <div>
               <ShoppingCart className="w-5 h-5 mb-3 text-[#5A3828]/80" />
               <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5A3828]/70 mb-1">Active Orders</p>
-            </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
-              (trends.activeOrders || 0) <= 0 ? 'bg-green-500/20 text-green-800 border-green-500/20' : 'bg-red-500/20 text-red-800 border-red-500/20'
-            }`}>
-              {(trends.activeOrders || 0) <= 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-              {(trends.activeOrders || 0) > 0 ? '+' : ''}{(trends.activeOrders || 0).toFixed(1)}%
             </div>
           </div>
           <div className="flex items-baseline gap-3 mt-4 relative z-10">

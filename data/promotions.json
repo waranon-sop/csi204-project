@@ -1,6 +1,15 @@
 {
   "promotions": [
     {
+      "value": 20,
+      "isActive": true,
+      "code": "UATTEST20",
+      "description": "UAT Test coupon 20% off",
+      "minOrder": 0,
+      "type": "percentage",
+      "id": "PROMO-590"
+    },
+    {
       "code": "KUY1",
       "type": "percentage",
       "value": 5,

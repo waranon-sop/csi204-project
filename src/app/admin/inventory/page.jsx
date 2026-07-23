@@ -742,19 +742,17 @@ export default function AdminProducts() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Sale Price (THB)</label>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Price (THB)</label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-400 font-bold">฿</span>
-                      <input type="number" value={editingProduct.price || ''} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} className="w-full pl-9 pr-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300 font-bold" placeholder="0" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-earth-500 uppercase tracking-wider">Original Price (Optional)</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-400 font-bold">฿</span>
-                      <input type="number" value={editingProduct.originalPrice || ''} onChange={(e) => setEditingProduct({ ...editingProduct, originalPrice: parseFloat(e.target.value) || 0 })} className="w-full pl-9 pr-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300" placeholder="e.g. 2000" />
+                      <input 
+                        type="number" 
+                        value={editingProduct.price || ''} 
+                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-9 pr-4 py-3 border border-earth-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5F6B4E]/30 text-sm bg-earth-50/50 text-earth-800 transition-all hover:border-earth-300 font-bold" 
+                        placeholder="0" 
+                      />
                     </div>
                   </div>
                   

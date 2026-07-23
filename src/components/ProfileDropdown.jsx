@@ -53,7 +53,7 @@ export default function ProfileDropdown({ isOpen, onClose }) {
           icon: Cpu,
           avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150',
           menu: [
-            { name: 'Orders Management', path: '/admin/orders', icon: Cpu },
+            { name: 'Inventory Management', path: '/admin/inventory', icon: Cpu },
             { name: 'My Profile', path: '/admin/profile', icon: User },
             { name: 'Storefront', path: '/', icon: Store },
             { name: 'Support', path: '/support', icon: HelpCircle },

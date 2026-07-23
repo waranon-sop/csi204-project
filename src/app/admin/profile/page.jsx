@@ -65,7 +65,7 @@ export default function AdminProfile() {
       const res = await fetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...currentUser, ...formData })
       });
       
       if (!res.ok) throw new Error('Failed to update profile');
@@ -201,7 +201,7 @@ export default function AdminProfile() {
                   {!isAdmin && <p className="text-[10px] text-red-500 mt-1 font-medium">To change your email, please contact an Administrator.</p>}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                <div className="space-y-6 max-w-md">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-[#5C5C5A] uppercase tracking-widest flex items-center justify-between">
                       <span>New Password</span>

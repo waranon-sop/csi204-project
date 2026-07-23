@@ -9,10 +9,15 @@ import ProfileDropdown from '../ProfileDropdown';
 const PAGE_TITLES = {
   '/admin': { title: 'Performance Overview', sub: "Tracking the lifecycle of Re-Wear's curated textile collection" },
   '/admin/inventory': { title: 'Inventory Management', sub: 'Add, edit, and organize your product listings' },
+  '/admin/lookbooks': { title: 'Lookbook Management', sub: 'Curate style inspirations and outfits' },
   '/admin/orders': { title: 'Customer Orders', sub: 'View and process incoming customer orders' },
+  '/admin/requests': { title: 'Shopper Requests', sub: 'Manage special requests from customers' },
   '/admin/promotions': { title: 'Promotions Management', sub: 'Manage discount codes and promotional campaigns' },
+  '/admin/reviews': { title: 'Customer Reviews', sub: 'Monitor and moderate product reviews' },
   '/admin/users': { title: 'User Management', sub: 'Manage staff & admin accounts and access levels' },
+  '/admin/support': { title: 'Support Config', sub: 'Configure help and support settings' },
   '/admin/settings': { title: 'Store Settings', sub: 'Manage your store preferences and system configuration' },
+  '/admin/profile': { title: 'Account Settings', sub: 'Manage your personal information and security preferences' },
 };
 
 // Generate real, actionable notifications from actual data in localStorage
@@ -120,7 +125,7 @@ export default function AdminTopbar() {
   const notifRef = useRef(null);
   const profileRef = useRef(null);
 
-  const pageInfo = PAGE_TITLES[pathname] || { title: 'Admin Panel', sub: '' };
+  const pageInfo = PAGE_TITLES[pathname] || { title: 'Admin Portal', sub: '' };
 
   useEffect(() => {
     // Generate real actionable notifications from localStorage data

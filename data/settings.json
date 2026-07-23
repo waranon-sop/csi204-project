@@ -7,6 +7,9 @@
     "ecoCO2": 6.5,
     "ecoWaste": 0.2,
     "shippingFlatRate": 5,
-    "freeShippingThreshold": 50
+    "freeShippingThreshold": 50,
+    "ecoRate": null,
+    "shopName": "Re-Wear Store",
+    "maxShipping": null
   }
 }

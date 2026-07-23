@@ -18,7 +18,7 @@ export function useRoleGuard(allowedRoles = ['admin'], redirectTo = '/admin?deni
     // Not logged in or role not allowed
     if (!currentUser || !allowedRoles.includes(currentUser.role)) {
       if (currentUser?.role === 'staff') {
-        router.replace('/admin/orders?denied=1');
+        router.replace('/admin/inventory?denied=1');
       } else {
         router.replace(redirectTo);
       }

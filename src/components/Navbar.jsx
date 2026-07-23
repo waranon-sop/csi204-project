@@ -105,20 +105,7 @@ export default function Navbar() {
           ]
         }
       },
-      { 
-        name: 'SALE', 
-        path: '#',
-        hasMegaMenu: true,
-        megaMenuData: {
-          items: [
-            { name: '10% OFF', path: '/search?q=10%25%20OFF&cat=SALE' },
-            { name: '20% OFF', path: '/search?q=20%25%20OFF&cat=SALE' },
-            { name: '30% OFF', path: '/search?q=30%25%20OFF&cat=SALE' },
-            { name: '50% OFF', path: '/search?q=50%25%20OFF&cat=SALE' },
-            { name: '70% OFF', path: '/search?q=70%25%20OFF&cat=SALE' },
-          ]
-        }
-      },
+
       { name: 'SUPPORT', path: '/support' },
       
     ];

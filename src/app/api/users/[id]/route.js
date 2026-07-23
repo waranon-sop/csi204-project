@@ -6,14 +6,17 @@ export async function PUT(request, { params }) {
     const updateData = await request.json();
     const db = await readDB('users.json', { users: [] });
     
-    const userIndex = db.users.findIndex(u => u.id === id);
+    let userIndex = db.users.findIndex(u => u.id === id);
     
     if (userIndex === -1) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
+      // Upsert: if user not found (e.g. seeded admin), create it
+      db.users.push({ ...updateData, id });
+      userIndex = db.users.length - 1;
+    } else {
+      // Update user data, but keep the original ID
+      db.users[userIndex] = { ...db.users[userIndex], ...updateData, id };
     }
     
-    // Update user data, but keep the original ID
-    db.users[userIndex] = { ...db.users[userIndex], ...updateData, id };
     await writeDB('users.json', db);
     
     return Response.json(db.users[userIndex]);

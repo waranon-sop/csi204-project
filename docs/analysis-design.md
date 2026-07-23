@@ -12,7 +12,6 @@
 - [5. โครงสร้างฐานข้อมูล (Database Design)](#5-โครงสร้างฐานข้อมูล-database-design)
   - [5.1 Data Schema (Local JSON Database)](#51-data-schema-local-json-database)
   - [5.2 Class Diagram](#52-class-diagram)
-  - [5.3 ER Diagram](#53-er-diagram)
 - [6. Flow การทำงานหลัก (Sequence)](#6-flow-การทำงานหลัก-sequence)
   - [6.1 Sequence Diagram](#61-sequence-diagram)
 - [7. หลักการออกแบบที่นำมาใช้ (Design Principles)](#7-หลักการออกแบบที่นำมาใช้-design-principles)
@@ -88,25 +87,9 @@
 
 ระบบแบ่งออกเป็น 3 ส่วนหลัก ได้แก่ Frontend (Next.js), Backend (Next.js API Routes) และฐานข้อมูลจำลอง (JSON Files แยกตามหมวดหมู่ในโฟลเดอร์ `data/`)
 
-```mermaid
-graph TD
-  subgraph Client["Frontend (Next.js)"]
-    A[Customer View]
-    B[Staff / Admin Dashboard]
-  end
-
-  subgraph Backend["Backend (Next.js Route Handlers)"]
-    C[Logic & API Routes]
-  end
-
-  subgraph Data["Database (JSON Files)"]
-    D[(data/*.json)]
-  end
-
-  A --> C
-  B --> C
-  C --> D
-```
+<div align="center">
+  <img src="System%20Architecture.png" alt="สถาปัตยกรรมระบบ (System Architecture)" style="max-width: 100%; border: 1px solid #eaeaea; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />
+</div>
 
 ### 4.1 Frontend Architecture
 
@@ -175,49 +158,6 @@ graph TD
 ### 5.2 Class Diagram
 
 ![Class Diagram](class.png)
-
-### 5.3 ER Diagram
-
-```mermaid
-erDiagram
-  User ||--o| Customer : "is a"
-  User ||--o| Staff : "is a"
-  User ||--o| Admin : "is a"
-  Customer ||--o{ Order : places
-  Customer ||--o| Cart : has
-  Cart ||--o{ CartItem : contains
-  Order ||--|{ OrderItem : contains
-  Product ||--o{ OrderItem : "included in"
-  Product ||--o{ CartItem : "included in"
-  Order ||--o| Payment : has
-
-  User {
-    string id
-    string role
-    string name
-    string email
-    string password
-    string ecoStatus
-    string joinDate
-    string avatar
-  }
-  Product {
-    string productid
-    string productname
-    number price
-    int stock
-  }
-  Order {
-    string orderid
-    string userid
-    number totalAmount
-    string orderStatus
-  }
-  Cart {
-    string cartid
-    string userid
-  }
-```
 
 ---
 
