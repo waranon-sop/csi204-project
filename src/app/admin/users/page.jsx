@@ -104,6 +104,13 @@ export default function AdminUsersManagement() {
       setSelectedUser(updatedUser);
       setIsEditingUser(false);
       
+      if (currentUser?.id === updatedUser.id) {
+         const localUsers = JSON.parse(localStorage.getItem('users') || '[]');
+         const newLocalUsers = localUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
+         localStorage.setItem('users', JSON.stringify(newLocalUsers));
+         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
+      
       addToast('User updated successfully!');
     } catch (err) {
       addToast('Error updating user', 'error');
@@ -178,6 +185,7 @@ export default function AdminUsersManagement() {
       });
       const updatedUsers = users.map(u => u.id === selectedUser.id ? updatedUser : u);
       setUsers(updatedUsers);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
       setSelectedUser(updatedUser);
       addToast('User role updated successfully');
       logAndRefresh(currentUser?.name, 'Changed role for user', selectedUser.name, 'user');
@@ -208,6 +216,7 @@ export default function AdminUsersManagement() {
       });
       const updatedUsers = [addedUser, ...users];
       setUsers(updatedUsers);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
       addToast('New team member added successfully');
       logAndRefresh(currentUser?.name, 'Added a new team member', newStaff.name, 'user');
       setIsAddStaffModalOpen(false);
@@ -232,6 +241,7 @@ export default function AdminUsersManagement() {
         
         const updatedUsers = users.map(u => u.id === userToSuspend ? updatedUser : u);
         setUsers(updatedUsers);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
 
         addToast('Account has been suspended.');
         if (suspendedUser) logAndRefresh(currentUser?.name, 'Suspended user', suspendedUser.name, 'user');
@@ -262,6 +272,7 @@ export default function AdminUsersManagement() {
       });
       const updatedUsers = users.map(u => u.id === id ? updatedUser : u);
       setUsers(updatedUsers);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
       addToast('Account has been activated.');
       logAndRefresh(currentUser?.name, 'Activated user', userToUpdate.name, 'user');
       if (selectedUser?.id === id) {

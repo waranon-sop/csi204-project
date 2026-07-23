@@ -1,5 +1,5 @@
-{
-  "0": {
+[
+  {
     "name": "100",
     "brand": "1",
     "price": 100000,
@@ -13,7 +13,7 @@
     "id": "RW-45123",
     "reservedAt": null
   },
-  "1": {
+  {
     "name": "4",
     "brand": "",
     "price": 3000,
@@ -26,7 +26,7 @@
     "id": "RW-84949",
     "reservedAt": null
   },
-  "2": {
+  {
     "name": "3",
     "brand": "3",
     "price": 2000,
@@ -39,7 +39,7 @@
     "id": "RW-89332",
     "reservedAt": null
   },
-  "3": {
+  {
     "name": "a",
     "brand": "a",
     "price": 500,
@@ -52,7 +52,7 @@
     "id": "RW-10381",
     "reservedAt": null
   },
-  "4": {
+  {
     "name": "2",
     "brand": "2",
     "price": 3000,
@@ -68,7 +68,7 @@
     "id": "RW-89319",
     "reservedAt": null
   },
-  "5": {
+  {
     "name": "aaaaaaa",
     "brand": "aaaaaaaa",
     "price": 1111,
@@ -82,7 +82,7 @@
     "id": "RW-97002",
     "reservedAt": null
   },
-  "6": {
+  {
     "name": "jrhre",
     "brand": "",
     "price": 2000,
@@ -96,7 +96,7 @@
     "id": "RW-47196",
     "reservedAt": null
   },
-  "7": {
+  {
     "name": "fasdfwr",
     "brand": "qewrqrq",
     "price": 490,
@@ -112,7 +112,7 @@
     "id": "RW-65329",
     "reservedAt": null
   },
-  "8": {
+  {
     "name": "fasfasf",
     "brand": "fawerwq",
     "price": 10000,
@@ -128,4 +128,4 @@
     "id": "RW-19539",
     "reservedAt": null
   }
-}
+]

@@ -135,7 +135,7 @@ export default function CheckoutPage() {
 
   React.useEffect(() => {
     if (showCouponModal) {
-      const stored = currentUser?.coupons || [];
+      const stored = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
       setMyCouponsList(stored.filter(c => {
         const statusStr = (c.status || '').toLowerCase();
         return statusStr === 'active' || (!c.used && statusStr !== 'used' && statusStr !== 'expired');
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Failed to fetch promotions', err);
     }
-    const myCoupons = currentUser?.coupons || [];
+    const myCoupons = currentUser?.coupons || JSON.parse(localStorage.getItem('my_coupons')) || [];
     
     let promo = promos.find(p => p.code === codeToApply.toUpperCase());
     if (!promo) {

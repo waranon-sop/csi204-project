@@ -9,72 +9,30 @@ export const useFavorites = () => {
   return useContext(FavoritesContext);
 };
 
-const getCookie = (name) => {
-  if (typeof document !== 'undefined') {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    if (match) return match[2];
-  }
-  return null;
-};
-
-const setCookie = (name, value, maxAge = 604800) => {
-  if (typeof document !== 'undefined') {
-    if (value) {
-      document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    } else {
-      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    }
-  }
-};
-
 export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
   const { currentUser } = useAuth();
-  const [favUserId, setFavUserId] = useState(null);
+  
+  const favKey = currentUser ? `favorites_${currentUser.id}` : 'favorites_guest';
 
+  // Load favorites from local storage on mount
   useEffect(() => {
-    let uid = currentUser?.id;
-    if (!uid) {
-      let guestId = getCookie('guestId');
-      if (!guestId) {
-        guestId = 'guest-' + Date.now() + Math.random().toString(36).substring(2, 6);
-        setCookie('guestId', guestId);
+    const savedFavorites = localStorage.getItem(favKey);
+    if (savedFavorites) {
+      try {
+        setFavorites(JSON.parse(savedFavorites));
+      } catch (error) {
+        console.error('Failed to parse favorites:', error);
       }
-      uid = guestId;
+    } else {
+      setFavorites([]);
     }
-    setFavUserId(uid);
-  }, [currentUser]);
+  }, [favKey]);
 
+  // Save to local storage whenever favorites change
   useEffect(() => {
-    if (!favUserId) return;
-    const initFavs = async () => {
-      try {
-        const res = await fetch(`/api/favorites?userId=${favUserId}`);
-        if (res.ok) {
-          setFavorites(await res.json());
-        }
-      } catch (err) {
-        console.error("Failed to load favorites", err);
-      }
-    };
-    initFavs();
-  }, [favUserId]);
-
-  useEffect(() => {
-    if (!favUserId) return;
-    const syncFavs = async () => {
-      try {
-        await fetch('/api/favorites', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: favUserId, items: favorites })
-        });
-      } catch (err) {
-        console.error("Failed to sync favorites", err);
-      }
-    };
-    syncFavs();
-  }, [favorites, favUserId]);
+    localStorage.setItem(favKey, JSON.stringify(favorites));
+  }, [favorites, favKey]);
 
   const addFavorite = (product) => {
     setFavorites((prev) => {

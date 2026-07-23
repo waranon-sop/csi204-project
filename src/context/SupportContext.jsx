@@ -54,52 +54,40 @@ const defaultContactInfo = {
 };
 
 export function SupportProvider({ children }) {
-  const [faqData, setFaqData] = useState(defaultFaqData);
-  const [contactInfo, setContactInfo] = useState(defaultContactInfo);
+  const [faqData, setFaqData] = useState([]);
+  const [contactInfo, setContactInfo] = useState({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const fetchSupport = async () => {
-      try {
-        const res = await fetch('/api/support');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.faqData) setFaqData(data.faqData);
-          if (data.contactInfo) setContactInfo(data.contactInfo);
-        }
-      } catch (err) {
-        console.error("Failed to fetch support data", err);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-    fetchSupport();
+    // Load from local storage
+    const storedFaq = localStorage.getItem('reWearFaqData');
+    const storedContact = localStorage.getItem('reWearContactInfo');
+    
+    if (storedFaq) {
+      try { setFaqData(JSON.parse(storedFaq)); } catch(e) { setFaqData(defaultFaqData); }
+    } else {
+      setFaqData(defaultFaqData);
+      localStorage.setItem('reWearFaqData', JSON.stringify(defaultFaqData));
+    }
+
+    if (storedContact) {
+      try { setContactInfo(JSON.parse(storedContact)); } catch(e) { setContactInfo(defaultContactInfo); }
+    } else {
+      setContactInfo(defaultContactInfo);
+      localStorage.setItem('reWearContactInfo', JSON.stringify(defaultContactInfo));
+    }
+    
+    setIsLoaded(true);
   }, []);
 
-  const updateFaqData = async (newFaqData) => {
+  const updateFaqData = (newFaqData) => {
     setFaqData(newFaqData);
-    try {
-      await fetch('/api/support', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faqData: newFaqData })
-      });
-    } catch (err) {
-      console.error("Failed to update FAQ data", err);
-    }
+    localStorage.setItem('reWearFaqData', JSON.stringify(newFaqData));
   };
 
-  const updateContactInfo = async (newContactInfo) => {
+  const updateContactInfo = (newContactInfo) => {
     setContactInfo(newContactInfo);
-    try {
-      await fetch('/api/support', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contactInfo: newContactInfo })
-      });
-    } catch (err) {
-      console.error("Failed to update contact info", err);
-    }
+    localStorage.setItem('reWearContactInfo', JSON.stringify(newContactInfo));
   };
 
   return (

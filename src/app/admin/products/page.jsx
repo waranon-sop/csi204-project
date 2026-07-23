@@ -52,106 +52,90 @@ export default function AdminProducts() {
   const [attributeTab, setAttributeTab] = useState('categories'); // 'categories' or 'sizes'
 
   useEffect(() => {
-    const initData = async () => {
-      try {
-        const [prodRes, metaRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/metadata')
-        ]);
-        if (prodRes.ok) setProducts(await prodRes.json());
-        if (metaRes.ok) {
-          const meta = await metaRes.json();
-          if (meta.categories && meta.categories.length) setCategories(meta.categories);
-          if (meta.sizes && meta.sizes.length) setSizes(meta.sizes);
-        }
-      } catch (err) {
-        console.error('Failed to load data', err);
-      }
-    };
-    initData();
+    let localProducts = JSON.parse(localStorage.getItem('products')) || [];
+    
+    // Migrate old conditions in localStorage to new standard
+    if (localProducts.length > 0) {
+      localProducts = localProducts.map(p => {
+        let cond = p.condition;
+        if (cond === 'Mint' || cond === 'Deadstock (Unworn)') cond = 'Like New';
+        else if (cond === 'Excellent' || cond === 'Excellent (Pre-loved)') cond = 'Very Good';
+        else if (cond === 'Vintage Fade (Repaired)' || cond === 'Distressed (Upcycled)' || cond === 'Fair') cond = 'Acceptable';
+        else if (cond === 'Good (Minor wear)') cond = 'Good';
+        return { ...p, condition: cond };
+      });
+      localStorage.setItem('products', JSON.stringify(localProducts));
+    }
+
+    const localCategories = JSON.parse(localStorage.getItem('productCategories'));
+    if (localCategories) setCategories(localCategories);
+    const localSizes = JSON.parse(localStorage.getItem('productSizes'));
+    if (localSizes) setSizes(localSizes);
+    
+    if (localProducts.length > 0) {
+      setProducts(localProducts);
+    }
   }, []);
 
-  const handleSaveProduct = async () => {
-    try {
-      if (editingProduct.isNew) {
-        const newProduct = { ...editingProduct };
-        delete newProduct.isNew;
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newProduct)
-        });
-        const added = await res.json();
-        setProducts([added, ...products]);
-        addToast('New product added successfully');
-        addAdminNotification(currentUser?.name, 'Added a new product', added.name, 'product');
-      } else {
-        const res = await fetch(`/api/products/${editingProduct.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editingProduct)
-        });
-        const updated = await res.json();
-        setProducts(products.map(p => p.id === updated.id ? updated : p));
-        addToast('Product updated successfully');
-        addAdminNotification(currentUser?.name, 'Updated product', updated.name, 'product');
-      }
-      setEditingProduct(null);
-    } catch (err) {
-      console.error(err);
-      addToast('Failed to save product', 'error');
+  const handleSaveProduct = () => {
+    let updatedProducts;
+    if (editingProduct.isNew) {
+      const newProduct = { ...editingProduct, id: `RW-${Math.floor(Math.random() * 90000) + 10000}` };
+      delete newProduct.isNew;
+      updatedProducts = [newProduct, ...products];
+      addToast('New product added successfully');
+      addAdminNotification(currentUser?.name, 'Added a new product', newProduct.name, 'product');
+    } else {
+      updatedProducts = products.map(p => p.id === editingProduct.id ? editingProduct : p);
+      addToast('Product updated successfully');
+      addAdminNotification(currentUser?.name, 'Updated product', editingProduct.name, 'product');
     }
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    setEditingProduct(null);
   };
 
-  const handleToggleVisibility = async (id) => {
+  const handleToggleVisibility = (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
     const newStatus = product.status === 'Draft' ? 'Active' : 'Draft';
-    const updated = { ...product, status: newStatus };
-    try {
-      await fetch(`/api/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
-      setProducts(products.map(p => p.id === id ? updated : p));
-      addToast(`Product visibility ${newStatus === 'Draft' ? 'hidden' : 'shown'}`);
-      addAdminNotification(currentUser?.name, newStatus === 'Draft' ? 'Hid product from store' : 'Published product', product.name, 'product');
-    } catch (err) {
-      console.error(err);
-    }
+    const updatedProducts = products.map(p => p.id === id ? { ...p, status: newStatus } : p);
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    addToast(`Product visibility ${newStatus === 'Draft' ? 'hidden' : 'shown'}`);
+    addAdminNotification(currentUser?.name, newStatus === 'Draft' ? 'Hid product from store' : 'Published product', product.name, 'product');
   };
 
   const handleDeleteProduct = (id) => {
     setProductToDelete(id);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (productToDelete) {
       const archivedProduct = products.find(p => p.id === productToDelete);
-      const updated = { ...archivedProduct, status: 'Archived' };
-      try {
-        await fetch(`/api/products/${productToDelete}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
-        setProducts(products.map(p => p.id === productToDelete ? updated : p));
-        addToast('Product archived successfully');
-        if (archivedProduct) addAdminNotification(currentUser?.name, 'Archived product', archivedProduct.name, 'product');
-        setViewProduct(null);
-        setProductToDelete(null);
-      } catch (err) {
-        console.error(err);
-      }
+      const updatedProducts = products.map(p => 
+        p.id === productToDelete ? { ...p, status: 'Archived' } : p
+      );
+      setProducts(updatedProducts);
+      localStorage.setItem('products', JSON.stringify(updatedProducts));
+      addToast('Product archived successfully');
+      if (archivedProduct) addAdminNotification(currentUser?.name, 'Archived product', archivedProduct.name, 'product');
+      setViewProduct(null);
+      setProductToDelete(null);
     }
   };
 
-  const handleRestoreProduct = async (id) => {
+  const handleRestoreProduct = (id) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    const updated = { ...product, status: 'Available' };
-    try {
-      await fetch(`/api/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
-      setProducts(products.map(p => p.id === id ? updated : p));
-      addToast(`"${product.name}" restored and set to Available`);
-      addAdminNotification(currentUser?.name, 'Restored product', product.name, 'product');
-      setViewProduct(prev => prev?.id === id ? { ...prev, status: 'Available' } : prev);
-    } catch (err) {
-      console.error(err);
-    }
+    const updatedProducts = products.map(p =>
+      p.id === id ? { ...p, status: 'Available' } : p
+    );
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    addToast(`"${product.name}" restored and set to Available`);
+    addAdminNotification(currentUser?.name, 'Restored product', product.name, 'product');
+    setViewProduct(prev => prev?.id === id ? { ...prev, status: 'Available' } : prev);
   };
 
   const handleExport = () => {
@@ -656,7 +640,7 @@ export default function AdminProducts() {
                       if (!list.includes(newAttributeInput.trim())) {
                         const updated = [...list, newAttributeInput.trim()];
                         setList(updated);
-                        fetch('/api/metadata', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [attributeTab === 'categories' ? 'categories' : 'sizes']: updated }) });
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
                         setNewAttributeInput('');
                         addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
                       }
@@ -672,7 +656,7 @@ export default function AdminProducts() {
                       if (!list.includes(newAttributeInput.trim())) {
                         const updated = [...list, newAttributeInput.trim()];
                         setList(updated);
-                        fetch('/api/metadata', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [attributeTab === 'categories' ? 'categories' : 'sizes']: updated }) });
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
                         setNewAttributeInput('');
                         addToast(`Added new ${attributeTab === 'categories' ? 'category' : 'size'}`);
                       }
@@ -692,9 +676,10 @@ export default function AdminProducts() {
                       onClick={() => {
                         const list = attributeTab === 'categories' ? categories : sizes;
                         const setList = attributeTab === 'categories' ? setCategories : setSizes;
+                        const storageKey = attributeTab === 'categories' ? 'productCategories' : 'productSizes';
                         const updated = list.filter(i => i !== item);
                         setList(updated);
-                        fetch('/api/metadata', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [attributeTab === 'categories' ? 'categories' : 'sizes']: updated }) });
+                        localStorage.setItem(storageKey, JSON.stringify(updated));
                       }}
                       className="text-earth-400 hover:text-red-500 p-0.5 rounded-full hover:bg-earth-200/50 transition-colors"
                     >

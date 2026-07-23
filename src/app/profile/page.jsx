@@ -41,7 +41,7 @@ export default function ProfileSettings() {
         password: currentUser.password || '',
         avatar: currentUser.avatar || currentUser.picture || '',
         ecoStatus: getDisplayRank(currentUser),
-        birthday: currentUser.birthday || '',
+        birthday: currentUser.birthday || (currentUser.birthDay && currentUser.birthMonth ? `${currentUser.birthDay} ${new Date(0, currentUser.birthMonth - 1).toLocaleString('default', { month: 'long' })}` : ''),
       }));
     }
   }, [currentUser]);

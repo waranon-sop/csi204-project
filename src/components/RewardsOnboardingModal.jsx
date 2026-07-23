@@ -35,7 +35,14 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
       setStep(step + 1);
     } else {
       if (birthMonth && birthDay && updateProfile && !hasBirthdaySaved) {
-        updateProfile({ birthMonth, birthDay });
+        const monthName = new Date(0, parseInt(birthMonth) - 1).toLocaleString('default', { month: 'long' });
+        const currentPoints = currentUser?.points !== undefined ? currentUser.points : (currentUser?.total_spending || 0);
+        updateProfile({ 
+          birthMonth, 
+          birthDay, 
+          birthday: `${birthDay} ${monthName}`,
+          points: currentPoints + 100
+        });
       }
       onClose();
     }

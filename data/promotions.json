@@ -9,16 +9,7 @@
       "used": 0,
       "expiryDate": "2026-08-24",
       "id": "PROMO-326"
-    },
-    {
-      "code": "KUY1",
-      "type": "percentage",
-      "value": 5,
-      "status": "Active",
-      "usageLimit": 100,
-      "used": 1,
-      "expiryDate": "2026-07-31",
-      "id": "PROMO-118"
     }
+  
   ]
 }
