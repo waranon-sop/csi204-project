@@ -68,11 +68,9 @@
 
 | หมวดหมู่ | เทคโนโลยีที่เลือกใช้ |
 |---|---|
-| **Frontend Framework** | **Next.js 15** (App Router + React) |
-| **Styling & UI** | Tailwind CSS v3 (Earth Tone Style), Lucide React |
-| **Data Visualization** | Recharts (สำหรับกราฟ Dashboard) |
-| **State Management** | React Context API (Auth, Cart, Settings) |
-| **Database (Mock)** | Local JSON + API Routes (`fs.promises` อ่าน/เขียนไฟล์จริง) |
+| **Frontend Framework** | **Next.js 15** (App Router + React), Tailwind CSS v3, Lucide React |
+| **Backend** | Node js |
+| **Database** | Local JSON + API Routes |
 | **Tools & Design** | Git, GitHub, Figma, Draw.io |
 
 
