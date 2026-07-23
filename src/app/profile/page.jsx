@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Sidebar from '../../components/Sidebar';
-import { User, Mail, Phone, MapPin, Shield, Check, Lock, ShieldCheck, Box, FileText, Activity, Gift } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Check, Lock, Box, FileText, Activity, Gift, Sprout, Leaf, Flower2, Apple, TreeDeciduous } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCustomerGuard } from '../../hooks/useRoleGuard';
 
@@ -16,7 +16,7 @@ export default function ProfileSettings() {
     if (!u) return '';
     if (u.role === 'admin') return 'Admin';
     if (u.role === 'staff') return 'Staff';
-    return u.rank || 'Seed';
+    return u.tier || u.rank || 'None';
   };
 
   const [formData, setFormData] = useState({
@@ -40,13 +40,24 @@ export default function ProfileSettings() {
         address: currentUser.address || '',
         password: currentUser.password || '',
         avatar: currentUser.avatar || currentUser.picture || '',
-        ecoStatus: getDisplayRank(currentUser) || currentUser.ecoStatus || 'Eco Hero',
+        ecoStatus: getDisplayRank(currentUser),
         birthday: currentUser.birthday || '',
       }));
     }
   }, [currentUser]);
 
   const [saved, setSaved] = useState(false);
+
+  const getTierIcon = (tier) => {
+    if (!tier || tier === 'None') return User;
+    const t = tier.toLowerCase();
+    if (t.includes('harvest')) return TreeDeciduous;
+    if (t.includes('fruit')) return Apple;
+    if (t.includes('bloom')) return Flower2;
+    if (t.includes('sprout')) return Leaf;
+    if (t.includes('seed')) return Sprout;
+    return User; // Default
+  };
 
 
   const handleImageUpload = (e) => {
@@ -315,7 +326,7 @@ export default function ProfileSettings() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-earth-700 block">Eco Membership Tier</label>
                   <div className="relative">
-                    <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-sage-500" />
+                    {React.createElement(getTierIcon(formData.ecoStatus), { className: "absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-sage-500" })}
                     <input
                       type="text"
                       value={formData.ecoStatus}

@@ -6,6 +6,24 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Helper to check and reset daily missions
+const applyDailyReset = (user, usersArray) => {
+  if (!user) return user;
+  const today = new Date().toLocaleDateString('en-CA'); // e.g., '2026-07-23'
+  if (user.lastMissionResetDate !== today) {
+    user.completedMissions = (user.completedMissions || []).filter(m => !m.startsWith('daily-'));
+    user.lastMissionResetDate = today;
+    
+    // Update global users array
+    const userIndex = usersArray.findIndex(u => u.id === user.id);
+    if (userIndex !== -1) {
+      usersArray[userIndex] = user;
+      localStorage.setItem("users", JSON.stringify(usersArray));
+    }
+  }
+  return user;
+};
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -24,6 +42,9 @@ export function AuthProvider({ children }) {
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalView, setAuthModalView] = useState("login");
+  
+  // Rewards Onboarding State
+  const [isRewardsOnboardingOpen, setIsRewardsOnboardingOpen] = useState(false);
 
   // Pending Google Data
   const [pendingGoogleUser, setPendingGoogleUser] = useState(null);
@@ -37,16 +58,35 @@ export function AuthProvider({ children }) {
     setIsAuthModalOpen(false);
   };
 
+  const openRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(true);
+  };
+
+  const closeRewardsOnboarding = () => {
+    setIsRewardsOnboardingOpen(false);
+  };
+
   // Initialize from API with fallback to localStorage
   useEffect(() => {
     const initializeAuth = async () => {
       let storedUsers = [];
+      const storedUser = sessionStorage.getItem("currentUser") || localStorage.getItem("currentUser");
       try {
         const res = await fetch("/api/users");
         if (res.ok) {
           storedUsers = await res.json();
           // Update localStorage to keep it in sync
           localStorage.setItem("users", JSON.stringify(storedUsers));
+
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            const freshUser = storedUsers.find(u => u.id === parsedUser.id);
+            if (freshUser) {
+              setCurrentUser(freshUser);
+              if (localStorage.getItem("currentUser")) localStorage.setItem("currentUser", JSON.stringify(freshUser));
+              if (sessionStorage.getItem("currentUser")) sessionStorage.setItem("currentUser", JSON.stringify(freshUser));
+            }
+          }
         } else {
           throw new Error("Failed to fetch from API");
         }
@@ -65,7 +105,7 @@ export function AuthProvider({ children }) {
         // Ensure session user still exists and update data
         const currentUserInDB = storedUsers.find(u => u.id === storedSession.id);
         if (currentUserInDB) {
-          storedSession = currentUserInDB;
+          storedSession = applyDailyReset(currentUserInDB, storedUsers);
           if (sessionStorage.getItem("currentUser"))
             sessionStorage.setItem("currentUser", JSON.stringify(storedSession));
           if (localStorage.getItem("currentUser"))
@@ -101,18 +141,21 @@ export function AuthProvider({ children }) {
             "This account has been suspended. Please contact an administrator.",
         };
       }
-      setCurrentUser(user);
+      
+      const resetUser = applyDailyReset(user, freshUsers);
+      setCurrentUser(resetUser);
+      
       if (keepSignedIn) {
-        localStorage.setItem("currentUser", JSON.stringify(user));
+        localStorage.setItem("currentUser", JSON.stringify(resetUser));
         sessionStorage.removeItem("currentUser");
       } else {
-        sessionStorage.setItem("currentUser", JSON.stringify(user));
+        sessionStorage.setItem("currentUser", JSON.stringify(resetUser));
         localStorage.removeItem("currentUser");
       }
       setRoleCookie(user.role);
       // Sync users state with the fresh data
       setUsers(freshUsers);
-      return { success: true, user };
+      return { success: true, user: resetUser };
     }
     return { success: false, error: "Invalid email or password" };
   };
@@ -146,7 +189,11 @@ export function AuthProvider({ children }) {
       phone,
       role: "customer", // Default role
       referredBy: referredBy || null,
-      rank: 'Seed'
+      rank: null,
+      isRewardsMember: false,
+      tier: null,
+      points: 0,
+      couponsRedeemed: 0
     };
 
     const updatedUsers = [...users, newUser];
@@ -188,12 +235,34 @@ export function AuthProvider({ children }) {
     }
 
     // Existing user: Login automatically
-    setCurrentUser(user);
-    localStorage.setItem("currentUser", JSON.stringify(user));
+    const resetUser = applyDailyReset(user, users);
+    setCurrentUser(resetUser);
+    localStorage.setItem("currentUser", JSON.stringify(resetUser));
     sessionStorage.removeItem("currentUser");
     setRoleCookie(user.role);
 
     return { success: true };
+  };
+
+  const updateProfile = (updates) => {
+    updateUser(updates);
+  };
+
+  const joinRewardsProgram = () => {
+    updateProfile({ isRewardsMember: true, tier: 'Seed', points: 0, couponsRedeemed: 0 });
+  };
+
+  const addPoints = (amount) => {
+    if (!currentUser) return;
+    const newPoints = (currentUser.points || 0) + amount;
+    
+    updateProfile({ points: newPoints });
+  };
+
+  const deductPoints = (amount) => {
+    if (!currentUser || (currentUser.points || 0) < amount) return false;
+    updateProfile({ points: (currentUser.points || 0) - amount });
+    return true;
   };
 
   const logout = () => {
@@ -201,6 +270,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("currentUser");
     sessionStorage.removeItem("currentUser");
     setRoleCookie(null);
+    window.dispatchEvent(new Event("userLoggedOut"));
   };
 
   // For the SAD System Design demo widget
@@ -214,16 +284,20 @@ export function AuthProvider({ children }) {
 
     const newSpending = (currentUser.total_spending || 0) + amount;
 
-    let newRank = 'Seed';
-    if (newSpending >= 25000) newRank = 'Harvest';
-    else if (newSpending >= 12000) newRank = 'Fruit';
-    else if (newSpending >= 6000) newRank = 'Bloom';
-    else if (newSpending >= 2000) newRank = 'Sprout';
+    if (currentUser.isRewardsMember) {
+      const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
+      const newPoints = currentPoints + amount;
+      
+      let newTier = 'Seed';
+      if (newSpending >= 25000) newTier = 'Harvest';
+      else if (newSpending >= 12000) newTier = 'Fruit';
+      else if (newSpending >= 6000) newTier = 'Bloom';
+      else if (newSpending >= 2000) newTier = 'Sprout';
 
-    const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
-    const newPoints = currentPoints + amount;
-
-    updateUser({ total_spending: newSpending, rank: newRank, points: newPoints });
+      updateUser({ total_spending: newSpending, tier: newTier, points: newPoints });
+    } else {
+      updateUser({ total_spending: newSpending });
+    }
   };
 
   const claimMission = (missionId, points) => {
@@ -238,6 +312,66 @@ export function AuthProvider({ children }) {
     const newCompleted = [...completedMissions, missionId];
 
     updateUser({ points: newPoints, completedMissions: newCompleted });
+  };
+
+  const redeemReward = (reward) => {
+    if (!currentUser) return { success: false, error: 'Not logged in' };
+    const currentPoints = currentUser.points !== undefined ? currentUser.points : (currentUser.total_spending || 0);
+    if (currentPoints < reward.pointsRequired) {
+      return { success: false, error: 'Not enough points' };
+    }
+
+    // Check limits (e.g. 5 discount coupons per year)
+    const isDiscount = reward.title.includes('Discount');
+    const currentYear = new Date().getFullYear();
+    let redeemedDiscountsThisYear = currentUser.redeemedDiscountsThisYear || {};
+    
+    if (isDiscount) {
+      let yearData = redeemedDiscountsThisYear[currentYear];
+      if (typeof yearData === 'number') {
+        // Migrate old format
+        yearData = { 'Legacy Discount': yearData };
+      } else if (!yearData) {
+        yearData = {};
+      }
+      
+      const countForThisReward = yearData[reward.title] || 0;
+      const limit = reward.limit || 5;
+      
+      if (countForThisReward >= limit) {
+        return { success: false, error: `Yearly limit reached (${limit}/${limit})` };
+      }
+      
+      redeemedDiscountsThisYear = {
+        ...redeemedDiscountsThisYear,
+        [currentYear]: {
+          ...yearData,
+          [reward.title]: countForThisReward + 1
+        }
+      };
+    }
+
+    const newPoints = currentPoints - reward.pointsRequired;
+    
+    // Create new coupon
+    const newCoupon = {
+      id: `CPN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      code: `RW-${reward.title.substring(0, 4).toUpperCase().replace(/[% ]/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      title: reward.title,
+      type: isDiscount ? 'discount' : reward.title.includes('Standard') ? 'free_standard' : reward.title.includes('Express') ? 'free_express' : 'other',
+      dateRedeemed: new Date().toISOString(),
+      status: 'active' // Can be 'active' or 'used'
+    };
+
+    const currentCoupons = currentUser.coupons || [];
+    
+    updateUser({ 
+      points: newPoints, 
+      redeemedDiscountsThisYear,
+      coupons: [newCoupon, ...currentCoupons]
+    });
+
+    return { success: true, coupon: newCoupon };
   };
 
   const updateUser = (updates) => {
@@ -299,10 +433,18 @@ export function AuthProvider({ children }) {
     updateUser,
     addSpending,
     claimMission,
+    redeemReward,
     isAuthModalOpen,
     authModalView,
     openAuthModal,
     closeAuthModal,
+    isRewardsOnboardingOpen,
+    openRewardsOnboarding,
+    closeRewardsOnboarding,
+    updateProfile,
+    joinRewardsProgram,
+    addPoints,
+    deductPoints
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

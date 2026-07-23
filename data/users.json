@@ -49,6 +49,20 @@
       "role": "customer",
       "referredBy": null,
       "rank": "Seed"
+    },
+    {
+      "id": "U-006",
+      "name": "Owojen",
+      "email": "lamnamazeda@gmail.com",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": null,
+      "isRewardsMember": false,
+      "tier": null,
+      "points": 0,
+      "couponsRedeemed": 0
     }
   ]
 }

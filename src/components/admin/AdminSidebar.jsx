@@ -13,7 +13,9 @@ import {
   Store,
   Tag,
   UserCircle,
-  Images
+  Images,
+  Star,
+  Search
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
@@ -46,7 +48,9 @@ export default function AdminSidebar() {
           { name: "Inventory", path: "/admin/inventory", icon: Package },
           { name: "Lookbook", path: "/admin/lookbooks", icon: Images },
           { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
+          { name: "Shopper Requests", path: "/admin/requests", icon: Search, adminOnly: true },
           { name: "Promotions", path: "/admin/promotions", icon: Tag, adminOnly: true },
+          { name: "Reviews", path: "/admin/reviews", icon: Star, adminOnly: true },
           { name: "Users", path: "/admin/users", icon: Users, adminOnly: true },
           { name: "Support Config", path: "/admin/support", icon: HelpCircle, adminOnly: true },
         ]
@@ -58,11 +62,10 @@ export default function AdminSidebar() {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-none transition-all duration-200 text-sm font-semibold ${
-                  active
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-none transition-all duration-200 text-sm font-semibold ${active
                     ? "bg-[#E3E7D3] text-[#2D2D2A] border-l-4 border-[#3A4A2D] -ml-3 pl-6"
                     : "text-[#5C5C58] hover:bg-[#EAE5DB]/50 border-l-4 border-transparent -ml-3 pl-6 hover:text-[#2D2D2A]"
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 {item.name}

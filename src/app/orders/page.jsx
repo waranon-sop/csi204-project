@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { useRouter } from 'next/navigation';
-import { Leaf, Eye, Truck, Package, Box, Star, Check, Zap } from 'lucide-react';
+import { Leaf, Eye, Truck, Package, Box, Star, Check, X, Flame, Droplet, Recycle } from 'lucide-react';
 import { getOrdersByUser, updateOrder } from '../../utils/localStorageHelper';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,6 +29,7 @@ const getStatusBadge = (status) => {
 export default function OrderHistory() {
   const { currentUser } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,11 +42,9 @@ export default function OrderHistory() {
     }
   }, [currentUser]);
 
-  const handleConfirmReceipt = async (orderId) => {
-    await updateOrder(orderId, { status: 'Delivered' });
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Delivered' } : o));
-    // Simulate eco points gain (in a real app, backend handles this)
-  };
+  const deliveredItemsCount = orders
+    .filter(o => ['Delivered', 'จัดส่งสำเร็จ'].includes(o.status))
+    .reduce((sum, order) => sum + (order.itemsCount || order.items?.length || 1), 0);
 
   return (
     <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -109,7 +108,12 @@ export default function OrderHistory() {
                         <Leaf className="h-4 w-4 text-sage-600" />
                         <div className="text-left">
                           <span className="block text-[9px] text-sage-700 font-semibold uppercase leading-none">Carbon Saved</span>
-                          <span className="block text-xs font-bold text-sage-800">{order.carbonSaved}</span>
+                          <span className="block text-xs font-bold text-sage-800">
+                            {['Delivered', 'จัดส่งสำเร็จ'].includes(order.status) 
+                              ? `${((order.itemsCount || 1) * 6.5).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg CO₂e`
+                              : '0.0 kg CO₂e'
+                            }
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -141,13 +145,10 @@ export default function OrderHistory() {
                              Reviewed
                            </div>
                         )}
-                        {!['Delivered', 'จัดส่งสำเร็จ'].includes(order.status) && (
-                          <button onClick={() => handleConfirmReceipt(order.id)} className="flex items-center gap-1.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-bold px-4 py-2 rounded-full transition-colors border border-yellow-300">
-                            <Zap className="h-3.5 w-3.5" />
-                            Dev: Mark Delivered
-                          </button>
-                        )}
-                        <button className="flex items-center gap-1.5 bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors">
+                        <button 
+                          onClick={() => setSelectedOrder(order)}
+                          className="flex items-center gap-1.5 bg-white hover:bg-earth-50 text-earth-700 text-xs font-medium px-4 py-2 rounded-full border border-earth-200 transition-colors"
+                        >
                           <Eye className="h-3.5 w-3.5" />
                           View Details
                         </button>
@@ -175,6 +176,119 @@ export default function OrderHistory() {
           </div>
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 sm:p-6 border-b border-earth-100">
+              <div>
+                <h2 className="text-xl font-bold text-earth-900">Order Details</h2>
+                <p className="text-xs text-earth-500 mt-1">Order #{selectedOrder.id} • {selectedOrder.date || new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 text-earth-400 hover:text-earth-700 hover:bg-earth-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Modal Body (Scrollable) */}
+            <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              
+              {/* Status and Summary */}
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-earth-50/50 rounded-xl border border-earth-100">
+                <div>
+                  <span className="text-xs font-semibold text-earth-500 block mb-1">Status</span>
+                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusBadge(selectedOrder.status)}`}>
+                    {selectedOrder.status}
+                  </span>
+                </div>
+                {selectedOrder.trackingNumber && (
+                  <div>
+                    <span className="text-xs font-semibold text-earth-500 block mb-1">Tracking Number</span>
+                    <span className="text-sm font-mono font-medium text-earth-800">{selectedOrder.trackingNumber}</span>
+                  </div>
+                )}
+                <div className="text-right">
+                  <span className="text-xs font-semibold text-earth-500 block mb-1">Total Amount</span>
+                  <span className="text-base font-bold text-earth-900">THB {selectedOrder.total}</span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div>
+                <h3 className="text-sm font-bold text-earth-800 mb-4 border-b border-earth-100 pb-2">Items in Your Order</h3>
+                <div className="space-y-4">
+                  {selectedOrder.items?.map((item, idx) => (
+                    <div key={item.id || idx} className="flex gap-4 p-3 hover:bg-earth-50/50 rounded-xl transition-colors">
+                      <div className="w-20 h-24 sm:w-24 sm:h-28 bg-earth-100 rounded-lg overflow-hidden shrink-0">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-earth-400">
+                            <Package className="w-8 h-8" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <h4 className="font-semibold text-earth-800 text-sm">{item.name}</h4>
+                          <p className="text-xs text-earth-500 mt-1">{item.detail}</p>
+                        </div>
+                        <div className="font-bold text-earth-900 text-sm mt-2">
+                          THB {item.price}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Summary & Address Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                {/* Shipping Address */}
+                <div className="space-y-3 p-4 bg-earth-50 rounded-xl border border-earth-100">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-earth-500">Shipping Address</h3>
+                  <div className="text-sm text-earth-800 space-y-1">
+                    <p className="font-semibold">{selectedOrder.customer}</p>
+                    <p className="text-earth-600 leading-relaxed">{selectedOrder.address}</p>
+                    {selectedOrder.phone && <p className="text-earth-600 mt-2 flex items-center gap-2">📞 {selectedOrder.phone}</p>}
+                  </div>
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="space-y-3 p-4 bg-earth-50 rounded-xl border border-earth-100">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-earth-500">Order Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-earth-600">
+                      <span>Subtotal ({selectedOrder.itemsCount} items)</span>
+                      <span>THB {selectedOrder.subTotal || selectedOrder.total}</span>
+                    </div>
+                    {selectedOrder.discount > 0 && (
+                      <div className="flex justify-between text-sage-600">
+                        <span>Discount {selectedOrder.promoCode ? `(${selectedOrder.promoCode})` : ''}</span>
+                        <span>-THB {selectedOrder.discount}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-earth-600">
+                      <span>Shipping</span>
+                      <span>{selectedOrder.shipping === 0 ? 'Free' : `THB ${selectedOrder.shipping}`}</span>
+                    </div>
+                    <div className="border-t border-earth-200/60 pt-2 mt-2 flex justify-between font-bold text-earth-900">
+                      <span>Total</span>
+                      <span>THB {selectedOrder.total}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

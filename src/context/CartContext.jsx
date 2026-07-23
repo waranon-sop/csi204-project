@@ -4,13 +4,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { updateProductStatus, releaseExpiredReservations, getProducts } from '../utils/localStorageHelper';
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
+
+const CART_KEY = 're_wear_cart';
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { settings } = useSettings();
-  const { currentUser } = useAuth();
+  const { currentUser, deductPoints } = useAuth();
 
   const userCartKey = currentUser ? `re_wear_cart_${currentUser.id}` : 're_wear_cart_guest';
 
@@ -37,6 +39,17 @@ export function CartProvider({ children }) {
     localStorage.setItem(userCartKey, JSON.stringify(cartItems));
   }, [cartItems, userCartKey]);
 
+  // Clear cart and release items on logout
+  useEffect(() => {
+    const handleLogout = () => {
+      cartItems.forEach(item => updateProductStatus(item.id, 'Available'));
+      setCartItems([]);
+      localStorage.removeItem(CART_KEY);
+    };
+    window.addEventListener("userLoggedOut", handleLogout);
+    return () => window.removeEventListener("userLoggedOut", handleLogout);
+  }, [cartItems]);
+
   // Soft lock release check
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -58,9 +71,30 @@ export function CartProvider({ children }) {
       setIsCartOpen(true);
       return;
     }
-    updateProductStatus(product.id, 'Reserved');
+    
+    let duration = 900000; // 15 mins
+    if (currentUser?.tier === 'Harvest') {
+      duration = 86400000; // 24 hours
+    }
+    const expiresAt = Date.now() + duration;
+    
+    updateProductStatus(product.id, 'Reserved', expiresAt);
     setCartItems((prev) => [...prev, product]);
     setIsCartOpen(true);
+  };
+
+  const extendReservation = () => {
+    if (!currentUser) return { success: false, error: 'Please sign in to extend reservation' };
+    if (currentUser.tier === 'Harvest') return { success: false, error: 'You already have 24-hour cart lock' };
+    
+    if (deductPoints(50)) {
+      const newExpiresAt = Date.now() + 1800000; // 30 mins
+      cartItems.forEach(item => {
+        updateProductStatus(item.id, 'Reserved', newExpiresAt);
+      });
+      return { success: true };
+    }
+    return { success: false, error: 'Not enough points' };
   };
 
   const removeFromCart = (id) => {
@@ -90,6 +124,7 @@ export function CartProvider({ children }) {
         toggleCart,
         closeCart,
         clearCart,
+        extendReservation,
         subTotal,
         shipping,
         shippingDiscount,
