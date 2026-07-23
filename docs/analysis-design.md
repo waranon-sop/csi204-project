@@ -169,44 +169,5 @@
 
 ---
 
-## 7. หลักการออกแบบที่นำมาใช้ (Design Principles)
-
-ระบบ Re-wear นำหลักการออกแบบสถาปัตยกรรมซอฟต์แวร์ที่ศึกษาในวิชา CSI204 มาประยุกต์ใช้ดังนี้:
-
-- **Separation of Concerns (SoC)**: แบ่งระบบออกเป็น 3 เลเยอร์ชัดเจน ได้แก่ Frontend (UI), Backend (API Routes) และ Database (JSON Files) แต่ละส่วนมีหน้าที่รับผิดชอบของตนเองโดยไม่ก้าวก่ายกัน
-- **Single Responsibility Principle (SRP)**: แต่ละ API Route รับผิดชอบข้อมูลเพียงหมวดเดียว เช่น `orders/route.js` จัดการแค่คำสั่งซื้อ `products/route.js` จัดการแค่สินค้า ไม่ปะปนกัน
-- **Modularity**: ระบบแบ่งออกเป็นโมดูลย่อยที่ทำงานอิสระจากกัน ทำให้แก้ไขหรือทดสอบแต่ละส่วนได้โดยไม่กระทบส่วนอื่น
-- **Loose Coupling**: Frontend และ Backend สื่อสารกันผ่าน REST API เท่านั้น ไม่มีการเรียกใช้งานโดยตรงระหว่างส่วน ทำให้สามารถเปลี่ยนฐานข้อมูลหรือ Logic ฝั่งเซิร์ฟเวอร์ได้โดยไม่ต้องแก้โค้ดฝั่งหน้า
-- **High Cohesion**: โค้ดและไฟล์ที่เกี่ยวข้องกันอยู่รวมกัน เช่น เอกสารทั้งหมดอยู่ใน `docs/` ไฟล์ฐานข้อมูลอยู่ใน `data/` และหน้า Admin อยู่ใน `app/admin/`
-- **Scalability**: โครงสร้าง API ออกแบบให้รองรับการขยายตัวได้ ไม่ว่าจะเป็นการเพิ่ม Route ใหม่หรือย้ายไปใช้ฐานข้อมูลจริง
-- **Reusability**: ฟังก์ชันกลางอย่าง `readDB` และ `writeDB` ใน `src/lib/db.js` ถูกเรียกใช้ร่วมกันจากทุก API Route แทนที่จะเขียนซ้ำในแต่ละไฟล์
-- **Security**: จำกัดสิทธิ์การเข้าถึงหน้าต่างๆ ตามบทบาทผู้ใช้ผ่าน `AuthContext` และ Route Protection (`useAdminGuard`) พนักงานที่เข้าหน้า Admin โดยตรงจะถูก Redirect อัตโนมัติ
-- **Flexibility**: เพิ่ม API Route ใหม่หรือเปลี่ยนฐานข้อมูลได้โดยแก้ที่ `src/lib/db.js` เพียงจุดเดียว ไม่ต้องไล่แก้ทุกไฟล์
-
----
-
-## 8. สรุป (Conclusion)
-
-ระบบ **Re-wear** ถูกออกแบบโดยเน้นแนวคิด Circular Fashion เป็นหลัก ครอบคลุมกระบวนการตั้งแต่การวิเคราะห์ความต้องการ ออกแบบสถาปัตยกรรม ไปจนถึงการพัฒนาระบบที่ใช้งานได้จริง
-
-### ผลลัพธ์ที่ได้จากโครงการ
-
-| ด้าน | รายละเอียด |
-|---|---|
-| Functional Requirements | ครบ 10 รายการ (F-01 ถึง F-10) |
-| จำนวนหน้าที่พัฒนา | 14 หน้า (Customer: 8 หน้า, Admin Panel: 6 หน้า) |
-| Role-based System | จัดการสิทธิ์ 3 บทบาทผ่าน AuthContext และ Route Protection |
-| ID System | แยกรหัสตามกลุ่มผู้ใช้ (ADM-xxxx, STF-xxxx, USR-xxxx) |
-| Eco Impact | Dashboard สรุปผลการลดคาร์บอนและขยะแฟชั่น |
-| Design Principles | นำมาใช้ 9 หลักการ (SoC, SRP, Modularity, Loose Coupling ฯลฯ) |
-| เทคโนโลยีหลัก | Next.js 15 (App Router), Tailwind CSS, Lucide React, Recharts |
-
-### ข้อจำกัดและแนวทางพัฒนาต่อ
-
-- **ระบบยืนยันตัวตน**: ปัจจุบันจำลองการ Login ผ่าน Context API แนวทางต่อไปคือนำ JWT หรือ NextAuth.js มาใช้งานจริง
-- **ฐานข้อมูล**: ปัจจุบันใช้ JSON Files แยกหมวดหมู่พร้อม Async I/O แนวทางต่อไปคือเชื่อมต่อกับ PostgreSQL หรือ MongoDB
-- **ระบบชำระเงิน**: ปัจจุบันเป็น Mockup แนวทางต่อไปคือเชื่อมต่อกับ Payment Gateway เช่น Omise หรือ Stripe
-
----
 
 > จัดทำโดย **กลุ่ม Re-wear** (พิมพ์มาดา คงดี, วรานนท์ โสปรก, ณัฐพงศ์ หาญชัยภา) สำหรับวิชา CSI204 Digital Platform for Software Development
