@@ -148,12 +148,6 @@ export const updateUserById = async (userId, updates) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
     });
-
-    // Also update local storage to keep client in sync before a full reload
-    const localUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = localUsers.map(u => u.id === userId ? { ...u, ...updates } : u);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-
   } catch (err) {
     console.error('Failed to sync updated user', err);
   }

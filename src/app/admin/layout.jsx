@@ -13,21 +13,17 @@ export default function AdminLayout({ children }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    // Check both localStorage and sessionStorage (new auth supports both)
-    const storedSession =
-      JSON.parse(sessionStorage.getItem('currentUser')) ||
-      JSON.parse(localStorage.getItem('currentUser'));
-    const userToCheck = currentUser || storedSession;
+    const match = document.cookie.match(new RegExp('(^| )userRole=([^;]+)'));
+    const role = match ? match[2] : null;
 
-    if (!userToCheck) {
-      router.push('/'); // Redirect to home (AuthModal will open)
-    } else if (userToCheck.role !== 'admin' && userToCheck.role !== 'staff') {
+    if (!role) {
+      router.push('/'); // Redirect to home
+    } else if (role !== 'admin' && role !== 'staff') {
       router.push('/'); // Redirect customers to home
-
     } else {
       setIsAuthorized(true);
     }
-  }, [currentUser, router, pathname]);
+  }, [router, pathname]);
 
   if (!isAuthorized) {
     return (

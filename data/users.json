@@ -48,7 +48,15 @@
       "phone": "Waranon_777",
       "role": "customer",
       "referredBy": null,
-      "rank": "Seed"
+      "rank": "Seed",
+      "completedMissions": [],
+      "lastMissionResetDate": "2026-07-23",
+      "isRewardsMember": true,
+      "tier": "Seed",
+      "points": 0,
+      "couponsRedeemed": 0,
+      "birthMonth": "9",
+      "birthDay": "7"
     },
     {
       "id": "U-006",

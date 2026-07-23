@@ -5,7 +5,24 @@ import { updateProductStatus, releaseExpiredReservations, getProducts } from '..
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
 
-const CART_KEY = 're_wear_cart';
+const getCookie = (name) => {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return match[2];
+  }
+  return null;
+};
+
+const setCookie = (name, value, maxAge = 604800) => {
+  if (typeof document !== 'undefined') {
+    if (value) {
+      document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    } else {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    }
+  }
+};
+
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
@@ -13,42 +30,77 @@ export function CartProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { settings } = useSettings();
   const { currentUser, deductPoints } = useAuth();
+  const [cartUserId, setCartUserId] = useState(null);
 
-  const userCartKey = currentUser ? `re_wear_cart_${currentUser.id}` : 're_wear_cart_guest';
-
-  // Load cart from localStorage on mount — cross-check each item is still Reserved
+  // Determine User/Guest ID
   useEffect(() => {
+    let uid = currentUser?.id;
+    if (!uid) {
+      let guestId = getCookie('guestId');
+      if (!guestId) {
+        guestId = 'guest-' + Date.now() + Math.random().toString(36).substring(2, 6);
+        setCookie('guestId', guestId);
+      }
+      uid = guestId;
+    }
+    setCartUserId(uid);
+  }, [currentUser]);
+
+  // Fetch cart on mount / user change
+  useEffect(() => {
+    if (!cartUserId) return;
     const initCart = async () => {
-      const savedCart = JSON.parse(localStorage.getItem(userCartKey)) || [];
-      if (savedCart.length > 0) {
-        const currentProducts = await getProducts();
-        const validItems = savedCart.filter(item => {
-          const prod = currentProducts.find(p => p.id === item.id);
-          return prod && prod.status === 'Reserved';
-        });
-        setCartItems(validItems);
-      } else {
-        setCartItems([]);
+      try {
+        const res = await fetch(`/api/cart?userId=${cartUserId}`);
+        const savedCart = res.ok ? await res.json() : [];
+        if (savedCart.length > 0) {
+          const currentProducts = await getProducts();
+          const validItems = savedCart.filter(item => {
+            const prod = currentProducts.find(p => p.id === item.id);
+            return prod && prod.status === 'Reserved';
+          });
+          setCartItems(validItems);
+        } else {
+          setCartItems([]);
+        }
+      } catch (err) {
+        console.error("Failed to load cart", err);
       }
     };
     initCart();
-  }, [userCartKey]);
+  }, [cartUserId]);
 
-  // Sync cart to localStorage whenever it changes
+  // Sync to backend whenever cartItems change
   useEffect(() => {
-    localStorage.setItem(userCartKey, JSON.stringify(cartItems));
-  }, [cartItems, userCartKey]);
+    if (!cartUserId) return;
+    const syncCart = async () => {
+      try {
+        await fetch('/api/cart', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: cartUserId, items: cartItems })
+        });
+      } catch (err) {
+        console.error("Failed to sync cart", err);
+      }
+    };
+    syncCart();
+  }, [cartItems, cartUserId]);
 
   // Clear cart and release items on logout
   useEffect(() => {
     const handleLogout = () => {
       cartItems.forEach(item => updateProductStatus(item.id, 'Available'));
       setCartItems([]);
-      localStorage.removeItem(CART_KEY);
+      fetch('/api/cart', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: cartUserId, items: [] })
+      });
     };
     window.addEventListener("userLoggedOut", handleLogout);
     return () => window.removeEventListener("userLoggedOut", handleLogout);
-  }, [cartItems]);
+  }, [cartItems, cartUserId]);
 
   // Soft lock release check
   useEffect(() => {
@@ -65,16 +117,15 @@ export function CartProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
-  // For vintage 1-of-1 items, we shouldn't add duplicates
   const addToCart = (product) => {
     if (cartItems.find((item) => item.id === product.id)) {
       setIsCartOpen(true);
       return;
     }
     
-    let duration = 900000; // 15 mins
+    let duration = 900000;
     if (currentUser?.tier === 'Harvest') {
-      duration = 86400000; // 24 hours
+      duration = 86400000;
     }
     const expiresAt = Date.now() + duration;
     
@@ -88,7 +139,7 @@ export function CartProvider({ children }) {
     if (currentUser.tier === 'Harvest') return { success: false, error: 'You already have 24-hour cart lock' };
     
     if (deductPoints(50)) {
-      const newExpiresAt = Date.now() + 1800000; // 30 mins
+      const newExpiresAt = Date.now() + 1800000;
       cartItems.forEach(item => {
         updateProductStatus(item.id, 'Reserved', newExpiresAt);
       });
@@ -106,7 +157,6 @@ export function CartProvider({ children }) {
   const closeCart = () => setIsCartOpen(false);
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem(userCartKey);
   };
 
   const subTotal = cartItems.reduce((sum, item) => sum + (item.salePrice > 0 ? item.salePrice : item.price), 0);
@@ -114,6 +164,7 @@ export function CartProvider({ children }) {
   const freeThreshold = settings?.freeShippingThreshold ?? 500;
   const shippingDiscount = subTotal >= freeThreshold ? shipping : 0;
   const cartTotal = subTotal + shipping - shippingDiscount;
+
   return (
     <CartContext.Provider
       value={{
