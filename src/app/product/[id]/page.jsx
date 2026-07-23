@@ -98,9 +98,21 @@ export default function ProductDetail() {
             <h1 className="font-serif text-4xl lg:text-5xl font-semibold leading-tight text-[#4A543C]">
               {product.title || product.name}
             </h1>
-            <p className="font-serif text-2xl font-bold text-[#8B6B57]">
-              THB {product.price}.00
-            </p>
+            <div className="flex flex-col gap-1 mt-2">
+              {product.originalPrice && product.originalPrice > product.price && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-[#8B8B88] line-through font-medium">
+                    THB {product.originalPrice.toLocaleString()}
+                  </span>
+                  <span className="bg-[#D03C31] text-white text-[10px] font-bold px-2 py-0.5 uppercase rounded-sm shadow-sm flex items-center gap-1">
+                    {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                  </span>
+                </div>
+              )}
+              <p className={`font-serif text-2xl font-bold ${product.originalPrice && product.originalPrice > product.price ? 'text-[#D03C31]' : 'text-[#8B6B57]'}`}>
+                THB {product.price.toLocaleString()}
+              </p>
+            </div>
           </div>
 
           {/* Condition Pill & Era */}
@@ -199,14 +211,16 @@ export default function ProductDetail() {
                   {isAdded ? 'ADDED TO ARCHIVE' : 'ADD TO CART'}
                 </button>
               )}
-              <button 
-                onClick={() => toggleFavorite(product)}
-                className={`p-4 rounded-xl border transition-all ${
-                  isFavorite(product.id) ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
-              </button>
+              {(!currentUser || currentUser.role === 'customer') && (
+                <button 
+                  onClick={() => toggleFavorite(product)}
+                  className={`p-4 rounded-xl border transition-all ${
+                    isFavorite(product.id) ? 'border-clay-400 bg-clay-50' : 'border-[#EAE5DB] hover:border-clay bg-white'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current text-clay-600' : 'text-[#8B8B88]'}`} />
+                </button>
+              )}
             </div>
             
             <div className="flex items-center justify-between text-[9px] text-[#8B8B88] font-medium">

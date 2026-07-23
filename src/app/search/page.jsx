@@ -53,13 +53,30 @@ function SearchContent() {
     
     if (query && query.toLowerCase() !== 'all items') {
       const q = query.toLowerCase();
-      const matched = results.filter(p =>
-        (p.title || p.name || '').toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q) ||
-        (p.brandCategory || p.brand || '').toLowerCase().includes(q)
-      );
-      // fallback to all if no match so the user can see mock results
-      if (matched.length > 0) results = matched;
+      
+      if (category === 'SALE' && q.includes('% off')) {
+        const percentMatch = q.match(/(\d+)%\s*off/);
+        if (percentMatch) {
+          const discountRequired = parseInt(percentMatch[1], 10);
+          results = results.filter(p => {
+            if (!p.originalPrice || p.originalPrice <= p.price) return false;
+            const discount = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+            return discount >= discountRequired;
+          });
+        }
+      } else if (category === 'SALE' && q === 'sale') {
+        results = results.filter(p => p.originalPrice && p.originalPrice > p.price);
+      } else {
+        const matched = results.filter(p =>
+          (p.title || p.name || '').toLowerCase().includes(q) ||
+          (p.category || '').toLowerCase().includes(q) ||
+          (p.brandCategory || p.brand || '').toLowerCase().includes(q)
+        );
+        // fallback to all if no match so the user can see mock results
+        if (matched.length > 0) results = matched;
+      }
+    } else if (category === 'SALE') {
+      results = results.filter(p => p.originalPrice && p.originalPrice > p.price);
     }
 
     if (selectedSpecs.length > 0) {

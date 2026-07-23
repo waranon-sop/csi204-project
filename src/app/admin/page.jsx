@@ -17,7 +17,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ecoStats, setEcoStats] = useState({ items: 892, water: '2,408,400', co2: '5,798.0', waste: '178.4' });
-  const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342, newUsers: 145 });
+  const [dashboardStats, setDashboardStats] = useState({ revenue: 12480, activeOrders: 342, newUsers: 145, topCategory: 'None', topCategoryCount: 0 });
   const [trends, setTrends] = useState({ revenue: 12.5, activeOrders: -2.4, items: 8.1, users: 8.2 });
   const [promotions, setPromotions] = useState([]);
 
@@ -33,16 +33,18 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [ordersRes, settingsRes, promosRes, usersRes] = await Promise.all([
+        const [ordersRes, settingsRes, promosRes, usersRes, productsRes] = await Promise.all([
           fetch('/api/orders'),
           fetch('/api/settings'),
           fetch('/api/promotions'),
-          fetch('/api/users')
+          fetch('/api/users'),
+          fetch('/api/products')
         ]);
         const localOrders = await ordersRes.json();
         const storedSettings = await settingsRes.json();
         const localPromos = await promosRes.json();
         const localUsers = await usersRes.json();
+        const localProducts = await productsRes.json();
 
         setOrders(localOrders);
         setPromotions(localPromos);
@@ -61,12 +63,6 @@ export default function AdminDashboard() {
         });
 
         let base = deliveredOrders.reduce((sum, o) => sum + (o.items?.length || o.itemCount || 1), 0);
-        // Add dummy fallback numbers so the UI reacts satisfyingly to the toggle
-        if (base === 0) {
-          if (timeFilter === '12 Months') base = 4850;
-          if (timeFilter === '30 Days') base = 892;
-          if (timeFilter === '7 Days') base = 214;
-        }
 
         // Fetch Eco Multipliers from Settings
         let ecoWater = 2700;
@@ -103,6 +99,7 @@ export default function AdminDashboard() {
           isPrevPeriod = (d) => d.getFullYear() === now.getFullYear() - 1;
         }
 
+        let categoryCounts = {};
         let currentRev = 0, prevRev = 0;
         let currentActive = 0, prevActive = 0;
         let currentItems = 0, prevItems = 0;
@@ -118,6 +115,14 @@ export default function AdminDashboard() {
             currentRev += rev;
             currentItems += items;
             currentActive += isActive;
+
+            if ((o.status === 'Shipped' || o.status === 'Delivered') && o.items && Array.isArray(o.items)) {
+              o.items.forEach(item => {
+                const prod = localProducts.find(p => p.id === item.id || p.name === item.name);
+                const cat = prod?.category || 'Uncategorized';
+                categoryCounts[cat] = (categoryCounts[cat] || 0) + (item.quantity || 1);
+              });
+            }
           } else if (isPrevPeriod(d)) {
             prevRev += rev;
             prevItems += items;
@@ -146,24 +151,24 @@ export default function AdminDashboard() {
         let tItems = calcTrend(currentItems, prevItems);
         let tUsers = calcTrend(currentUsers, prevUsers);
 
-        // Fallbacks if data is zero/missing for demo (except Users which are real)
-        if (currentRev === 0) {
-          if (timeFilter === '12 Months') { tRev = 12.5; tActive = 8.2; tItems = 15.0; }
-          else if (timeFilter === '30 Days') { tRev = 4.2; tActive = -2.4; tItems = 5.1; }
-          else { tRev = -1.5; tActive = 5.0; tItems = 2.0; }
-        }
-
         setTrends({ revenue: tRev, activeOrders: tActive, items: tItems, users: tUsers });
 
-        // ------------------ MAIN STATS ------------------
-        let fallbackRev = 12480;
-        if (timeFilter === '12 Months') fallbackRev = 145000;
-        if (timeFilter === '7 Days') fallbackRev = 3450;
+        let topCategory = 'None';
+        let topCategoryCount = 0;
+        Object.entries(categoryCounts).forEach(([cat, count]) => {
+          if (count > topCategoryCount) {
+            topCategoryCount = count;
+            topCategory = cat;
+          }
+        });
 
+        // ------------------ MAIN STATS ------------------
         setDashboardStats({
-          revenue: currentRev > 0 ? currentRev : fallbackRev,
-          activeOrders: currentActive > 0 ? currentActive : (timeFilter === '7 Days' ? 85 : (timeFilter === '30 Days' ? 342 : 1240)),
-          newUsers: currentUsers
+          revenue: currentRev,
+          activeOrders: currentActive,
+          newUsers: currentUsers,
+          topCategory: topCategory,
+          topCategoryCount: topCategoryCount
         });
       } catch (err) {
         console.error('Failed to load dashboard data', err);
@@ -188,14 +193,6 @@ export default function AdminDashboard() {
           buckets[days[d.getDay()]].items += (o.items?.length || o.itemCount || 1);
         }
       });
-      if (Object.values(buckets).every(v => v.revenue === 0)) {
-        return [
-          { time: 'Mon', revenue: 450, items: 12 }, { time: 'Tue', revenue: 300, items: 8 }, 
-          { time: 'Wed', revenue: 620, items: 18 }, { time: 'Thu', revenue: 0, items: 0 }, 
-          { time: 'Fri', revenue: 880, items: 25 }, { time: 'Sat', revenue: 1100, items: 32 }, 
-          { time: 'Sun', revenue: 1500, items: 40 }
-        ];
-      }
       return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
     } else if (timeFilter === '30 Days') {
       const buckets = { 'Week 1': { revenue: 0, items: 0 }, 'Week 2': { revenue: 0, items: 0 }, 'Week 3': { revenue: 0, items: 0 }, 'Week 4': { revenue: 0, items: 0 } };
@@ -209,12 +206,6 @@ export default function AdminDashboard() {
           buckets[weekKey].items += (o.items?.length || o.itemCount || 1);
         }
       });
-      if (Object.values(buckets).every(v => v.revenue === 0)) {
-        return [
-          { time: 'Week 1', revenue: 2400, items: 70 }, { time: 'Week 2', revenue: 3200, items: 95 }, 
-          { time: 'Week 3', revenue: 2800, items: 82 }, { time: 'Week 4', revenue: 4080, items: 120 }
-        ];
-      }
       return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
     } else {
       const buckets = { 'Jan': { revenue: 0, items: 0 }, 'Feb': { revenue: 0, items: 0 }, 'Mar': { revenue: 0, items: 0 }, 'Apr': { revenue: 0, items: 0 }, 'May': { revenue: 0, items: 0 }, 'Jun': { revenue: 0, items: 0 }, 'Jul': { revenue: 0, items: 0 }, 'Aug': { revenue: 0, items: 0 }, 'Sep': { revenue: 0, items: 0 }, 'Oct': { revenue: 0, items: 0 }, 'Nov': { revenue: 0, items: 0 }, 'Dec': { revenue: 0, items: 0 } };
@@ -226,9 +217,6 @@ export default function AdminDashboard() {
           buckets[monthNames[d.getMonth()]].items += (o.items?.length || o.itemCount || 1);
         }
       });
-      if (Object.values(buckets).every(v => v.revenue === 0)) {
-        return monthNames.map((m, i) => ({ time: m, revenue: 15000 + (i * 2000), items: 400 + (i * 50) }));
-      }
       return Object.keys(buckets).map(time => ({ time, ...buckets[time] }));
     }
   };
@@ -313,23 +301,17 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* New Users - warm cream */}
+        {/* Top Category - warm cream */}
         <div className="bg-[#EAE5DB] text-[#2D2D2A] rounded-3xl p-7 flex flex-col justify-between min-h-[160px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <div className="flex justify-between items-start">
             <div>
-              <Users className="w-5 h-5 mb-3 text-[#2D2D2A]/80" />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5C5C58] mb-1">New Users</p>
-            </div>
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-sm border ${
-              (trends.users || 0) >= 0 ? 'bg-[#4A533D]/10 text-[#4A533D] border-[#4A533D]/10' : 'bg-red-500/10 text-red-700 border-red-500/10'
-            }`}>
-              {(trends.users || 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {(trends.users || 0) > 0 ? '+' : ''}{(trends.users || 0).toFixed(1)}%
+              <Shirt className="w-5 h-5 mb-3 text-[#2D2D2A]/80" />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5C5C58] mb-1">Top Category</p>
             </div>
           </div>
           <div className="flex items-baseline gap-2 mt-4">
-            <p className="text-4xl font-serif tracking-tight">{dashboardStats.newUsers}</p>
-            <span className="text-xs font-semibold text-[#8B8B88]">Signups</span>
+            <p className="text-3xl sm:text-4xl font-serif tracking-tight truncate max-w-full">{dashboardStats.topCategory}</p>
+            <span className="text-xs font-semibold text-[#8B8B88] whitespace-nowrap">{dashboardStats.topCategoryCount > 0 ? `${dashboardStats.topCategoryCount} sold` : ''}</span>
           </div>
         </div>
       </div>

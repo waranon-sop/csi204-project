@@ -44,7 +44,7 @@ export default function MyWardrobe() {
                 {savedItems.map((item) => (
                   <div key={item.id} className="flex gap-4 p-4 border border-earth-200 rounded-2xl bg-earth-50/20">
                     <div className="relative w-20 h-20 bg-earth-100 rounded-xl overflow-hidden flex-shrink-0">
-                      <Image src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
+                      <Image src={item.image} alt={item.title || item.name || 'Product image'} fill sizes="80px" className="object-cover" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div>

@@ -168,28 +168,37 @@ export default function ProductCollection() {
                   className="object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 ease-in-out mix-blend-multiply"
                 />
 
-                <div className="absolute top-4 right-4 z-20">
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleFavorite(product);
-                    }}
-                    className="p-2 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm transition-colors shadow-sm text-sage-600 hover:scale-110 active:scale-95"
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current' : ''}`} />
-                  </button>
-                </div>
-
-
-
-                {product.isEarlyAccess && (
-                  <div className="absolute top-2 left-2 bg-[#2D2D2A] text-white text-[9px] font-bold px-2 py-1 uppercase rounded-sm z-20 shadow-sm flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    EARLY ACCESS
+                {(!currentUser || currentUser.role === 'customer') && (
+                  <div className="absolute top-4 right-4 z-20">
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleFavorite(product);
+                      }}
+                      className="p-2 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm transition-colors shadow-sm text-sage-600 hover:scale-110 active:scale-95"
+                    >
+                      <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-current' : ''}`} />
+                    </button>
                   </div>
                 )}
+
+
+
+                <div className="absolute top-2 left-2 z-20 flex flex-col gap-1 items-start">
+                  {product.isEarlyAccess && (
+                    <div className="bg-[#2D2D2A] text-white text-[9px] font-bold px-2 py-1 uppercase rounded-sm shadow-sm flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      EARLY ACCESS
+                    </div>
+                  )}
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <div className="bg-[#D03C31] text-white text-[10px] font-bold px-2 py-1 uppercase rounded-sm shadow-sm flex items-center gap-1">
+                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                    </div>
+                  )}
+                </div>
               </Link>
 
               <div className="flex justify-between items-start pt-1 font-sans px-1">

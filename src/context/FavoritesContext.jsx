@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const FavoritesContext = createContext();
 
@@ -10,23 +11,32 @@ export const useFavorites = () => {
 
 export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
+  const { currentUser } = useAuth();
+  
+  // Use a unique key for each user, or 'guest' if not logged in
+  const getFavoritesKey = () => `favorites_${currentUser?.id || 'guest'}`;
 
-  // Load favorites from local storage on mount
+  // Load favorites from local storage on mount or user change
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('favorites');
+    const key = getFavoritesKey();
+    const savedFavorites = localStorage.getItem(key);
     if (savedFavorites) {
       try {
         setFavorites(JSON.parse(savedFavorites));
       } catch (error) {
         console.error('Failed to parse favorites:', error);
+        setFavorites([]);
       }
+    } else {
+      setFavorites([]);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   // Save to local storage whenever favorites change
   useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-  }, [favorites]);
+    const key = getFavoritesKey();
+    localStorage.setItem(key, JSON.stringify(favorites));
+  }, [favorites, currentUser?.id]);
 
   const addFavorite = (product) => {
     setFavorites((prev) => {

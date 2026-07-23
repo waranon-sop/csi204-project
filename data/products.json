@@ -126,6 +126,7 @@
     "length": "11",
     "measurements": "Chest/Waist: 111, Length: 11",
     "id": "RW-19539",
-    "reservedAt": null
+    "reservedAt": null,
+    "originalPrice": 12000
   }
 ]

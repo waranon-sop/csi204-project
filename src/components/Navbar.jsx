@@ -238,14 +238,16 @@ export default function Navbar() {
             </form>
 
             {/* Wishlist Icon */}
-            <Link href="/wardrobe" className="p-1 text-[#2D2D2A] hover:text-[#C57B57] transition-colors focus:outline-none relative">
-              <Heart className="h-5 w-5" strokeWidth={1.5} />
-              {favorites.length > 0 && (
-                <span className="absolute top-0 right-0 bg-[#C57B57] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
+            {(!currentUser || currentUser.role === 'customer') && (
+              <Link href="/wardrobe" className="p-1 text-[#2D2D2A] hover:text-[#C57B57] transition-colors focus:outline-none relative">
+                <Heart className="h-5 w-5" strokeWidth={1.5} />
+                {favorites.length > 0 && (
+                  <span className="absolute top-0 right-0 bg-[#C57B57] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
+                    {favorites.length}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Shopping Cart Icon */}
             {currentUser?.role === 'customer' ? (

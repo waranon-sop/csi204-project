@@ -152,10 +152,21 @@ export default function QuickViewModal({
                 <h2 className="font-serif text-2xl md:text-3xl font-semibold text-[#2D2D2A] mt-1">
                   {selectedProduct.name}
                 </h2>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="block font-serif text-xl font-bold text-[#2D2D2A]">
-                    THB {selectedProduct.price}
-                  </span>
+                <div className="flex flex-col items-start mt-2">
+                  {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-[#8B8B88] line-through font-medium">
+                        THB {selectedProduct.originalPrice.toLocaleString()}
+                      </span>
+                      <span className="bg-[#D03C31] text-white text-[10px] font-bold px-2 py-0.5 uppercase rounded-sm shadow-sm flex items-center gap-1">
+                        {Math.round(((selectedProduct.originalPrice - selectedProduct.price) / selectedProduct.originalPrice) * 100)}% OFF
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between w-full">
+                    <span className={`block font-serif text-xl font-bold ${selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price ? 'text-[#D03C31]' : 'text-[#2D2D2A]'}`}>
+                      THB {selectedProduct.price.toLocaleString()}
+                    </span>
                   <span className="text-[10px] font-bold text-[#D03C31] bg-[#FFF3EE] px-2.5 py-1 rounded-full uppercase tracking-wider">
                     Only 1 left in stock
                   </span>
@@ -270,16 +281,18 @@ export default function QuickViewModal({
                     </>
                   )}
                 </button>
-                <button 
-                  onClick={() => toggleFavorite(selectedProduct)}
-                  className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
-                    isFavorite(selectedProduct.id) 
-                      ? 'border-clay-400 bg-clay-50 text-clay-600' 
-                      : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${isFavorite(selectedProduct.id) ? 'fill-current text-clay-600' : ''}`} />
-                </button>
+                {(!currentUser || currentUser.role === 'customer') && (
+                  <button 
+                    onClick={() => toggleFavorite(selectedProduct)}
+                    className={`p-3.5 border rounded-xl transition-all flex-shrink-0 ${
+                      isFavorite(selectedProduct.id) 
+                        ? 'border-clay-400 bg-clay-50 text-clay-600' 
+                        : 'border-[#EAE5DB] hover:border-clay hover:text-clay text-[#8B8B88]'
+                    }`}
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorite(selectedProduct.id) ? 'fill-current text-clay-600' : ''}`} />
+                  </button>
+                )}
               </div>
 
               {/* View Full Details Link */}
