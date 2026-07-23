@@ -42,14 +42,14 @@
 | Shopping Experience | ค้นหาและกรองสินค้า, ระบบตะกร้า, สั่งซื้อและชำระเงินจำลอง |
 | Order Management | ประวัติคำสั่งซื้อ, ติดตามสถานะ |
 | Eco-Impact Dashboard | สรุปสถิติรักษ์โลกส่วนบุคคล (คำนวณจากยอดสั่งซื้อ) |
-| Wardrobe / Favorites | ระบบตู้เสื้อผ้า บันทึกสินค้าที่ชื่นชอบ |
+| Wardrobe / Favorites | บันทึกสินค้าที่ชื่นชอบ |
 | Missions & Rewards | ภารกิจรายวัน สะสมแต้ม แลกรางวัล |
 
 ### พนักงาน (Staff)
 | ฟีเจอร์ | รายละเอียด |
 |---|---|
 | Inventory | จัดการคลังสินค้า, เพิ่ม/แก้ไข/อัปเดตสถานะ |
-| Order Fulfillment | อัปเดตสถานะคำสั่งซื้อ (สะท้อนถึงลูกค้าทันที) |
+| Order Fulfillment | อัปเดตสถานะคำสั่งซื้อ |
 | Promotions | จัดการโปรโมชันและโค้ดส่วนลด |
 
 ### ผู้ดูแลระบบ (Admin)
@@ -58,7 +58,7 @@
 | Dashboard | แผงควบคุมสรุปยอดขาย, กราฟรายได้, Activity Log |
 | User Management | จัดการสิทธิ์ผู้ใช้งาน (Customer ↔ Staff) |
 | Lookbooks | จัดการชุดแฟชั่นโปรโมตที่หน้าแรก |
-| Settings | ตั้งค่าร้านค้า (ค่าส่ง, ชื่อร้าน, Eco-Rate) |
+| Settings | ตั้งค่าร้านค้า (ค่าส่ง, Eco-Rate) |
 
 > **Security Highlight:** ระบบมี **Role-based Route Protection** เพื่อป้องกันการเข้าถึงหน้า Admin โดยตรงจากผู้ที่ไม่มีสิทธิ์ และ **Notification System** เพื่อเก็บประวัติการกระทำของ Admin และ Staff
 
