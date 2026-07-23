@@ -58,6 +58,17 @@
 
 ---
 
+## เทคโนโลยีที่ใช้ (Tech Stack)
+
+| หมวดหมู่ | เทคโนโลยีที่เลือกใช้ |
+|---|---|
+| **Frontend Framework** | **Next.js 15** (App Router + React), Tailwind CSS v3, Lucide React |
+| **Backend** | Node js |
+| **Database** | Local JSON + API Routes |
+| **Tools & Design** | Git, GitHub, Figma, Draw.io |
+
+---
+
 ## หมวดการประเมินที่ 2: การวิเคราะห์และออกแบบระบบ (System Analysis and Design)
 
 ข้อมูลในหมวดนี้จะแสดงรายละเอียดเกี่ยวกับการออกแบบระบบและฐานข้อมูล ได้แก่:
@@ -102,18 +113,6 @@
 | Settings | ตั้งค่าร้านค้า (ค่าส่ง, Eco-Rate) |
 
 > **Security Highlight:** ระบบมี **Role-based Route Protection** เพื่อป้องกันการเข้าถึงหน้า Admin โดยตรงจากผู้ที่ไม่มีสิทธิ์ และ **Notification System** เพื่อเก็บประวัติการกระทำของ Admin และ Staff
-
----
-
-## เทคโนโลยีที่ใช้ (Tech Stack)
-
-| หมวดหมู่ | เทคโนโลยีที่เลือกใช้ |
-|---|---|
-| **Frontend Framework** | **Next.js 15** (App Router + React), Tailwind CSS v3, Lucide React |
-| **Backend** | Node js |
-| **Database** | Local JSON + API Routes |
-| **Tools & Design** | Git, GitHub, Figma, Draw.io |
-
 
 ---
 
