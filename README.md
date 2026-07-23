@@ -75,25 +75,6 @@
 | **Database (Mock)** | Local JSON + API Routes (`fs.promises` อ่าน/เขียนไฟล์จริง) |
 | **Tools & Design** | Git, GitHub, Figma, Draw.io |
 
----
-
-## คู่มือการติดตั้งและใช้งาน (Getting Started)
-
-คุณสามารถนำโปรเจกต์นี้ไปรันในเครื่องส่วนตัวได้ด้วยขั้นตอนดังนี้:
-
-**1. ติดตั้ง Dependencies**
-```bash
-npm install
-```
-
-**2. รัน Development Server**
-```bash
-npm run dev
-```
-
-**3. เปิดใช้งาน**
-
-เปิดเบราว์เซอร์แล้วไปที่ → `http://localhost:3000`
 
 ---
 
