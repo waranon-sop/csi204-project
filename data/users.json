@@ -237,6 +237,22 @@
       "tier": null,
       "points": 0,
       "couponsRedeemed": 0
+    },
+    {
+      "id": "U-008",
+      "name": "Pipe Waranon",
+      "email": "pipezaza34@gmail.com",
+      "password": "Waranon_777",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": null,
+      "isRewardsMember": true,
+      "tier": "Seed",
+      "points": 0,
+      "couponsRedeemed": 0,
+      "birthMonth": "2",
+      "birthDay": "4"
     }
   ]
 }

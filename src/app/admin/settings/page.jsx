@@ -32,7 +32,6 @@ export default function SettingsPage() {
     if (!isLoadingSettings && globalSettings) {
       setSettings(globalSettings);
       setOriginalSettings(globalSettings);
-      setIsLoading(false);
     }
   }, [globalSettings, isLoadingSettings]);
 

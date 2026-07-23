@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { createOrder, processOrderInventory, updateProductStatus, updateUserById } from '../../utils/localStorageHelper';
 import { Check, ChevronRight, Gift, CreditCard, ChevronDown, MapPin } from 'lucide-react';
 import Image from 'next/image';
@@ -12,6 +13,7 @@ import MinimalDropdown from '../../components/ui/MinimalDropdown';
 export default function CheckoutPage() {
   const { cartItems, cartTotal, subTotal, shipping, shippingDiscount, clearCart, toggleCart } = useCart();
   const { currentUser, addSpending, updateUser } = useAuth();
+  const { settings } = useSettings();
   const router = useRouter();
   
   const [step, setStep] = useState(2); // 2 = Delivery, 3 = Payment
@@ -311,8 +313,10 @@ export default function CheckoutPage() {
   }
 
   let baseShippingFee = shippingMethod === 'express' ? 50 : 35;
+  const freeThreshold = settings?.freeShippingThreshold ?? 500;
   const isFreeShipping = (currentUser && currentUser.tier === 'Harvest') || 
-                         (appliedPromo && appliedPromo.type === 'shipping' && appliedPromo.value === shippingMethod);
+                         (appliedPromo && appliedPromo.type === 'shipping' && appliedPromo.value === shippingMethod) ||
+                         (subTotal >= freeThreshold);
   let finalShipping = isFreeShipping ? 0 : baseShippingFee;
   let finalShippingDiscount = isFreeShipping ? baseShippingFee : 0;
   

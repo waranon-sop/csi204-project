@@ -10,47 +10,51 @@ export const useFavorites = () => {
 };
 
 export const FavoritesProvider = ({ children }) => {
-  const [favorites, setFavorites] = useState([]);
   const { currentUser } = useAuth();
-  
-  // Use a unique key for each user, or 'guest' if not logged in
-  const getFavoritesKey = () => `favorites_${currentUser?.id || 'guest'}`;
+  const expectedKey = `favorites_${currentUser?.id || 'guest'}`;
 
+  const [favoritesState, setFavoritesState] = useState({
+    items: [],
+    key: null,
+  });
+  
   // Load favorites from local storage on mount or user change
   useEffect(() => {
-    const key = getFavoritesKey();
-    const savedFavorites = localStorage.getItem(key);
+    const savedFavorites = localStorage.getItem(expectedKey);
+    let items = [];
     if (savedFavorites) {
       try {
-        setFavorites(JSON.parse(savedFavorites));
+        items = JSON.parse(savedFavorites);
       } catch (error) {
         console.error('Failed to parse favorites:', error);
-        setFavorites([]);
       }
-    } else {
-      setFavorites([]);
     }
-  }, [currentUser?.id]);
+    setFavoritesState({ items, key: expectedKey });
+  }, [expectedKey]);
 
   // Save to local storage whenever favorites change
   useEffect(() => {
-    const key = getFavoritesKey();
-    localStorage.setItem(key, JSON.stringify(favorites));
-  }, [favorites, currentUser?.id]);
+    if (favoritesState.key === expectedKey && favoritesState.key !== null) {
+      localStorage.setItem(expectedKey, JSON.stringify(favoritesState.items));
+    }
+  }, [favoritesState, expectedKey]);
 
   const addFavorite = (product) => {
-    setFavorites((prev) => {
-      if (prev.some((item) => item.id === product.id)) return prev;
-      return [...prev, product];
+    setFavoritesState((prev) => {
+      if (prev.items.some((item) => item.id === product.id)) return prev;
+      return { ...prev, items: [...prev.items, product] };
     });
   };
 
   const removeFavorite = (productId) => {
-    setFavorites((prev) => prev.filter((item) => item.id !== productId));
+    setFavoritesState((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== productId)
+    }));
   };
 
   const isFavorite = (productId) => {
-    return favorites.some((item) => item.id === productId);
+    return favoritesState.items.some((item) => item.id === productId);
   };
 
   const toggleFavorite = (product) => {
@@ -62,7 +66,7 @@ export const FavoritesProvider = ({ children }) => {
   };
 
   const value = {
-    favorites,
+    favorites: favoritesState.items,
     addFavorite,
     removeFavorite,
     isFavorite,

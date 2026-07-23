@@ -5,7 +5,7 @@ import { X, CheckCircle2, Star, Award, Cake, Leaf, Clock, Tag, Truck, ChevronDow
 import { useAuth } from "../context/AuthContext";
 
 export default function RewardsOnboardingModal({ isOpen, onClose }) {
-  const { currentUser, updateProfile } = useAuth();
+  const { currentUser, updateProfile, addPoints } = useAuth();
   const [step, setStep] = useState(0);
   const [birthMonth, setBirthMonth] = useState("");
   const [birthDay, setBirthDay] = useState("");
@@ -36,6 +36,7 @@ export default function RewardsOnboardingModal({ isOpen, onClose }) {
     } else {
       if (birthMonth && birthDay && updateProfile && !hasBirthdaySaved) {
         updateProfile({ birthMonth, birthDay });
+        if (addPoints) addPoints(100);
       }
       onClose();
     }
