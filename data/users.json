@@ -21,34 +21,71 @@
       "status": "active"
     },
     {
-      "id": "U-003",
-      "name": "Waranon Sama",
+      "id": "U-006",
+      "name": "Owojen",
+      "email": "lamnamazeda@gmail.com",
+      "password": "snQ72`HVXl",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": null,
+      "isRewardsMember": false,
+      "tier": null,
+      "points": 0,
+      "couponsRedeemed": 0
+    },
+    {
+      "id": "U-007",
+      "name": "วรานนท์ โสปรก",
       "email": "pipezaza34@gmail.com",
       "password": "Waranon_777",
       "phone": "0823077771",
       "role": "customer",
       "referredBy": null,
-      "rank": "Seed"
+      "rank": null,
+      "isRewardsMember": true,
+      "tier": "Seed",
+      "points": 0,
+      "couponsRedeemed": 0,
+      "completedMissions": [],
+      "lastMissionResetDate": "2026-07-23",
+      "birthMonth": "2",
+      "birthDay": "2"
     },
     {
-      "id": "U-004",
-      "name": "Waranon SOPROK",
+      "id": "U-008",
+      "name": "วรานนท์ โสปรก",
+      "email": "pipesomad@gmail.com",
+      "password": "Waranon_777",
+      "phone": "",
+      "role": "customer",
+      "referredBy": null,
+      "rank": null,
+      "isRewardsMember": false,
+      "tier": null,
+      "points": 0,
+      "couponsRedeemed": 0,
+      "completedMissions": [],
+      "lastMissionResetDate": "2026-07-23"
+    },
+    {
+      "id": "U-009",
+      "name": "WARANON SOPROK",
       "email": "waranon.sop@spumail.net",
       "password": "Waranon_777",
-      "phone": "0823077771",
+      "phone": "",
       "role": "customer",
       "referredBy": null,
-      "rank": "Seed"
-    },
-    {
-      "id": "U-005",
-      "name": "Pipwe dawda",
-      "email": "waranon.sop@gmail.com",
-      "password": "Waranon_777",
-      "phone": "Waranon_777",
-      "role": "customer",
-      "referredBy": null,
-      "rank": "Seed"
+      "rank": null,
+      "isRewardsMember": true,
+      "tier": "Seed",
+      "points": 0,
+      "couponsRedeemed": 0,
+      "birthMonth": "2",
+      "birthDay": "2",
+      "birthday": "2 2",
+      "completedMissions": [],
+      "lastMissionResetDate": "2026-07-23"
     }
   ]
 }

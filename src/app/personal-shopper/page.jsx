@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { Search, Upload, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PersonalShopper() {
   const router = useRouter();
+  const { currentUser } = useAuth();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     brandOrStyle: '',
@@ -15,18 +17,37 @@ export default function PersonalShopper() {
   });
   const [image, setImage] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitted(true);
-    }, 800);
+    try {
+      const payload = {
+        userId: currentUser?.id,
+        ...formData,
+        image
+      };
+      const res = await fetch('/api/shopper-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setIsSubmitted(true);
+        setFormData({ brandOrStyle: '', description: '', size: '' });
+        setImage(null);
+      }
+    } catch (err) {
+      console.error('Failed to submit request', err);
+    }
   };
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImage(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 

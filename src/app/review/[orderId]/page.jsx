@@ -23,6 +23,7 @@ export default function ReviewPage() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [reviewText, setReviewText] = useState('');
   const [photoAdded, setPhotoAdded] = useState(false);
+  const [photoData, setPhotoData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
@@ -46,7 +47,13 @@ export default function ReviewPage() {
 
   const handleFakePhotoUpload = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setPhotoAdded(true);
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoData(reader.result);
+        setPhotoAdded(true);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -57,7 +64,17 @@ export default function ReviewPage() {
 
     // Save review data to localStorage (or update order)
     const decodedId = decodeURIComponent(orderId);
-    await updateOrder(decodedId, { hasReviewed: true });
+    await updateOrder(decodedId, { 
+      hasReviewed: true,
+      review: {
+        rating,
+        tags: selectedTags,
+        text: reviewText,
+        photoAdded,
+        photoUrl: photoData,
+        date: new Date().toISOString()
+      }
+    });
     
     if (updateUser) {
       const updates = { hasReviewed: true };

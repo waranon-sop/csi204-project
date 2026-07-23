@@ -7,13 +7,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, ShieldAlert, Cpu, Heart, ShoppingBag, User } from 'lucide-react';
 import ProfileDropdown from './ProfileDropdown';
 import AuthModal from './AuthModal';
+import RewardsOnboardingModal from './RewardsOnboardingModal';
+import { mockProducts } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { useSettings } from '../context/SettingsContext';
 
 export default function Navbar() {
-  const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
+  const { currentUser, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal, isRewardsOnboardingOpen, closeRewardsOnboarding } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -102,11 +104,12 @@ export default function Navbar() {
         hasMegaMenu: true,
         megaMenuData: {
           items: [
-            { name: 'Skirts', path: '/search?q=Skirts&cat=CLOTHING' },
-            { name: 'Dresses', path: '/search?q=Dresses&cat=CLOTHING' },
-            { name: 'T-shirts & Tops', path: '/search?q=Tops&cat=CLOTHING' },
-            { name: 'Pants & Jeans', path: '/search?q=Pants&cat=CLOTHING' },
-            { name: 'Outerwear', path: '/search?q=Outerwear&cat=CLOTHING' },
+            { name: 'All Clothing', path: '/search?cat=CLOTHING' },
+            { name: 'Skirts', path: '/search?exactCategory=Skirts&cat=CLOTHING' },
+            { name: 'Dresses', path: '/search?exactCategory=Dresses&cat=CLOTHING' },
+            { name: 'T-shirts & Tops', path: '/search?exactCategory=T-shirts%20%26%20Tops&cat=CLOTHING' },
+            { name: 'Pants & Jeans', path: '/search?exactCategory=Pants%20%26%20Jeans&cat=CLOTHING' },
+            { name: 'Outerwear', path: '/search?exactCategory=Outerwear&cat=CLOTHING' },
           ]
         }
       },
@@ -116,11 +119,12 @@ export default function Navbar() {
         hasMegaMenu: true,
         megaMenuData: {
           items: [
-            { name: 'Necklaces', path: '/search?q=Necklaces&cat=ACCESSORIES' },
-            { name: 'Earrings', path: '/search?q=Earrings&cat=ACCESSORIES' },
-            { name: 'Bracelets', path: '/search?q=Bracelets&cat=ACCESSORIES' },
-            { name: 'Rings', path: '/search?q=Rings&cat=ACCESSORIES' },
-            { name: 'Handbags', path: '/search?q=Handbags&cat=ACCESSORIES' },
+            { name: 'All Accessories', path: '/search?cat=ACCESSORIES' },
+            { name: 'Necklaces', path: '/search?exactCategory=Necklaces&cat=ACCESSORIES' },
+            { name: 'Earrings', path: '/search?exactCategory=Earrings&cat=ACCESSORIES' },
+            { name: 'Bracelets', path: '/search?exactCategory=Bracelets&cat=ACCESSORIES' },
+            { name: 'Rings', path: '/search?exactCategory=Rings&cat=ACCESSORIES' },
+            { name: 'Handbags', path: '/search?exactCategory=Handbags&cat=ACCESSORIES' },
           ]
         }
       },
@@ -129,7 +133,7 @@ export default function Navbar() {
         path: '/search?cat=SALE'
       },
       { name: 'SUPPORT', path: '/support' },
-      ...(currentUser ? [{ name: 'ECO IMPACT', path: '/eco-impact' }] : []),
+      
     ];
   };
 
@@ -312,7 +316,8 @@ export default function Navbar() {
       </div>
 
       {/* Tier 3: Category Links */}
-      <div className="hidden md:flex w-full justify-center items-center border-t border-[#EAE5DB] relative z-40" ref={megaMenuRef}>
+      {!pathname.startsWith('/payment') && (
+        <div className="hidden md:flex w-full justify-center items-center border-t border-[#EAE5DB] relative z-40" ref={megaMenuRef}>
         <div className="flex space-x-12 relative">
           {navLinks.map((link, index) => {
             if (link.hasMegaMenu) {
@@ -370,6 +375,7 @@ export default function Navbar() {
           })}
         </div>
       </div>
+      )}
 
       {/* Mobile Drawer Menu */}
       {isOpen && (
@@ -424,6 +430,10 @@ export default function Navbar() {
         isOpen={isAuthModalOpen} 
         onClose={closeAuthModal} 
         initialView={authModalView} 
+      />
+      <RewardsOnboardingModal
+        isOpen={isRewardsOnboardingOpen}
+        onClose={closeRewardsOnboarding}
       />
     </nav>
   );

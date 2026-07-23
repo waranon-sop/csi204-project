@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, History, CreditCard, Heart, Leaf, LogOut } from 'lucide-react';
+import { User, History, CreditCard, Heart, Leaf, LogOut, Ticket } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Removed ROLE_AVATARS constant
@@ -19,12 +19,13 @@ export default function Sidebar() {
     }
   }, [currentUser, router]);
 
-  const user = currentUser || { name: 'Guest', role: 'customer', rank: 'Seed' };
+  const user = currentUser || { name: 'Guest', role: 'customer', rank: 'None' };
 
   const getDisplayRank = (u) => {
     if (u.role === 'admin') return 'Admin';
     if (u.role === 'staff') return 'Staff';
-    return u.rank || 'Seed';
+    if (u.role === 'customer' && !u.isRewardsMember) return 'Non-Member';
+    return u.tier || u.rank || 'Member';
   };
 
   const menuItems = [
@@ -41,10 +42,10 @@ export default function Sidebar() {
       description: 'View past orders',
     },
     {
-      name: 'Payment Methods',
-      path: '/payment-methods',
-      icon: CreditCard,
-      description: 'Manage cards and bank accounts',
+      name: 'My Coupons',
+      path: '/coupons',
+      icon: Ticket,
+      description: 'View redeemed rewards',
     },
     {
       name: 'Wardrobe & Favorites',
@@ -87,7 +88,7 @@ export default function Sidebar() {
         <div>
           <h2 className="font-semibold text-earth-800 text-sm">{user.name}</h2>
           <p className="text-xs text-sage-600 font-medium capitalize">
-            {user.role === 'customer' ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
+            {user.role === 'customer' && user.isRewardsMember ? `${getDisplayRank(user)} Member` : getDisplayRank(user)}
           </p>
         </div>
       </div>
