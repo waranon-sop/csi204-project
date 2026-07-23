@@ -109,9 +109,9 @@
 
 | Persona | Pass | Fail | Total |
 |:---:|:---:|:---:|:---:|
-| Customer | **9** | 0 | 9 |
+| Customer | **7** | 2 | 9 |
 | Staff | **6** | 0 | 6 |
-| Admin | **6** | 0 | 6 |
+| Admin | **5** | 1 | 6 |
 | **Total** | **21** | **0** | **21** |
 
 **Pass Rate: 100%**
