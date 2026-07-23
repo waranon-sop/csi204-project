@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Re-wear Collective</h1>
   <p>
-    <strong>แพลตฟอร์ม e-Commerce สำหรับส่งต่อเสื้อผ้ามือสอง (Circular Fashion)</strong>
+    <strong>แพลตฟอร์ม e-Commerce สำหรับส่งต่อเสื้อผ้ามือสอง</strong>
     <br />
     <i>"เพราะแฟชั่นไม่จำเป็นต้องทำร้ายโลก"</i>
   </p>
